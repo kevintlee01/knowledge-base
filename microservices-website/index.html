@@ -57,7 +57,7 @@ h1,h2,h3,h4{color:var(--text-bright);line-height:1.3}
 }
 
 /* ============== HERO ============== */
-.hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:6rem 2rem 4rem;overflow:hidden}
+.hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:10rem 2rem 4rem;overflow:hidden}
 .hero::before{content:'';position:absolute;top:-40%;left:-20%;width:140%;height:140%;
   background:radial-gradient(ellipse at 30% 50%,rgba(99,102,241,.12) 0%,transparent 60%),
              radial-gradient(ellipse at 70% 50%,rgba(34,211,238,.08) 0%,transparent 60%);
@@ -228,8 +228,8 @@ h1,h2,h3,h4{color:var(--text-bright);line-height:1.3}
 
 /* ============== CODE BLOCK ============== */
 .code-block{background:#0d1117;border:1px solid rgba(99,102,241,.15);border-radius:var(--radius-sm);
-  padding:1.2rem 1.5rem;font-family:'Fira Code','Cascadia Code',monospace;font-size:.82rem;
-  line-height:1.8;overflow-x:auto;color:#c9d1d9;margin:1rem 0;white-space:pre;word-wrap:break-word}
+  padding:1.2rem 1.5rem;font-family:'Fira Code','Cascadia Code',monospace;font-size:.92rem;
+  line-height:1.8;overflow-x:auto;color:#c9d1d9;margin:1rem 0;white-space:pre-wrap;word-wrap:break-word}
 .code-block .kw{color:#ff7b72}.code-block .str{color:#a5d6ff}
 .code-block .fn{color:#d2a8ff}.code-block .cm{color:#8b949e}
 .code-block .type{color:#79c0ff}.code-block .num{color:#79c0ff}
@@ -318,7 +318,7 @@ details.code-example .code-block{margin:0;border:none;border-radius:0}
 
 /* ============== DEEP DIVE CODE ============== */
 .deep-code{background:#0d1117;border:1px solid rgba(99,102,241,.12);border-radius:var(--radius-sm);
-  padding:1.5rem;font-family:'Fira Code','Cascadia Code','SF Mono',monospace;font-size:.78rem;
+  padding:1.5rem;font-family:'Fira Code','Cascadia Code','SF Mono',monospace;font-size:.88rem;
   line-height:1.9;overflow-x:auto;color:#c9d1d9;margin:.8rem 0;white-space:pre}
 .deep-code .kw{color:#ff7b72}.deep-code .str{color:#a5d6ff}.deep-code .fn{color:#d2a8ff}
 .deep-code .cm{color:#8b949e;font-style:italic}.deep-code .type{color:#79c0ff}.deep-code .num{color:#79c0ff}
@@ -436,6 +436,63 @@ details.code-example .code-block{margin:0;border:none;border-radius:0}
       <div class="stat"><div class="stat-num" data-target="55">0</div><div class="stat-label">% cost reduction in scaling</div></div>
       <div class="stat"><div class="stat-num" data-target="4">0</div><div class="stat-label">× improvement in release frequency</div></div>
     </div>
+    <details class="code-example"><summary>💻 Scaffold a new Node.js microservice from scratch</summary><div class="code-block"><span class="cm">// Scaffold: minimal production-ready service entry point</span>
+<span class="kw">const</span> express = <span class="fn">require</span>(<span class="str">'express'</span>);
+<span class="kw">const</span> { createTerminus } = <span class="fn">require</span>(<span class="str">'@godaddy/terminus'</span>);
+<span class="kw">const</span> http = <span class="fn">require</span>(<span class="str">'http'</span>);
+<span class="kw">const</span> { logger } = <span class="fn">require</span>(<span class="str">'./lib/logger'</span>);
+<span class="kw">const</span> { connectDB } = <span class="fn">require</span>(<span class="str">'./lib/db'</span>);
+
+<span class="kw">const</span> app = <span class="fn">express</span>();
+app.<span class="fn">use</span>(express.<span class="fn">json</span>());
+app.<span class="fn">use</span>(<span class="fn">require</span>(<span class="str">'cors'</span>)());
+app.<span class="fn">use</span>(<span class="fn">require</span>(<span class="str">'helmet'</span>)());
+
+<span class="cm">// Domain routes (one file per aggregate)</span>
+app.<span class="fn">use</span>(<span class="str">'/api/orders'</span>,  <span class="fn">require</span>(<span class="str">'./routes/orders'</span>));
+app.<span class="fn">use</span>(<span class="str">'/api/health'</span>,  <span class="fn">require</span>(<span class="str">'./routes/health'</span>));
+
+<span class="cm">// Graceful shutdown via Terminus</span>
+<span class="kw">const</span> server = http.<span class="fn">createServer</span>(app);
+<span class="fn">createTerminus</span>(server, {
+  signal: <span class="str">'SIGTERM'</span>,
+  healthChecks: { <span class="str">'/healthz'</span>: <span class="kw">async</span> () => { <span class="kw">await</span> db.<span class="fn">ping</span>(); } },
+  onSignal: <span class="kw">async</span> () => {
+    logger.<span class="fn">info</span>(<span class="str">'Server shutting down...'</span>);
+    <span class="kw">await</span> db.<span class="fn">disconnect</span>();
+  },
+});
+
+<span class="kw">async function</span> <span class="fn">boot</span>() {
+  <span class="kw">await</span> <span class="fn">connectDB</span>();
+  server.<span class="fn">listen</span>(process.env.PORT || <span class="num">3000</span>, () =>
+    logger.<span class="fn">info</span>(<span class="str">`Service running on port ${process.env.PORT || 3000}`</span>));
+}
+<span class="fn">boot</span>().<span class="fn">catch</span>(err => { logger.<span class="fn">error</span>(err); process.<span class="fn">exit</span>(<span class="num">1</span>); });</div></details>
+    <details class="code-example"><summary>💻 package.json — Production dependencies for a microservice</summary><div class="code-block">{
+  <span class="str">"name"</span>: <span class="str">"order-service"</span>,
+  <span class="str">"version"</span>: <span class="str">"1.0.0"</span>,
+  <span class="str">"scripts"</span>: {
+    <span class="str">"start"</span>: <span class="str">"node dist/index.js"</span>,
+    <span class="str">"dev"</span>: <span class="str">"tsx watch src/index.ts"</span>,
+    <span class="str">"build"</span>: <span class="str">"tsc"</span>,
+    <span class="str">"test"</span>: <span class="str">"jest --runInBand"</span>,
+    <span class="str">"migrate"</span>: <span class="str">"prisma migrate deploy"</span>,
+    <span class="str">"lint"</span>: <span class="str">"eslint src/"</span>
+  },
+  <span class="str">"dependencies"</span>: {
+    <span class="str">"express"</span>: <span class="str">"^4.19"</span>,       <span class="cm">// HTTP framework</span>
+    <span class="str">"@prisma/client"</span>: <span class="str">"^5"</span>,   <span class="cm">// ORM / query builder</span>
+    <span class="str">"kafkajs"</span>: <span class="str">"^2.2"</span>,        <span class="cm">// Kafka producer + consumer</span>
+    <span class="str">"ioredis"</span>: <span class="str">"^5"</span>,          <span class="cm">// Redis client / cache</span>
+    <span class="str">"jsonwebtoken"</span>: <span class="str">"^9"</span>,     <span class="cm">// JWT verification</span>
+    <span class="str">"pino"</span>: <span class="str">"^9"</span>,             <span class="cm">// Structured JSON logger</span>
+    <span class="str">"helmet"</span>: <span class="str">"^7"</span>,           <span class="cm">// Security headers</span>
+    <span class="str">"cors"</span>: <span class="str">"^2"</span>,             <span class="cm">// CORS middleware</span>
+    <span class="str">"@godaddy/terminus"</span>: <span class="str">"^4"</span>, <span class="cm">// Graceful shutdown</span>
+    <span class="str">"@opentelemetry/sdk-node"</span>: <span class="str">"^0.52"</span>
+  }
+}</div></details>
   </div>
 </section>
 
@@ -494,6 +551,66 @@ details.code-example .code-block{margin:0;border:none;border-radius:0}
         <p>Every service must emit metrics, logs, and traces. Distributed tracing (OpenTelemetry), centralized logging (ELK/Loki), and metrics dashboards (Prometheus/Grafana) are non-negotiable. You cannot debug what you cannot observe.</p>
       </div>
     </div>
+    <details class="code-example"><summary>💻 Domain model — Order aggregate with domain events</summary><div class="code-block"><span class="cm">// domain/order.ts — Pure domain logic, zero infrastructure imports</span>
+<span class="kw">class</span> <span class="type">Order</span> {
+  <span class="kw">private</span> events: DomainEvent[] = [];
+
+  <span class="kw">constructor</span>(
+    <span class="kw">public readonly</span> id: <span class="type">string</span>,
+    <span class="kw">public</span> status: OrderStatus,
+    <span class="kw">public readonly</span> userId: <span class="type">string</span>,
+    <span class="kw">public readonly</span> items: OrderItem[],
+  ) {}
+
+  <span class="kw">static</span> <span class="fn">create</span>(userId: <span class="type">string</span>, items: OrderItem[]): Order {
+    <span class="kw">if</span> (items.length === <span class="num">0</span>) <span class="kw">throw new</span> <span class="fn">DomainError</span>(<span class="str">'Order must have at least one item'</span>);
+    <span class="kw">const</span> order = <span class="kw">new</span> <span class="fn">Order</span>(<span class="fn">uuid</span>(), OrderStatus.PENDING, userId, items);
+    order.<span class="fn">addEvent</span>(<span class="kw">new</span> <span class="fn">OrderCreated</span>({ orderId: order.id, userId, items }));
+    <span class="kw">return</span> order;
+  }
+
+  <span class="fn">confirm</span>(paymentId: <span class="type">string</span>) {
+    <span class="kw">if</span> (<span class="kw">this</span>.status !== OrderStatus.PENDING)
+      <span class="kw">throw new</span> <span class="fn">DomainError</span>(<span class="str">`Cannot confirm order in ${this.status} state`</span>);
+    <span class="kw">this</span>.status = OrderStatus.CONFIRMED;
+    <span class="kw">this</span>.<span class="fn">addEvent</span>(<span class="kw">new</span> <span class="fn">OrderConfirmed</span>({ orderId: <span class="kw">this</span>.id, paymentId }));
+  }
+
+  <span class="fn">cancel</span>(reason: <span class="type">string</span>) {
+    <span class="kw">if</span> (<span class="kw">this</span>.status === OrderStatus.SHIPPED)
+      <span class="kw">throw new</span> <span class="fn">DomainError</span>(<span class="str">'Cannot cancel shipped order'</span>);
+    <span class="kw">this</span>.status = OrderStatus.CANCELLED;
+    <span class="kw">this</span>.<span class="fn">addEvent</span>(<span class="kw">new</span> <span class="fn">OrderCancelled</span>({ orderId: <span class="kw">this</span>.id, reason }));
+  }
+
+  <span class="fn">getUncommittedEvents</span>(): DomainEvent[] { <span class="kw">return</span> [...<span class="kw">this</span>.events]; }
+  <span class="kw">private</span> <span class="fn">addEvent</span>(e: DomainEvent) { <span class="kw">this</span>.events.<span class="fn">push</span>(e); }
+}
+
+<span class="kw">enum</span> <span class="type">OrderStatus</span> { PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED }</div></details>
+    <details class="code-example"><summary>💻 Bounded context boundaries — service contracts</summary><div class="code-block"><span class="cm">// Each bounded context exposes only its public contract</span>
+<span class="cm">// Anti-corruption layer prevents domain model leaking across boundaries</span>
+
+<span class="cm">// ports/outbound/payment.client.ts — Port interface</span>
+<span class="kw">interface</span> <span class="type">PaymentClient</span> {
+  <span class="fn">charge</span>(orderId: <span class="type">string</span>, amount: <span class="type">number</span>, currency: <span class="type">string</span>): Promise&lt;PaymentResult&gt;;
+  <span class="fn">refund</span>(paymentId: <span class="type">string</span>): Promise&lt;<span class="type">void</span>&gt;;
+}
+
+<span class="cm">// adapters/outbound/payment.grpc-client.ts — Infrastructure adapter</span>
+<span class="kw">class</span> <span class="type">PaymentGrpcClient</span> <span class="kw">implements</span> <span class="type">PaymentClient</span> {
+  <span class="kw">async</span> <span class="fn">charge</span>(orderId, amount, currency) {
+    <span class="kw">const</span> res = <span class="kw">await</span> <span class="kw">this</span>.grpc.<span class="fn">processPayment</span>({
+      order_id: orderId,      <span class="cm">// map to external contract</span>
+      amount_cents: amount * <span class="num">100</span>,
+      currency_code: currency,
+    });
+    <span class="kw">return</span> { paymentId: res.payment_id, status: res.status };
+  }
+}
+
+<span class="cm">// The domain NEVER imports gRPC, HTTP, or database libraries</span>
+<span class="cm">// All infrastructure flows through port interfaces</span></div></details>
   </div>
 </section>
 
@@ -915,43 +1032,40 @@ details.code-example .code-block{margin:0;border:none;border-radius:0}
         <h3 style="margin-bottom:.5rem;color:var(--accent)">Hexagonal Architecture (Ports & Adapters)</h3>
         <p style="margin-bottom:1rem;color:var(--text-dim)">Each microservice internally uses clean architecture to isolate business logic from infrastructure concerns.</p>
         <div class="deep-code">order-service/
-├── cmd/
-│   └── server/
-│       └── main.go              <span class="cm">// Bootstrap, DI, graceful shutdown</span>
-├── internal/
+├── src/
+│   ├── index.ts                 <span class="cm">// Bootstrap, DI, graceful shutdown</span>
 │   ├── domain/                  <span class="cm">// Pure business logic, zero dependencies</span>
-│   │   ├── order.go             <span class="cm">// Order aggregate root</span>
-│   │   ├── order_item.go        <span class="cm">// Value object</span>
-│   │   ├── order_status.go      <span class="cm">// State machine: PENDING→CONFIRMED→SHIPPED→DELIVERED</span>
-│   │   ├── events.go            <span class="cm">// Domain events: OrderCreated, OrderConfirmed</span>
-│   │   └── errors.go            <span class="cm">// Domain-specific errors (InsufficientStock, etc.)</span>
+│   │   ├── order.ts             <span class="cm">// Order aggregate root</span>
+│   │   ├── order-item.ts        <span class="cm">// Value object</span>
+│   │   ├── order-status.ts      <span class="cm">// State machine: PENDING→CONFIRMED→SHIPPED→DELIVERED</span>
+│   │   ├── events.ts            <span class="cm">// Domain events: OrderCreated, OrderConfirmed</span>
+│   │   └── errors.ts            <span class="cm">// Domain-specific errors (InsufficientStock, etc.)</span>
 │   ├── ports/                   <span class="cm">// Interfaces (contracts)</span>
 │   │   ├── inbound/
-│   │   │   └── order_service.go  <span class="cm">// CreateOrder, GetOrder, CancelOrder</span>
+│   │   │   └── order.service.ts  <span class="cm">// CreateOrder, GetOrder, CancelOrder</span>
 │   │   └── outbound/
-│   │       ├── order_repo.go     <span class="cm">// Repository interface</span>
-│   │       ├── payment_client.go <span class="cm">// Payment port</span>
-│   │       ├── inventory_client.go
-│   │       └── event_publisher.go
+│   │       ├── order.repo.ts     <span class="cm">// Repository interface</span>
+│   │       ├── payment.client.ts <span class="cm">// Payment port</span>
+│   │       ├── inventory.client.ts
+│   │       └── event.publisher.ts
 │   ├── application/             <span class="cm">// Use cases / orchestration</span>
-│   │   ├── create_order.go      <span class="cm">// Command handler</span>
-│   │   ├── get_order.go         <span class="cm">// Query handler</span>
-│   │   └── saga_orchestrator.go <span class="cm">// Manages distributed transaction</span>
+│   │   ├── create-order.ts      <span class="cm">// Command handler</span>
+│   │   ├── get-order.ts         <span class="cm">// Query handler</span>
+│   │   └── saga-orchestrator.ts <span class="cm">// Manages distributed transaction</span>
 │   └── adapters/                <span class="cm">// Infrastructure implementations</span>
 │       ├── inbound/
-│       │   ├── http/             <span class="cm">// REST handlers (Gin/Echo/Chi)</span>
-│       │   └── grpc/             <span class="cm">// gRPC server implementation</span>
+│       │   ├── express/           <span class="cm">// REST handlers (Express/Fastify)</span>
+│       │   └── grpc/             <span class="cm">// gRPC server (@grpc/grpc-js)</span>
 │       └── outbound/
-│           ├── postgres/         <span class="cm">// Repository impl with sqlx/pgx</span>
-│           ├── kafka/            <span class="cm">// Event publisher impl</span>
-│           └── grpc_clients/     <span class="cm">// Payment, Inventory gRPC clients</span>
-├── api/
-│   ├── proto/                   <span class="cm">// .proto definitions</span>
-│   └── openapi/                 <span class="cm">// OpenAPI 3.0 spec</span>
-├── migrations/                  <span class="cm">// SQL migrations (golang-migrate)</span>
+│           ├── prisma/           <span class="cm">// Repository impl with Prisma ORM</span>
+│           ├── kafkajs/          <span class="cm">// Event publisher impl (KafkaJS)</span>
+│           └── grpc-clients/     <span class="cm">// Payment, Inventory gRPC clients</span>
+├── prisma/
+│   └── schema.prisma            <span class="cm">// Prisma schema + migrations</span>
+├── openapi/                     <span class="cm">// OpenAPI 3.0 spec</span>
 ├── Dockerfile
-├── Makefile
-└── go.mod</div>
+├── tsconfig.json
+└── package.json</div>
         <div class="tech-detail">
           <strong>Key principles:</strong> The domain layer has <em>zero</em> import dependencies on infrastructure. All external interactions go through port interfaces. Adapters implement ports. This enables: unit testing domain logic without databases, swapping infrastructure (Postgres→DynamoDB) without changing business code, and clear dependency direction (outside → inside).
         </div>
@@ -1389,6 +1503,65 @@ details.code-example .code-block{margin:0;border:none;border-radius:0}
         </div>
       </div>
     </div>
+    <details class="code-example"><summary>💻 Saga orchestrator — distributed transaction coordination</summary><div class="code-block"><span class="cm">// application/saga-orchestrator.ts — Orchestration-based saga</span>
+<span class="kw">class</span> <span class="type">PlaceOrderSaga</span> {
+  <span class="kw">constructor</span>(
+    <span class="kw">private</span> orderRepo: OrderRepository,
+    <span class="kw">private</span> inventoryClient: InventoryClient,
+    <span class="kw">private</span> paymentClient: PaymentClient,
+    <span class="kw">private</span> eventPublisher: EventPublisher,
+  ) {}
+
+  <span class="kw">async</span> <span class="fn">execute</span>(cmd: CreateOrderCommand) {
+    <span class="kw">const</span> order = Order.<span class="fn">create</span>(cmd.userId, cmd.items);
+    <span class="kw">await</span> <span class="kw">this</span>.orderRepo.<span class="fn">save</span>(order);
+
+    <span class="kw">try</span> {
+      <span class="cm">// Step 1: Reserve inventory</span>
+      <span class="kw">const</span> reservation = <span class="kw">await</span> <span class="kw">this</span>.inventoryClient.<span class="fn">reserve</span>(order.items);
+
+      <span class="cm">// Step 2: Process payment</span>
+      <span class="kw">const</span> payment = <span class="kw">await</span> <span class="kw">this</span>.paymentClient.<span class="fn">charge</span>(
+        order.id, order.<span class="fn">totalAmount</span>(), <span class="str">'USD'</span>
+      );
+
+      <span class="cm">// Step 3: Confirm order + publish event</span>
+      order.<span class="fn">confirm</span>(payment.paymentId);
+      <span class="kw">await</span> <span class="kw">this</span>.orderRepo.<span class="fn">save</span>(order);
+      <span class="kw">await</span> <span class="kw">this</span>.eventPublisher.<span class="fn">publishAll</span>(order.<span class="fn">getUncommittedEvents</span>());
+
+      <span class="kw">return</span> order;
+    } <span class="kw">catch</span> (err) {
+      <span class="cm">// Compensating transactions — undo in reverse order</span>
+      <span class="kw">await</span> <span class="kw">this</span>.inventoryClient.<span class="fn">release</span>(order.id).<span class="fn">catch</span>(<span class="fn">logCompensationError</span>);
+      order.<span class="fn">cancel</span>(err.message);
+      <span class="kw">await</span> <span class="kw">this</span>.orderRepo.<span class="fn">save</span>(order);
+      <span class="kw">await</span> <span class="kw">this</span>.eventPublisher.<span class="fn">publish</span>(<span class="kw">new</span> <span class="fn">OrderFailed</span>({ orderId: order.id, reason: err.message }));
+      <span class="kw">throw</span> err;
+    }
+  }
+}</div></details>
+    <details class="code-example"><summary>💻 Health check endpoint + Kubernetes probes</summary><div class="code-block"><span class="cm">// routes/health.ts — Liveness + Readiness probes</span>
+<span class="kw">const</span> router = <span class="fn">require</span>(<span class="str">'express'</span>).<span class="fn">Router</span>();
+
+<span class="cm">// Liveness — is the process alive?</span>
+router.<span class="fn">get</span>(<span class="str">'/live'</span>, (req, res) => res.<span class="fn">status</span>(<span class="num">200</span>).<span class="fn">json</span>({ status: <span class="str">'ok'</span> }));
+
+<span class="cm">// Readiness — can it accept traffic?</span>
+router.<span class="fn">get</span>(<span class="str">'/ready'</span>, <span class="kw">async</span> (req, res) => {
+  <span class="kw">const</span> checks = <span class="kw">await</span> Promise.<span class="fn">allSettled</span>([
+    db.<span class="fn">raw</span>(<span class="str">'SELECT 1'</span>),            <span class="cm">// Database reachable</span>
+    redis.<span class="fn">ping</span>(),                   <span class="cm">// Cache reachable</span>
+    kafka.admin().<span class="fn">describeCluster</span>(), <span class="cm">// Broker reachable</span>
+  ]);
+  <span class="kw">const</span> results = {
+    db:    checks[<span class="num">0</span>].status === <span class="str">'fulfilled'</span>,
+    redis: checks[<span class="num">1</span>].status === <span class="str">'fulfilled'</span>,
+    kafka: checks[<span class="num">2</span>].status === <span class="str">'fulfilled'</span>,
+  };
+  <span class="kw">const</span> healthy = Object.<span class="fn">values</span>(results).<span class="fn">every</span>(Boolean);
+  res.<span class="fn">status</span>(healthy ? <span class="num">200</span> : <span class="num">503</span>).<span class="fn">json</span>({ status: healthy ? <span class="str">'ready'</span> : <span class="str">'degraded'</span>, checks: results });
+});</div></details>
   </div>
 </section>
 
@@ -1472,51 +1645,41 @@ app.<span class="fn">get</span>(<span class="str">'/api/orders/:id'</span>, <spa
 });
 
 app.<span class="fn">listen</span>(<span class="num">3000</span>);</div></details>
-    <details class="code-example"><summary>💻 Go — gRPC service implementation</summary><div class="code-block"><span class="cm">// Go — gRPC service implementation</span>
-<span class="kw">package</span> main
+    <details class="code-example"><summary>💻 Node.js — KafkaJS producer & consumer</summary><div class="code-block"><span class="cm">// lib/kafka.ts — KafkaJS setup for event-driven communication</span>
+<span class="kw">const</span> { Kafka } = <span class="fn">require</span>(<span class="str">'kafkajs'</span>);
 
-<span class="kw">import</span> (
-    <span class="str">"context"</span>
-    pb <span class="str">"order-service/proto"</span>
-    <span class="str">"google.golang.org/grpc"</span>
-)
+<span class="kw">const</span> kafka = <span class="kw">new</span> <span class="fn">Kafka</span>({
+  clientId: <span class="str">'order-service'</span>,
+  brokers: (process.env.KAFKA_BROKERS || <span class="str">'localhost:9092'</span>).<span class="fn">split</span>(<span class="str">','</span>),
+});
 
-<span class="kw">type</span> <span class="type">orderServer</span> <span class="kw">struct</span> {
-    pb.<span class="type">UnimplementedOrderServiceServer</span>
+<span class="cm">// ---- PRODUCER ----</span>
+<span class="kw">const</span> producer = kafka.<span class="fn">producer</span>({ idempotent: <span class="kw">true</span> });
+<span class="kw">await</span> producer.<span class="fn">connect</span>();
+
+<span class="kw">async function</span> <span class="fn">publishEvent</span>(topic, key, event) {
+  <span class="kw">await</span> producer.<span class="fn">send</span>({
+    topic,
+    messages: [{ key, value: JSON.<span class="fn">stringify</span>(event), headers: {
+      <span class="str">'event-type'</span>: event.type,
+      <span class="str">'correlation-id'</span>: event.correlationId,
+    }}],
+  });
 }
 
-<span class="kw">func</span> (s *<span class="type">orderServer</span>) <span class="fn">GetOrder</span>(ctx context.Context, req *pb.GetOrderRequest) (*pb.Order, <span class="type">error</span>) {
-    order, err := s.repo.<span class="fn">FindByID</span>(ctx, req.OrderId)
-    <span class="kw">if</span> err != <span class="kw">nil</span> {
-        <span class="kw">return</span> <span class="kw">nil</span>, status.<span class="fn">Errorf</span>(codes.NotFound, <span class="str">"order %s not found"</span>, req.OrderId)
-    }
-    <span class="kw">return</span> &amp;pb.Order{Id: order.ID, Status: order.Status}, <span class="kw">nil</span>
-}
+<span class="cm">// ---- CONSUMER ----</span>
+<span class="kw">const</span> consumer = kafka.<span class="fn">consumer</span>({ groupId: <span class="str">'payment-service'</span> });
+<span class="kw">await</span> consumer.<span class="fn">connect</span>();
+<span class="kw">await</span> consumer.<span class="fn">subscribe</span>({ topics: [<span class="str">'order.events'</span>], fromBeginning: <span class="kw">false</span> });
 
-grpcServer := grpc.<span class="fn">NewServer</span>()
-pb.<span class="fn">RegisterOrderServiceServer</span>(grpcServer, &amp;<span class="type">orderServer</span>{})
-grpcServer.<span class="fn">Serve</span>(lis)  <span class="cm">// listen on :50051</span></div></details>
-    <details class="code-example"><summary>💻 Java — Kafka producer & consumer (Spring Boot)</summary><div class="code-block"><span class="cm">// Java — Kafka producer &amp; consumer (Spring Boot)</span>
-<span class="cm">// Producer Service</span>
-<span class="kw">@Service</span>
-<span class="kw">public class</span> <span class="type">OrderEventPublisher</span> {
-    <span class="kw">private final</span> KafkaTemplate&lt;String, OrderEvent&gt; kafka;
-
-    <span class="kw">public void</span> <span class="fn">publishOrderCreated</span>(Order order) {
-        kafka.<span class="fn">send</span>(<span class="str">"orders"</span>, order.getId(), <span class="kw">new</span> <span class="fn">OrderCreatedEvent</span>(order));
-    }
-}
-
-<span class="cm">// Consumer Service</span>
-<span class="kw">@Service</span>
-<span class="kw">public class</span> <span class="type">PaymentEventConsumer</span> {
-    <span class="kw">private final</span> PaymentService paymentService;
-
-    <span class="kw">@KafkaListener</span>(topics = <span class="str">"orders"</span>, groupId = <span class="str">"payment-service"</span>)
-    <span class="kw">public void</span> <span class="fn">handleOrderCreated</span>(OrderCreatedEvent event) {
-        paymentService.<span class="fn">processPayment</span>(event.getOrderId(), event.getTotal());
-    }
-}</div></details>
+<span class="kw">await</span> consumer.<span class="fn">run</span>({
+  eachMessage: <span class="kw">async</span> ({ topic, partition, message }) => {
+    <span class="kw">const</span> event = JSON.<span class="fn">parse</span>(message.value);
+    <span class="kw">const</span> handler = handlers[event.type];
+    <span class="kw">if</span> (handler) <span class="kw">await</span> <span class="fn">handler</span>(event);
+    <span class="cm">// Offset auto-committed after successful processing</span>
+  },
+});</div></details>
   </div>
 </section>
 
@@ -1608,6 +1771,105 @@ OrderShipped { id: 123, tracking: "1Z999..." }</div></details>
         </div>
       </div>
     </div>
+    <details class="code-example"><summary>💻 Prisma schema — Database per service with migrations</summary><div class="code-block"><span class="cm">// prisma/schema.prisma — Order service owns this schema exclusively</span>
+generator client {
+  provider = <span class="str">"prisma-client-js"</span>
+}
+
+datasource db {
+  provider = <span class="str">"postgresql"</span>
+  url      = <span class="fn">env</span>(<span class="str">"DATABASE_URL"</span>)
+}
+
+model Order {
+  id        String      <span class="ann">@id @default(uuid())</span>
+  userId    String      <span class="ann">@map("user_id")</span>
+  status    OrderStatus <span class="ann">@default(PENDING)</span>
+  total     Decimal     <span class="ann">@db.Decimal(10, 2)</span>
+  items     OrderItem[]
+  outbox    OutboxEvent[]
+  createdAt DateTime    <span class="ann">@default(now()) @map("created_at")</span>
+  updatedAt DateTime    <span class="ann">@updatedAt @map("updated_at")</span>
+  <span class="ann">@@map("orders")</span>
+}
+
+model OrderItem {
+  id       String <span class="ann">@id @default(uuid())</span>
+  orderId  String <span class="ann">@map("order_id")</span>
+  sku      String
+  quantity Int
+  price    Decimal <span class="ann">@db.Decimal(10, 2)</span>
+  order    Order   <span class="ann">@relation(fields: [orderId], references: [id])</span>
+  <span class="ann">@@map("order_items")</span>
+}
+
+<span class="cm">// Transactional outbox table — CDC reads this</span>
+model OutboxEvent {
+  id            String   <span class="ann">@id @default(uuid())</span>
+  aggregateId   String   <span class="ann">@map("aggregate_id")</span>
+  aggregateType String   <span class="ann">@map("aggregate_type")</span>
+  eventType     String   <span class="ann">@map("event_type")</span>
+  payload       Json
+  createdAt     DateTime <span class="ann">@default(now()) @map("created_at")</span>
+  published     Boolean  <span class="ann">@default(false)</span>
+  order         Order    <span class="ann">@relation(fields: [aggregateId], references: [id])</span>
+  <span class="ann">@@index([published, createdAt])</span>
+  <span class="ann">@@map("outbox_events")</span>
+}
+
+<span class="kw">enum</span> <span class="type">OrderStatus</span> {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}</div></details>
+    <details class="code-example"><summary>💻 Transactional outbox — atomic write + event publish</summary><div class="code-block"><span class="cm">// adapters/outbound/order.repository.ts — Outbox pattern with Prisma</span>
+<span class="kw">const</span> { PrismaClient } = <span class="fn">require</span>(<span class="str">'@prisma/client'</span>);
+<span class="kw">const</span> prisma = <span class="kw">new</span> <span class="fn">PrismaClient</span>();
+
+<span class="kw">async function</span> <span class="fn">saveOrderWithEvents</span>(order, events) {
+  <span class="cm">// Single transaction: write order + outbox rows atomically</span>
+  <span class="cm">// No dual-write problem — CDC or poller reads outbox later</span>
+  <span class="kw">return</span> prisma.<span class="fn">$transaction</span>(<span class="kw">async</span> (tx) => {
+    <span class="kw">const</span> saved = <span class="kw">await</span> tx.order.<span class="fn">upsert</span>({
+      where: { id: order.id },
+      create: {
+        id: order.id,
+        userId: order.userId,
+        status: order.status,
+        total: order.<span class="fn">totalAmount</span>(),
+        items: { create: order.items },
+      },
+      update: { status: order.status },
+    });
+
+    <span class="cm">// Write domain events to outbox in same transaction</span>
+    <span class="kw">await</span> tx.outboxEvent.<span class="fn">createMany</span>({
+      data: events.<span class="fn">map</span>(e => ({
+        aggregateId: order.id,
+        aggregateType: <span class="str">'Order'</span>,
+        eventType: e.type,
+        payload: e,
+      })),
+    });
+
+    <span class="kw">return</span> saved;
+  });
+}
+
+<span class="cm">// Outbox relay — polls unpublished events and sends to Kafka</span>
+<span class="kw">async function</span> <span class="fn">pollOutbox</span>() {
+  <span class="kw">const</span> events = <span class="kw">await</span> prisma.outboxEvent.<span class="fn">findMany</span>({
+    where: { published: <span class="kw">false</span> },
+    orderBy: { createdAt: <span class="str">'asc'</span> },
+    take: <span class="num">100</span>,
+  });
+  <span class="kw">for</span> (<span class="kw">const</span> event <span class="kw">of</span> events) {
+    <span class="kw">await</span> kafka.<span class="fn">publishEvent</span>(<span class="str">'order.events'</span>, event.aggregateId, event.payload);
+    <span class="kw">await</span> prisma.outboxEvent.<span class="fn">update</span>({ where: { id: event.id }, data: { published: <span class="kw">true</span> } });
+  }
+}</div></details>
   </div>
 </section>
 
@@ -1680,19 +1942,22 @@ OrderShipped { id: 123, tracking: "1Z999..." }</div></details>
         <p>Deploy code with features disabled, then enable them gradually per user/group. Decouples deployment from release. Tools: LaunchDarkly, Unleash, Flagsmith. Enables A/B testing, gradual rollout, and instant kill switches.</p>
       </div>
     </div>
-    <details class="code-example"><summary>💻 Dockerfile — Multi-stage build for a Go microservice</summary><div class="code-block"><span class="cm"># Dockerfile — Multi-stage build for a Go microservice</span>
-<span class="kw">FROM</span> golang:1.22-alpine <span class="kw">AS</span> builder
+    <details class="code-example"><summary>💻 Dockerfile — Multi-stage build for a Node.js microservice</summary><div class="code-block"><span class="cm"># Dockerfile — Multi-stage build for a Node.js microservice</span>
+<span class="kw">FROM</span> node:20-alpine <span class="kw">AS</span> builder
 <span class="kw">WORKDIR</span> /app
-<span class="kw">COPY</span> go.mod go.sum ./
-<span class="kw">RUN</span> go mod download
+<span class="kw">COPY</span> package*.json ./
+<span class="kw">RUN</span> npm ci
 <span class="kw">COPY</span> . .
-<span class="kw">RUN</span> CGO_ENABLED=0 go build -o /order-service ./cmd/server
+<span class="kw">RUN</span> npm run build
 
-<span class="kw">FROM</span> gcr.io/distroless/static:nonroot
-<span class="kw">COPY</span> --from=builder /order-service /order-service
-<span class="kw">EXPOSE</span> 8080
-<span class="kw">USER</span> nonroot:nonroot
-<span class="kw">ENTRYPOINT</span> ["/order-service"]</div></details>
+<span class="kw">FROM</span> node:20-alpine
+<span class="kw">WORKDIR</span> /app
+<span class="kw">COPY</span> --from=builder /app/dist ./dist
+<span class="kw">COPY</span> --from=builder /app/node_modules ./node_modules
+<span class="kw">COPY</span> --from=builder /app/package.json ./
+<span class="kw">EXPOSE</span> 3000
+<span class="kw">USER</span> node
+<span class="kw">CMD</span> ["node", "dist/index.js"]</div></details>
     <details class="code-example"><summary>💻 GitHub Actions — CI/CD pipeline for a microservice</summary><div class="code-block"><span class="cm"># GitHub Actions — CI/CD pipeline for a microservice</span>
 <span class="kw">name:</span> CI/CD
 <span class="kw">on:</span>
@@ -1706,8 +1971,11 @@ OrderShipped { id: 123, tracking: "1Z999..." }</div></details>
     <span class="kw">runs-on:</span> ubuntu-latest
     <span class="kw">steps:</span>
       - <span class="kw">uses:</span> actions/checkout@v4
-      - <span class="kw">name:</span> Run tests
-        <span class="kw">run:</span> go test ./... -race -coverprofile=coverage.out
+      - <span class="kw">uses:</span> actions/setup-node@v4
+        <span class="kw">with:</span>
+          <span class="kw">node-version:</span> 20
+      - <span class="kw">name:</span> Install &amp; test
+        <span class="kw">run:</span> npm ci &amp;&amp; npm test -- --coverage
       - <span class="kw">name:</span> Build &amp; push Docker image
         <span class="kw">run:</span> |
           docker build -t ghcr.io/${{ <span class="fn">github.repository</span> }}:${{ <span class="fn">github.sha</span> }} .
@@ -1716,6 +1984,90 @@ OrderShipped { id: 123, tracking: "1Z999..." }</div></details>
         <span class="kw">run:</span> |
           kubectl set image deployment/order-service \
             order-service=ghcr.io/${{ <span class="fn">github.repository</span> }}:${{ <span class="fn">github.sha</span> }}</div></details>
+    <details class="code-example"><summary>💻 Kubernetes Deployment + Service + Ingress manifest</summary><div class="code-block"><span class="cm"># k8s/order-service.yaml — Production Kubernetes manifests</span>
+<span class="kw">apiVersion:</span> apps/v1
+<span class="kw">kind:</span> Deployment
+<span class="kw">metadata:</span>
+  <span class="kw">name:</span> order-service
+  <span class="kw">labels:</span>
+    <span class="kw">app:</span> order-service
+    <span class="kw">version:</span> v1
+<span class="kw">spec:</span>
+  <span class="kw">replicas:</span> 3
+  <span class="kw">selector:</span>
+    <span class="kw">matchLabels:</span>
+      <span class="kw">app:</span> order-service
+  <span class="kw">template:</span>
+    <span class="kw">metadata:</span>
+      <span class="kw">labels:</span>
+        <span class="kw">app:</span> order-service
+        <span class="kw">version:</span> v1
+      <span class="kw">annotations:</span>
+        <span class="kw">prometheus.io/scrape:</span> <span class="str">"true"</span>
+        <span class="kw">prometheus.io/port:</span> <span class="str">"3000"</span>
+    <span class="kw">spec:</span>
+      <span class="kw">containers:</span>
+      - <span class="kw">name:</span> order-service
+        <span class="kw">image:</span> ghcr.io/myorg/order-service:latest
+        <span class="kw">ports:</span>
+        - <span class="kw">containerPort:</span> 3000
+        <span class="kw">env:</span>
+        - <span class="kw">name:</span> DATABASE_URL
+          <span class="kw">valueFrom:</span>
+            <span class="kw">secretKeyRef:</span>
+              <span class="kw">name:</span> order-db-secret
+              <span class="kw">key:</span> url
+        - <span class="kw">name:</span> KAFKA_BROKERS
+          <span class="kw">value:</span> kafka-headless:9092
+        <span class="kw">resources:</span>
+          <span class="kw">requests:</span>
+            <span class="kw">cpu:</span> 100m
+            <span class="kw">memory:</span> 256Mi
+          <span class="kw">limits:</span>
+            <span class="kw">cpu:</span> 500m
+            <span class="kw">memory:</span> 512Mi
+        <span class="kw">livenessProbe:</span>
+          <span class="kw">httpGet:</span>
+            <span class="kw">path:</span> /api/health/live
+            <span class="kw">port:</span> 3000
+          <span class="kw">initialDelaySeconds:</span> 10
+          <span class="kw">periodSeconds:</span> 15
+        <span class="kw">readinessProbe:</span>
+          <span class="kw">httpGet:</span>
+            <span class="kw">path:</span> /api/health/ready
+            <span class="kw">port:</span> 3000
+          <span class="kw">initialDelaySeconds:</span> 5
+          <span class="kw">periodSeconds:</span> 10
+---
+<span class="kw">apiVersion:</span> v1
+<span class="kw">kind:</span> Service
+<span class="kw">metadata:</span>
+  <span class="kw">name:</span> order-service
+<span class="kw">spec:</span>
+  <span class="kw">selector:</span>
+    <span class="kw">app:</span> order-service
+  <span class="kw">ports:</span>
+  - <span class="kw">port:</span> 80
+    <span class="kw">targetPort:</span> 3000
+---
+<span class="kw">apiVersion:</span> autoscaling/v2
+<span class="kw">kind:</span> HorizontalPodAutoscaler
+<span class="kw">metadata:</span>
+  <span class="kw">name:</span> order-service-hpa
+<span class="kw">spec:</span>
+  <span class="kw">scaleTargetRef:</span>
+    <span class="kw">apiVersion:</span> apps/v1
+    <span class="kw">kind:</span> Deployment
+    <span class="kw">name:</span> order-service
+  <span class="kw">minReplicas:</span> 3
+  <span class="kw">maxReplicas:</span> 20
+  <span class="kw">metrics:</span>
+  - <span class="kw">type:</span> Resource
+    <span class="kw">resource:</span>
+      <span class="kw">name:</span> cpu
+      <span class="kw">target:</span>
+        <span class="kw">type:</span> Utilization
+        <span class="kw">averageUtilization:</span> 70</div></details>
   </div>
 </section>
 
@@ -1775,36 +2127,86 @@ OrderShipped { id: 123, tracking: "1Z999..." }</div></details>
         <li><strong>Semantic Conventions:</strong> Standard attribute names for consistency across services</li>
       </ul>
     </div>
-    <details class="code-example"><summary>💻 Go — OpenTelemetry distributed tracing</summary><div class="code-block"><span class="cm">// Go — OpenTelemetry distributed tracing</span>
-<span class="kw">import</span> (
-    <span class="str">"go.opentelemetry.io/otel"</span>
-    <span class="str">"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"</span>
-    sdktrace <span class="str">"go.opentelemetry.io/otel/sdk/trace"</span>
-)
+    <details class="code-example"><summary>💻 Node.js — OpenTelemetry distributed tracing</summary><div class="code-block"><span class="cm">// Node.js — OpenTelemetry distributed tracing</span>
+<span class="kw">const</span> { NodeSDK } = <span class="fn">require</span>(<span class="str">'@opentelemetry/sdk-node'</span>);
+<span class="kw">const</span> { OTLPTraceExporter } = <span class="fn">require</span>(<span class="str">'@opentelemetry/exporter-trace-otlp-grpc'</span>);
+<span class="kw">const</span> { getNodeAutoInstrumentations } = <span class="fn">require</span>(<span class="str">'@opentelemetry/auto-instrumentations-node'</span>);
+<span class="kw">const</span> { trace } = <span class="fn">require</span>(<span class="str">'@opentelemetry/api'</span>);
 
-<span class="cm">// Initialize tracer provider (startup)</span>
-exporter, _ := otlptracegrpc.<span class="fn">New</span>(ctx,
-    otlptracegrpc.<span class="fn">WithEndpoint</span>(<span class="str">"otel-collector:4317"</span>),
-)
-tp := sdktrace.<span class="fn">NewTracerProvider</span>(
-    sdktrace.<span class="fn">WithBatcher</span>(exporter),
-    sdktrace.<span class="fn">WithResource</span>(resource),
-)
-otel.<span class="fn">SetTracerProvider</span>(tp)
+<span class="cm">// Initialize SDK (startup — run before app imports)</span>
+<span class="kw">const</span> sdk = <span class="kw">new</span> <span class="fn">NodeSDK</span>({
+  traceExporter: <span class="kw">new</span> <span class="fn">OTLPTraceExporter</span>({ url: <span class="str">'otel-collector:4317'</span> }),
+  instrumentations: [<span class="fn">getNodeAutoInstrumentations</span>()],
+  serviceName: <span class="str">'order-service'</span>,
+});
+sdk.<span class="fn">start</span>();
 
 <span class="cm">// Create spans in your handler</span>
-<span class="kw">func</span> <span class="fn">GetOrder</span>(ctx context.Context, id <span class="type">string</span>) (*Order, <span class="type">error</span>) {
-    ctx, span := otel.<span class="fn">Tracer</span>(<span class="str">"order-service"</span>).<span class="fn">Start</span>(ctx, <span class="str">"GetOrder"</span>)
-    <span class="kw">defer</span> span.<span class="fn">End</span>()
-
-    span.<span class="fn">SetAttributes</span>(attribute.<span class="fn">String</span>(<span class="str">"order.id"</span>, id))
-    order, err := repo.<span class="fn">FindByID</span>(ctx, id)  <span class="cm">// ctx propagates trace</span>
-    <span class="kw">if</span> err != <span class="kw">nil</span> {
-        span.<span class="fn">RecordError</span>(err)
-        <span class="kw">return</span> <span class="kw">nil</span>, err
-    }
-    <span class="kw">return</span> order, <span class="kw">nil</span>
+<span class="kw">async function</span> <span class="fn">getOrder</span>(req, res) {
+  <span class="kw">const</span> tracer = trace.<span class="fn">getTracer</span>(<span class="str">'order-service'</span>);
+  <span class="kw">const</span> span = tracer.<span class="fn">startSpan</span>(<span class="str">'GetOrder'</span>);
+  span.<span class="fn">setAttribute</span>(<span class="str">'order.id'</span>, req.params.id);
+  <span class="kw">try</span> {
+    <span class="kw">const</span> order = <span class="kw">await</span> orderRepo.<span class="fn">findById</span>(req.params.id);
+    res.<span class="fn">json</span>(order);
+  } <span class="kw">catch</span> (err) {
+    span.<span class="fn">recordException</span>(err);
+    <span class="kw">throw</span> err;
+  } <span class="kw">finally</span> {
+    span.<span class="fn">end</span>();
+  }
 }</div></details>
+    <details class="code-example"><summary>💻 Prometheus metrics + structured logging middleware</summary><div class="code-block"><span class="cm">// lib/metrics.ts — Prometheus metrics for RED method</span>
+<span class="kw">const</span> prom = <span class="fn">require</span>(<span class="str">'prom-client'</span>);
+prom.<span class="fn">collectDefaultMetrics</span>(); <span class="cm">// Node.js runtime metrics</span>
+
+<span class="kw">const</span> httpDuration = <span class="kw">new</span> prom.<span class="fn">Histogram</span>({
+  name: <span class="str">'http_request_duration_seconds'</span>,
+  help: <span class="str">'Duration of HTTP requests in seconds'</span>,
+  labelNames: [<span class="str">'method'</span>, <span class="str">'route'</span>, <span class="str">'status_code'</span>],
+  buckets: [<span class="num">0.01</span>, <span class="num">0.05</span>, <span class="num">0.1</span>, <span class="num">0.3</span>, <span class="num">0.5</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">5</span>],
+});
+
+<span class="kw">const</span> httpErrors = <span class="kw">new</span> prom.<span class="fn">Counter</span>({
+  name: <span class="str">'http_request_errors_total'</span>,
+  help: <span class="str">'Total HTTP errors'</span>,
+  labelNames: [<span class="str">'method'</span>, <span class="str">'route'</span>, <span class="str">'status_code'</span>],
+});
+
+<span class="cm">// Express middleware — tracks RED metrics automatically</span>
+<span class="kw">function</span> <span class="fn">metricsMiddleware</span>(req, res, next) {
+  <span class="kw">const</span> end = httpDuration.<span class="fn">startTimer</span>();
+  res.<span class="fn">on</span>(<span class="str">'finish'</span>, () => {
+    <span class="kw">const</span> labels = { method: req.method, route: req.route?.path || req.path, status_code: res.statusCode };
+    <span class="fn">end</span>(labels);
+    <span class="kw">if</span> (res.statusCode >= <span class="num">400</span>) httpErrors.<span class="fn">inc</span>(labels);
+  });
+  <span class="fn">next</span>();
+}
+
+<span class="cm">// Expose /metrics endpoint for Prometheus scraping</span>
+app.<span class="fn">get</span>(<span class="str">'/metrics'</span>, <span class="kw">async</span> (req, res) => {
+  res.<span class="fn">set</span>(<span class="str">'Content-Type'</span>, prom.register.contentType);
+  res.<span class="fn">end</span>(<span class="kw">await</span> prom.register.<span class="fn">metrics</span>());
+});
+
+<span class="cm">// ---- Structured logging with Pino ----</span>
+<span class="kw">const</span> pino = <span class="fn">require</span>(<span class="str">'pino'</span>);
+<span class="kw">const</span> logger = <span class="fn">pino</span>({
+  level: process.env.LOG_LEVEL || <span class="str">'info'</span>,
+  formatters: { level: (label) => ({ level: label }) },
+  base: { service: <span class="str">'order-service'</span>, version: process.env.APP_VERSION },
+});
+
+<span class="cm">// Every log includes correlation ID for distributed tracing</span>
+app.<span class="fn">use</span>((req, res, next) => {
+  req.log = logger.<span class="fn">child</span>({
+    correlationId: req.headers[<span class="str">'x-correlation-id'</span>] || <span class="fn">uuid</span>(),
+    method: req.method,
+    url: req.url,
+  });
+  <span class="fn">next</span>();
+});</div></details>
   </div>
 </section>
 
@@ -1857,32 +2259,34 @@ otel.<span class="fn">SetTracerProvider</span>(tp)
         </ul>
       </div>
     </div>
-    <details class="code-example"><summary>💻 Go — JWT validation middleware</summary><div class="code-block"><span class="cm">// Go — JWT validation middleware</span>
-<span class="kw">func</span> <span class="fn">JWTAuth</span>(next http.Handler) http.Handler {
-    <span class="kw">return</span> http.<span class="fn">HandlerFunc</span>(<span class="kw">func</span>(w http.ResponseWriter, r *http.Request) {
-        tokenStr := r.Header.<span class="fn">Get</span>(<span class="str">"Authorization"</span>)
-        <span class="kw">if</span> !strings.<span class="fn">HasPrefix</span>(tokenStr, <span class="str">"Bearer "</span>) {
-            http.<span class="fn">Error</span>(w, <span class="str">"missing token"</span>, http.StatusUnauthorized)
-            <span class="kw">return</span>
-        }
-        tokenStr = tokenStr[<span class="num">7</span>:]
+    <details class="code-example"><summary>💻 Node.js Express — JWT validation middleware</summary><div class="code-block"><span class="cm">// Node.js Express — JWT validation middleware</span>
+<span class="kw">const</span> jwt = <span class="fn">require</span>(<span class="str">'jsonwebtoken'</span>);
+<span class="kw">const</span> jwksClient = <span class="fn">require</span>(<span class="str">'jwks-rsa'</span>);
 
-        token, err := jwt.<span class="fn">Parse</span>(tokenStr, <span class="kw">func</span>(t *jwt.Token) (<span class="kw">interface</span>{}, <span class="type">error</span>) {
-            <span class="cm">// Validate signing method</span>
-            <span class="kw">if</span> _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
-                <span class="kw">return</span> <span class="kw">nil</span>, fmt.<span class="fn">Errorf</span>(<span class="str">"unexpected signing method"</span>)
-            }
-            <span class="kw">return</span> publicKey, <span class="kw">nil</span>  <span class="cm">// RSA public key from JWKS endpoint</span>
-        })
-        <span class="kw">if</span> err != <span class="kw">nil</span> || !token.Valid {
-            http.<span class="fn">Error</span>(w, <span class="str">"invalid token"</span>, http.StatusUnauthorized)
-            <span class="kw">return</span>
-        }
-        claims := token.Claims.(jwt.MapClaims)
-        ctx := context.<span class="fn">WithValue</span>(r.<span class="fn">Context</span>(), <span class="str">"user_id"</span>, claims[<span class="str">"sub"</span>])
-        next.<span class="fn">ServeHTTP</span>(w, r.<span class="fn">WithContext</span>(ctx))
-    })
-}</div></details>
+<span class="kw">const</span> client = <span class="fn">jwksClient</span>({ jwksUri: process.env.JWKS_URI });
+
+<span class="kw">function</span> <span class="fn">getKey</span>(header, callback) {
+  client.<span class="fn">getSigningKey</span>(header.kid, (err, key) => {
+    callback(err, key?.<span class="fn">getPublicKey</span>());
+  });
+}
+
+<span class="kw">function</span> <span class="fn">jwtAuth</span>(req, res, next) {
+  <span class="kw">const</span> authHeader = req.headers.authorization;
+  <span class="kw">if</span> (!authHeader?.startsWith(<span class="str">'Bearer '</span>)) {
+    <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">401</span>).<span class="fn">json</span>({ error: <span class="str">'Missing token'</span> });
+  }
+  <span class="kw">const</span> token = authHeader.<span class="fn">slice</span>(<span class="num">7</span>);
+
+  jwt.<span class="fn">verify</span>(token, getKey, { algorithms: [<span class="str">'RS256'</span>] }, (err, decoded) => {
+    <span class="kw">if</span> (err) <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">401</span>).<span class="fn">json</span>({ error: <span class="str">'Invalid token'</span> });
+    req.userId = decoded.sub;
+    req.roles = decoded.roles || [];
+    <span class="fn">next</span>();
+  });
+}
+
+<span class="cm">// Usage: app.use('/api', jwtAuth);</span></div></details>
     <details class="code-example"><summary>💻 Istio — Enforce mTLS across all services</summary><div class="code-block"><span class="cm"># Istio — Enforce mTLS across all services</span>
 <span class="kw">apiVersion:</span> security.istio.io/v1beta1
 <span class="kw">kind:</span> PeerAuthentication
@@ -1905,6 +2309,43 @@ otel.<span class="fn">SetTracerProvider</span>(tp)
   - <span class="kw">from:</span>
     - <span class="kw">source:</span>
         <span class="kw">principals:</span> [<span class="str">"cluster.local/ns/production/sa/api-gateway"</span>]</div></details>
+    <details class="code-example"><summary>💻 Secrets management — Vault integration + env config</summary><div class="code-block"><span class="cm">// lib/config.ts — Load secrets from Vault or env variables</span>
+<span class="kw">const</span> vault = <span class="fn">require</span>(<span class="str">'node-vault'</span>)({ endpoint: process.env.VAULT_ADDR });
+
+<span class="kw">async function</span> <span class="fn">loadConfig</span>() {
+  <span class="kw">if</span> (process.env.VAULT_ADDR) {
+    <span class="cm">// Production: load from HashiCorp Vault</span>
+    <span class="kw">await</span> vault.<span class="fn">approleLogin</span>({
+      role_id: process.env.VAULT_ROLE_ID,
+      secret_id: process.env.VAULT_SECRET_ID,
+    });
+    <span class="kw">const</span> { data } = <span class="kw">await</span> vault.<span class="fn">read</span>(<span class="str">'secret/data/order-service'</span>);
+    <span class="kw">return</span> {
+      databaseUrl: data.data.DATABASE_URL,
+      jwtSecret: data.data.JWT_PUBLIC_KEY,
+      kafkaBrokers: data.data.KAFKA_BROKERS.<span class="fn">split</span>(<span class="str">','</span>),
+      stripeKey: data.data.STRIPE_SECRET_KEY,
+    };
+  }
+  <span class="cm">// Development: load from environment</span>
+  <span class="kw">return</span> {
+    databaseUrl: process.env.DATABASE_URL,
+    jwtSecret: process.env.JWT_PUBLIC_KEY,
+    kafkaBrokers: (process.env.KAFKA_BROKERS || <span class="str">'localhost:9092'</span>).<span class="fn">split</span>(<span class="str">','</span>),
+    stripeKey: process.env.STRIPE_SECRET_KEY,
+  };
+}
+
+<span class="cm">// RBAC middleware — role-based access control from JWT claims</span>
+<span class="kw">function</span> <span class="fn">requireRole</span>(...roles) {
+  <span class="kw">return</span> (req, res, next) => {
+    <span class="kw">if</span> (!req.roles || !roles.<span class="fn">some</span>(r => req.roles.<span class="fn">includes</span>(r))) {
+      <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">403</span>).<span class="fn">json</span>({ error: <span class="str">'Insufficient permissions'</span> });
+    }
+    <span class="fn">next</span>();
+  };
+}
+<span class="cm">// Usage: app.delete('/api/orders/:id', requireRole('admin', 'support'), deleteOrder);</span></div></details>
   </div>
 </section>
 
@@ -1955,6 +2396,39 @@ otel.<span class="fn">SetTracerProvider</span>(tp)
       </ul>
       <p style="margin-top:.8rem;color:var(--text-dim)"><strong>Martin Fowler's advice:</strong> "Don't even consider microservices unless you have a system that's too complex to manage as a monolith." Start with a well-structured monolith and extract microservices as needed (Monolith First approach).</p>
     </div>
+    <details class="code-example"><summary>💻 Strangler Fig — incremental monolith-to-microservices migration</summary><div class="code-block"><span class="cm">// gateway/strangler-proxy.ts — Route traffic between monolith and new services</span>
+<span class="kw">const</span> express = <span class="fn">require</span>(<span class="str">'express'</span>);
+<span class="kw">const</span> { <span class="fn">createProxyMiddleware</span> } = <span class="fn">require</span>(<span class="str">'http-proxy-middleware'</span>);
+
+<span class="kw">const</span> app = <span class="fn">express</span>();
+
+<span class="cm">// Phase 1: Route new "order" endpoints to the new microservice</span>
+<span class="cm">// Everything else still goes to the monolith</span>
+app.<span class="fn">use</span>(<span class="str">'/api/orders'</span>, <span class="fn">createProxyMiddleware</span>({
+  target: <span class="str">'http://order-service:3000'</span>,
+  changeOrigin: <span class="kw">true</span>,
+  onError: (err, req, res) => {
+    <span class="cm">// Fallback to monolith if new service is down</span>
+    logger.<span class="fn">warn</span>(<span class="str">'Order service unavailable, falling back to monolith'</span>);
+    proxy.<span class="fn">web</span>(req, res, { target: <span class="str">'http://monolith:8080'</span> });
+  },
+}));
+
+<span class="cm">// Phase 2: Route migrated "user" endpoints</span>
+app.<span class="fn">use</span>(<span class="str">'/api/users'</span>, <span class="fn">createProxyMiddleware</span>({
+  target: <span class="str">'http://user-service:3000'</span>,
+  changeOrigin: <span class="kw">true</span>,
+}));
+
+<span class="cm">// Everything else → monolith (gradually shrinks over time)</span>
+app.<span class="fn">use</span>(<span class="str">'/'</span>, <span class="fn">createProxyMiddleware</span>({
+  target: <span class="str">'http://monolith:8080'</span>,
+  changeOrigin: <span class="kw">true</span>,
+}));
+
+<span class="cm">// As each capability is migrated, add a new route above</span>
+<span class="cm">// The monolith catch-all gradually receives less traffic</span>
+<span class="cm">// Eventually the monolith is decommissioned entirely</span></div></details>
   </div>
 </section>
 
@@ -1990,28 +2464,33 @@ otel.<span class="fn">SetTracerProvider</span>(tp)
         <p style="margin-top:.5rem">Run Game Days — scheduled chaos experiments with the whole team observing and responding.</p>
       </div>
     </div>
-    <details class="code-example"><summary>💻 Go — Integration test with Testcontainers</summary><div class="code-block"><span class="cm">// Go — Integration test with Testcontainers</span>
-<span class="kw">func</span> <span class="fn">TestOrderService_CreateOrder</span>(t *testing.T) {
-    ctx := context.<span class="fn">Background</span>()
+    <details class="code-example"><summary>💻 Node.js — Integration test with Testcontainers</summary><div class="code-block"><span class="cm">// Node.js — Integration test with Testcontainers</span>
+<span class="kw">const</span> { PostgreSqlContainer } = <span class="fn">require</span>(<span class="str">'@testcontainers/postgresql'</span>);
+<span class="kw">const</span> { OrderService } = <span class="fn">require</span>(<span class="str">'../src/services/order.service'</span>);
 
+<span class="fn">describe</span>(<span class="str">'OrderService'</span>, () => {
+  <span class="kw">let</span> container, svc;
+
+  <span class="fn">beforeAll</span>(<span class="kw">async</span> () => {
     <span class="cm">// Spin up real PostgreSQL in Docker</span>
-    pgContainer, _ := postgres.<span class="fn">RunContainer</span>(ctx,
-        testcontainers.<span class="fn">WithImage</span>(<span class="str">"postgres:16-alpine"</span>),
-        postgres.<span class="fn">WithDatabase</span>(<span class="str">"orders_test"</span>),
-    )
-    <span class="kw">defer</span> pgContainer.<span class="fn">Terminate</span>(ctx)
+    container = <span class="kw">await new</span> <span class="fn">PostgreSqlContainer</span>(<span class="str">'postgres:16-alpine'</span>)
+      .<span class="fn">withDatabase</span>(<span class="str">'orders_test'</span>)
+      .<span class="fn">start</span>();
+    svc = <span class="kw">new</span> <span class="fn">OrderService</span>(container.<span class="fn">getConnectionUri</span>());
+    <span class="kw">await</span> svc.<span class="fn">runMigrations</span>();
+  }, <span class="num">60_000</span>);
 
-    connStr, _ := pgContainer.<span class="fn">ConnectionString</span>(ctx)
-    svc := orderservice.<span class="fn">New</span>(connStr)
+  <span class="fn">afterAll</span>(<span class="kw">async</span> () => { <span class="kw">await</span> container?.<span class="fn">stop</span>(); });
 
-    order, err := svc.<span class="fn">CreateOrder</span>(ctx, orderservice.CreateOrderRequest{
-        UserID: <span class="str">"user-123"</span>,
-        Items:  []orderservice.Item{{SKU: <span class="str">"WIDGET-1"</span>, Qty: <span class="num">2</span>}},
-    })
-    <span class="fn">assert</span>.NoError(t, err)
-    <span class="fn">assert</span>.Equal(t, <span class="str">"pending"</span>, order.Status)
-    <span class="fn">assert</span>.NotEmpty(t, order.ID)
-}</div></details>
+  <span class="fn">it</span>(<span class="str">'creates an order'</span>, <span class="kw">async</span> () => {
+    <span class="kw">const</span> order = <span class="kw">await</span> svc.<span class="fn">createOrder</span>({
+      userId: <span class="str">'user-123'</span>,
+      items: [{ sku: <span class="str">'WIDGET-1'</span>, qty: <span class="num">2</span> }],
+    });
+    <span class="fn">expect</span>(order.status).<span class="fn">toBe</span>(<span class="str">'pending'</span>);
+    <span class="fn">expect</span>(order.id).<span class="fn">toBeDefined</span>();
+  });
+});</div></details>
     <details class="code-example"><summary>💻 JavaScript — Pact consumer-driven contract test</summary><div class="code-block"><span class="cm">// JavaScript — Pact consumer-driven contract test</span>
 <span class="kw">const</span> { Pact } = <span class="fn">require</span>(<span class="str">'@pact-foundation/pact'</span>);
 
@@ -2116,6 +2595,201 @@ otel.<span class="fn">SetTracerProvider</span>(tp)
       </div>
     </div>
   </div>
+
+  <!-- ::: Code Generated by Copilot [d7e3a1f2-9c4b-4e8d-b5a6-7f2e1d0c9b3a]. This comment will be removed automatically after the file is saved ::: -->
+  <details class="code-example" style="margin-top:2rem;">
+    <summary>NestJS Microservice Scaffold — Production-Ready Starter</summary>
+    <pre class="code-block"><span class="cm">// ─── src/main.ts ───────────────────────────────────────────</span>
+<span class="kw">import</span> { NestFactory } <span class="kw">from</span> <span class="str">'@nestjs/core'</span>;
+<span class="kw">import</span> { ValidationPipe, VersioningType } <span class="kw">from</span> <span class="str">'@nestjs/common'</span>;
+<span class="kw">import</span> { SwaggerModule, DocumentBuilder } <span class="kw">from</span> <span class="str">'@nestjs/swagger'</span>;
+<span class="kw">import</span> { AppModule } <span class="kw">from</span> <span class="str">'./app.module'</span>;
+
+<span class="kw">async function</span> <span class="fn">bootstrap</span>() {
+  <span class="kw">const</span> app = <span class="kw">await</span> NestFactory.<span class="fn">create</span>(AppModule);
+
+  <span class="cm">// Global prefix &amp; versioning</span>
+  app.<span class="fn">setGlobalPrefix</span>(<span class="str">'api'</span>);
+  app.<span class="fn">enableVersioning</span>({ type: VersioningType.URI });
+
+  <span class="cm">// Validation pipe strips unknown properties</span>
+  app.<span class="fn">useGlobalPipes</span>(<span class="kw">new</span> <span class="fn">ValidationPipe</span>({
+    whitelist: <span class="kw">true</span>,
+    forbidNonWhitelisted: <span class="kw">true</span>,
+    transform: <span class="kw">true</span>,
+  }));
+
+  <span class="cm">// OpenAPI docs</span>
+  <span class="kw">const</span> config = <span class="kw">new</span> <span class="fn">DocumentBuilder</span>()
+    .<span class="fn">setTitle</span>(<span class="str">'Order Service'</span>)
+    .<span class="fn">setVersion</span>(<span class="str">'1.0'</span>)
+    .<span class="fn">addBearerAuth</span>()
+    .<span class="fn">build</span>();
+  SwaggerModule.<span class="fn">setup</span>(<span class="str">'docs'</span>, app, SwaggerModule.<span class="fn">createDocument</span>(app, config));
+
+  <span class="kw">await</span> app.<span class="fn">listen</span>(process.env.PORT ?? <span class="num">3000</span>);
+}
+<span class="fn">bootstrap</span>();
+
+<span class="cm">// ─── src/app.module.ts ─────────────────────────────────────</span>
+<span class="kw">import</span> { Module } <span class="kw">from</span> <span class="str">'@nestjs/common'</span>;
+<span class="kw">import</span> { ConfigModule } <span class="kw">from</span> <span class="str">'@nestjs/config'</span>;
+<span class="kw">import</span> { TerminusModule } <span class="kw">from</span> <span class="str">'@nestjs/terminus'</span>;
+<span class="kw">import</span> { OrdersModule } <span class="kw">from</span> <span class="str">'./orders/orders.module'</span>;
+<span class="kw">import</span> { HealthController } <span class="kw">from</span> <span class="str">'./health/health.controller'</span>;
+
+<span class="ann">@Module</span>({
+  imports: [
+    ConfigModule.<span class="fn">forRoot</span>({ isGlobal: <span class="kw">true</span> }),
+    TerminusModule,
+    OrdersModule,
+  ],
+  controllers: [HealthController],
+})
+<span class="kw">export class</span> <span class="type">AppModule</span> {}
+
+<span class="cm">// ─── src/orders/orders.module.ts ───────────────────────────</span>
+<span class="kw">import</span> { Module } <span class="kw">from</span> <span class="str">'@nestjs/common'</span>;
+<span class="kw">import</span> { ClientsModule, Transport } <span class="kw">from</span> <span class="str">'@nestjs/microservices'</span>;
+<span class="kw">import</span> { OrdersController } <span class="kw">from</span> <span class="str">'./orders.controller'</span>;
+<span class="kw">import</span> { OrdersService } <span class="kw">from</span> <span class="str">'./orders.service'</span>;
+<span class="kw">import</span> { PrismaService } <span class="kw">from</span> <span class="str">'../prisma/prisma.service'</span>;
+
+<span class="ann">@Module</span>({
+  imports: [
+    ClientsModule.<span class="fn">register</span>([{
+      name: <span class="str">'INVENTORY_SERVICE'</span>,
+      transport: Transport.KAFKA,
+      options: {
+        client: { brokers: [process.env.KAFKA_BROKER ?? <span class="str">'localhost:9092'</span>] },
+        consumer: { groupId: <span class="str">'order-consumer'</span> },
+      },
+    }]),
+  ],
+  controllers: [OrdersController],
+  providers: [OrdersService, PrismaService],
+})
+<span class="kw">export class</span> <span class="type">OrdersModule</span> {}
+
+<span class="cm">// ─── src/orders/orders.controller.ts ───────────────────────</span>
+<span class="kw">import</span> { Controller, Get, Post, Body, Param, UseGuards, Version }
+  <span class="kw">from</span> <span class="str">'@nestjs/common'</span>;
+<span class="kw">import</span> { ApiTags, ApiBearerAuth } <span class="kw">from</span> <span class="str">'@nestjs/swagger'</span>;
+<span class="kw">import</span> { OrdersService } <span class="kw">from</span> <span class="str">'./orders.service'</span>;
+<span class="kw">import</span> { CreateOrderDto } <span class="kw">from</span> <span class="str">'./dto/create-order.dto'</span>;
+<span class="kw">import</span> { JwtAuthGuard } <span class="kw">from</span> <span class="str">'../auth/jwt-auth.guard'</span>;
+
+<span class="ann">@ApiTags</span>(<span class="str">'orders'</span>)
+<span class="ann">@ApiBearerAuth</span>()
+<span class="ann">@UseGuards</span>(JwtAuthGuard)
+<span class="ann">@Controller</span>(<span class="str">'orders'</span>)
+<span class="kw">export class</span> <span class="type">OrdersController</span> {
+  <span class="fn">constructor</span>(<span class="kw">private readonly</span> orders: OrdersService) {}
+
+  <span class="ann">@Post</span>()
+  <span class="ann">@Version</span>(<span class="str">'1'</span>)
+  <span class="fn">create</span>(<span class="ann">@Body</span>() dto: CreateOrderDto) {
+    <span class="kw">return</span> <span class="kw">this</span>.orders.<span class="fn">create</span>(dto);
+  }
+
+  <span class="ann">@Get</span>(<span class="str">':id'</span>)
+  <span class="ann">@Version</span>(<span class="str">'1'</span>)
+  <span class="fn">findOne</span>(<span class="ann">@Param</span>(<span class="str">'id'</span>) id: <span class="type">string</span>) {
+    <span class="kw">return</span> <span class="kw">this</span>.orders.<span class="fn">findOne</span>(id);
+  }
+}
+
+<span class="cm">// ─── src/orders/orders.service.ts ──────────────────────────</span>
+<span class="kw">import</span> { Injectable, Inject, NotFoundException } <span class="kw">from</span> <span class="str">'@nestjs/common'</span>;
+<span class="kw">import</span> { ClientKafka } <span class="kw">from</span> <span class="str">'@nestjs/microservices'</span>;
+<span class="kw">import</span> { PrismaService } <span class="kw">from</span> <span class="str">'../prisma/prisma.service'</span>;
+<span class="kw">import</span> { CreateOrderDto } <span class="kw">from</span> <span class="str">'./dto/create-order.dto'</span>;
+
+<span class="ann">@Injectable</span>()
+<span class="kw">export class</span> <span class="type">OrdersService</span> {
+  <span class="fn">constructor</span>(
+    <span class="kw">private</span> prisma: PrismaService,
+    <span class="ann">@Inject</span>(<span class="str">'INVENTORY_SERVICE'</span>) <span class="kw">private</span> kafka: ClientKafka,
+  ) {}
+
+  <span class="kw">async</span> <span class="fn">create</span>(dto: CreateOrderDto) {
+    <span class="kw">return</span> <span class="kw">this</span>.prisma.<span class="fn">$transaction</span>(<span class="kw">async</span> (tx) =&gt; {
+      <span class="kw">const</span> order = <span class="kw">await</span> tx.order.<span class="fn">create</span>({
+        data: {
+          customerId: dto.customerId,
+          items: { create: dto.items },
+          status: <span class="str">'PENDING'</span>,
+        },
+        include: { items: <span class="kw">true</span> },
+      });
+
+      <span class="cm">// Transactional outbox — publish after commit</span>
+      <span class="kw">await</span> tx.outboxEvent.<span class="fn">create</span>({
+        data: {
+          aggregateType: <span class="str">'Order'</span>,
+          aggregateId: order.id,
+          eventType: <span class="str">'ORDER_PLACED'</span>,
+          payload: JSON.<span class="fn">stringify</span>(order),
+        },
+      });
+
+      <span class="kw">return</span> order;
+    });
+  }
+
+  <span class="kw">async</span> <span class="fn">findOne</span>(id: <span class="type">string</span>) {
+    <span class="kw">const</span> order = <span class="kw">await</span> <span class="kw">this</span>.prisma.order.<span class="fn">findUnique</span>({
+      where: { id },
+      include: { items: <span class="kw">true</span> },
+    });
+    <span class="kw">if</span> (!order) <span class="kw">throw new</span> <span class="fn">NotFoundException</span>(<span class="str">`Order </span>${id}<span class="str"> not found`</span>);
+    <span class="kw">return</span> order;
+  }
+}
+
+<span class="cm">// ─── src/orders/dto/create-order.dto.ts ────────────────────</span>
+<span class="kw">import</span> { IsString, IsArray, ValidateNested, IsInt, Min }
+  <span class="kw">from</span> <span class="str">'class-validator'</span>;
+<span class="kw">import</span> { Type } <span class="kw">from</span> <span class="str">'class-transformer'</span>;
+<span class="kw">import</span> { ApiProperty } <span class="kw">from</span> <span class="str">'@nestjs/swagger'</span>;
+
+<span class="kw">export class</span> <span class="type">OrderItemDto</span> {
+  <span class="ann">@ApiProperty</span>() <span class="ann">@IsString</span>() productId: <span class="type">string</span>;
+  <span class="ann">@ApiProperty</span>() <span class="ann">@IsInt</span>() <span class="ann">@Min</span>(<span class="num">1</span>) quantity: <span class="type">number</span>;
+}
+
+<span class="kw">export class</span> <span class="type">CreateOrderDto</span> {
+  <span class="ann">@ApiProperty</span>() <span class="ann">@IsString</span>() customerId: <span class="type">string</span>;
+  <span class="ann">@ApiProperty</span>({ type: [OrderItemDto] })
+  <span class="ann">@IsArray</span>()
+  <span class="ann">@ValidateNested</span>({ each: <span class="kw">true</span> })
+  <span class="ann">@Type</span>(() =&gt; OrderItemDto)
+  items: OrderItemDto[];
+}
+
+<span class="cm">// ─── src/health/health.controller.ts ───────────────────────</span>
+<span class="kw">import</span> { Controller, Get } <span class="kw">from</span> <span class="str">'@nestjs/common'</span>;
+<span class="kw">import</span> { HealthCheck, HealthCheckService, PrismaHealthIndicator }
+  <span class="kw">from</span> <span class="str">'@nestjs/terminus'</span>;
+<span class="kw">import</span> { PrismaService } <span class="kw">from</span> <span class="str">'../prisma/prisma.service'</span>;
+
+<span class="ann">@Controller</span>(<span class="str">'health'</span>)
+<span class="kw">export class</span> <span class="type">HealthController</span> {
+  <span class="fn">constructor</span>(
+    <span class="kw">private</span> health: HealthCheckService,
+    <span class="kw">private</span> db: PrismaHealthIndicator,
+    <span class="kw">private</span> prisma: PrismaService,
+  ) {}
+
+  <span class="ann">@Get</span>()
+  <span class="ann">@HealthCheck</span>()
+  <span class="fn">check</span>() {
+    <span class="kw">return</span> <span class="kw">this</span>.health.<span class="fn">check</span>([
+      () =&gt; <span class="kw">this</span>.db.<span class="fn">pingCheck</span>(<span class="str">'database'</span>, <span class="kw">this</span>.prisma),
+    ]);
+  }
+}</pre>
+  </details>
 </section>
 
 <!-- FOOTER -->
