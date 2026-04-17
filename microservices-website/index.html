@@ -91,9 +91,11 @@ h1,h2,h3,h4{color:var(--text-bright);line-height:1.3}
 
 /* ============== CARDS ============== */
 .cards-grid{display:grid;gap:1.5rem}
-.cards-grid.cols-2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
-.cards-grid.cols-3{grid-template-columns:repeat(auto-fit,minmax(480px,1fr))}
+.cards-grid.cols-2{grid-template-columns:repeat(2,1fr)}
+.cards-grid.cols-3{grid-template-columns:repeat(3,1fr)}
 .cards-grid.cols-4{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+@media(max-width:900px){.cards-grid.cols-3{grid-template-columns:repeat(2,1fr)}.cards-grid.cols-4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.cards-grid.cols-2{grid-template-columns:1fr}.cards-grid.cols-3{grid-template-columns:1fr}.cards-grid.cols-4{grid-template-columns:repeat(2,1fr)}}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;
   transition:var(--transition);position:relative;overflow:hidden}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
@@ -505,7 +507,7 @@ app.<span class="fn">use</span>(<span class="str">'/api/health'</span>,  <span c
       <h2>Core Principles</h2>
       <p>The foundational principles that govern the design and operation of microservices architectures.</p>
     </div>
-    <div class="cards-grid cols-3">
+    <div class="cards-grid cols-2">
       <div class="card">
         <div class="card-icon">🔗</div>
         <h3>Loose Coupling</h3>
@@ -612,36 +614,6 @@ app.<span class="fn">use</span>(<span class="str">'/api/health'</span>,  <span c
         <div class="card-icon">📊</div>
         <h3>Observability First</h3>
         <p>Every service must emit metrics, logs, and traces. Distributed tracing (OpenTelemetry), centralized logging (ELK/Loki), and metrics dashboards (Prometheus/Grafana) are non-negotiable. You cannot debug what you cannot observe.</p>
-      
-          <details class="code-example"><summary>💻 Node.js — OpenTelemetry distributed tracing</summary><div class="code-block"><span class="cm">// Node.js — OpenTelemetry distributed tracing</span>
-<span class="kw">const</span> { NodeSDK } = <span class="fn">require</span>(<span class="str">'@opentelemetry/sdk-node'</span>);
-<span class="kw">const</span> { OTLPTraceExporter } = <span class="fn">require</span>(<span class="str">'@opentelemetry/exporter-trace-otlp-grpc'</span>);
-<span class="kw">const</span> { getNodeAutoInstrumentations } = <span class="fn">require</span>(<span class="str">'@opentelemetry/auto-instrumentations-node'</span>);
-<span class="kw">const</span> { trace } = <span class="fn">require</span>(<span class="str">'@opentelemetry/api'</span>);
-
-<span class="cm">// Initialize SDK (startup — run before app imports)</span>
-<span class="kw">const</span> sdk = <span class="kw">new</span> <span class="fn">NodeSDK</span>({
-  traceExporter: <span class="kw">new</span> <span class="fn">OTLPTraceExporter</span>({ url: <span class="str">'otel-collector:4317'</span> }),
-  instrumentations: [<span class="fn">getNodeAutoInstrumentations</span>()],
-  serviceName: <span class="str">'order-service'</span>,
-});
-sdk.<span class="fn">start</span>();
-
-<span class="cm">// Create spans in your handler</span>
-<span class="kw">async function</span> <span class="fn">getOrder</span>(req, res) {
-  <span class="kw">const</span> tracer = trace.<span class="fn">getTracer</span>(<span class="str">'order-service'</span>);
-  <span class="kw">const</span> span = tracer.<span class="fn">startSpan</span>(<span class="str">'GetOrder'</span>);
-  span.<span class="fn">setAttribute</span>(<span class="str">'order.id'</span>, req.params.id);
-  <span class="kw">try</span> {
-    <span class="kw">const</span> order = <span class="kw">await</span> orderRepo.<span class="fn">findById</span>(req.params.id);
-    res.<span class="fn">json</span>(order);
-  } <span class="kw">catch</span> (err) {
-    span.<span class="fn">recordException</span>(err);
-    <span class="kw">throw</span> err;
-  } <span class="kw">finally</span> {
-    span.<span class="fn">end</span>();
-  }
-}</div></details>
       </div>
     </div>  </div>
 </section>
@@ -984,58 +956,6 @@ sdk.<span class="fn">start</span>();
           &nbsp;&nbsp;→ If 2/3 fail → circuit re-<strong>OPENS</strong> (restart wait timer)<br><br>
           <strong>Metrics emitted:</strong> <code>circuit_breaker_state{service="payment"}</code>, <code>circuit_breaker_failure_rate</code>, <code>circuit_breaker_calls_total{outcome="success|failure|not_permitted"}</code>
         </div>
-      
-          <details class="code-example"><summary>💻 Prometheus metrics + structured logging middleware</summary><div class="code-block"><span class="cm">// lib/metrics.ts — Prometheus metrics for RED method</span>
-<span class="kw">const</span> prom = <span class="fn">require</span>(<span class="str">'prom-client'</span>);
-prom.<span class="fn">collectDefaultMetrics</span>(); <span class="cm">// Node.js runtime metrics</span>
-
-<span class="kw">const</span> httpDuration = <span class="kw">new</span> prom.<span class="fn">Histogram</span>({
-  name: <span class="str">'http_request_duration_seconds'</span>,
-  help: <span class="str">'Duration of HTTP requests in seconds'</span>,
-  labelNames: [<span class="str">'method'</span>, <span class="str">'route'</span>, <span class="str">'status_code'</span>],
-  buckets: [<span class="num">0.01</span>, <span class="num">0.05</span>, <span class="num">0.1</span>, <span class="num">0.3</span>, <span class="num">0.5</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">5</span>],
-});
-
-<span class="kw">const</span> httpErrors = <span class="kw">new</span> prom.<span class="fn">Counter</span>({
-  name: <span class="str">'http_request_errors_total'</span>,
-  help: <span class="str">'Total HTTP errors'</span>,
-  labelNames: [<span class="str">'method'</span>, <span class="str">'route'</span>, <span class="str">'status_code'</span>],
-});
-
-<span class="cm">// Express middleware — tracks RED metrics automatically</span>
-<span class="kw">function</span> <span class="fn">metricsMiddleware</span>(req, res, next) {
-  <span class="kw">const</span> end = httpDuration.<span class="fn">startTimer</span>();
-  res.<span class="fn">on</span>(<span class="str">'finish'</span>, () => {
-    <span class="kw">const</span> labels = { method: req.method, route: req.route?.path || req.path, status_code: res.statusCode };
-    <span class="fn">end</span>(labels);
-    <span class="kw">if</span> (res.statusCode >= <span class="num">400</span>) httpErrors.<span class="fn">inc</span>(labels);
-  });
-  <span class="fn">next</span>();
-}
-
-<span class="cm">// Expose /metrics endpoint for Prometheus scraping</span>
-app.<span class="fn">get</span>(<span class="str">'/metrics'</span>, <span class="kw">async</span> (req, res) => {
-  res.<span class="fn">set</span>(<span class="str">'Content-Type'</span>, prom.register.contentType);
-  res.<span class="fn">end</span>(<span class="kw">await</span> prom.register.<span class="fn">metrics</span>());
-});
-
-<span class="cm">// ---- Structured logging with Pino ----</span>
-<span class="kw">const</span> pino = <span class="fn">require</span>(<span class="str">'pino'</span>);
-<span class="kw">const</span> logger = <span class="fn">pino</span>({
-  level: process.env.LOG_LEVEL || <span class="str">'info'</span>,
-  formatters: { level: (label) => ({ level: label }) },
-  base: { service: <span class="str">'order-service'</span>, version: process.env.APP_VERSION },
-});
-
-<span class="cm">// Every log includes correlation ID for distributed tracing</span>
-app.<span class="fn">use</span>((req, res, next) => {
-  req.log = logger.<span class="fn">child</span>({
-    correlationId: req.headers[<span class="str">'x-correlation-id'</span>] || <span class="fn">uuid</span>(),
-    method: req.method,
-    url: req.url,
-  });
-  <span class="fn">next</span>();
-});</div></details>
       </div>
       <div class="card">
         <h3>📨 Event-Driven Async Flow</h3>
@@ -1618,23 +1538,42 @@ app.<span class="fn">listen</span>(<span class="num">8080</span>, () =&gt; conso
               <li><strong>Half-Open:</strong> After timeout, allows test requests to check recovery</li>
             </ul>
             <p style="margin-top:.5rem">Implementations: Resilience4j, Hystrix (deprecated), Polly (.NET), gobreaker (Go).</p>
-            <details class="code-example"><summary>💻 Java — Resilience4j Circuit Breaker</summary><div class="code-block"><span class="cm">// Java — Resilience4j Circuit Breaker</span>
-<span class="kw">@CircuitBreaker</span>(name = <span class="str">"paymentService"</span>, fallbackMethod = <span class="str">"paymentFallback"</span>)
-<span class="kw">public</span> PaymentResult <span class="fn">processPayment</span>(PaymentRequest req) {
-    <span class="kw">return</span> paymentClient.<span class="fn">charge</span>(req);  <span class="cm">// calls downstream service</span>
+            <details class="code-example"><summary>💻 Node.js — Opossum Circuit Breaker</summary><div class="code-block"><span class="cm">// Node.js — Opossum circuit breaker (most popular CB for Node.js)</span>
+<span class="kw">const</span> CircuitBreaker = <span class="fn">require</span>(<span class="str">'opossum'</span>);
+
+<span class="kw">async function</span> <span class="fn">callPaymentService</span>(orderId, amount) {
+  <span class="kw">const</span> res = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">`http://payment-svc/charge`</span>, {
+    method: <span class="str">'POST'</span>,
+    headers: { <span class="str">'Content-Type'</span>: <span class="str">'application/json'</span> },
+    body: JSON.<span class="fn">stringify</span>({ orderId, amount }),
+  });
+  <span class="kw">if</span> (!res.ok) <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">`Payment failed: ${res.status}`</span>);
+  <span class="kw">return</span> res.<span class="fn">json</span>();
 }
 
-<span class="kw">private</span> PaymentResult <span class="fn">paymentFallback</span>(PaymentRequest req, Throwable t) {
-    log.<span class="fn">warn</span>(<span class="str">"Payment service unavailable, queuing for retry"</span>, t);
-    retryQueue.<span class="fn">enqueue</span>(req);
-    <span class="kw">return</span> PaymentResult.<span class="fn">pending</span>();
-}
+<span class="kw">const</span> breaker = <span class="kw">new</span> <span class="fn">CircuitBreaker</span>(callPaymentService, {
+  timeout: <span class="num">5000</span>,              <span class="cm">// 5s per request</span>
+  errorThresholdPercentage: <span class="num">50</span>, <span class="cm">// open at 50% failure rate</span>
+  resetTimeout: <span class="num">30000</span>,          <span class="cm">// try again after 30s</span>
+  volumeThreshold: <span class="num">10</span>,          <span class="cm">// min 10 requests before tripping</span>
+});
 
-<span class="cm">// application.yml</span>
-<span class="cm">// resilience4j.circuitbreaker.instances.paymentService:</span>
-<span class="cm">//   failureRateThreshold: 50</span>
-<span class="cm">//   waitDurationInOpenState: 30s</span>
-<span class="cm">//   slidingWindowSize: 10</span></div></details>
+<span class="cm">// Fallback when circuit is open</span>
+breaker.<span class="fn">fallback</span>((orderId) => ({
+  status: <span class="str">'pending'</span>,
+  message: <span class="str">'Payment queued for retry'</span>,
+}));
+
+<span class="cm">// Emit Prometheus metrics</span>
+breaker.<span class="fn">on</span>(<span class="str">'success'</span>, () => circuitMetrics.<span class="fn">inc</span>({ outcome: <span class="str">'success'</span> }));
+breaker.<span class="fn">on</span>(<span class="str">'failure'</span>, () => circuitMetrics.<span class="fn">inc</span>({ outcome: <span class="str">'failure'</span> }));
+breaker.<span class="fn">on</span>(<span class="str">'open'</span>,    () => logger.<span class="fn">warn</span>(<span class="str">'Circuit OPEN — payment-svc'</span>));
+
+<span class="cm">// Usage in route handler</span>
+app.<span class="fn">post</span>(<span class="str">'/api/orders/:id/pay'</span>, <span class="kw">async</span> (req, res) => {
+  <span class="kw">const</span> result = <span class="kw">await</span> breaker.<span class="fn">fire</span>(req.params.id, req.body.amount);
+  res.<span class="fn">json</span>(result);
+});</div></details>
           </div>
           <div class="card">
             <h3>Bulkhead</h3>
@@ -2083,7 +2022,16 @@ app.<span class="fn">get</span>(<span class="str">'/api/orders/summary'</span>, 
         </div>
       </div>
     </div>
-    <details class="code-example"><summary>💻 Redis cache-aside pattern — Cache reads, invalidate on writes</summary><div class="code-block"><span class="cm">// lib/cache.ts — Cache-aside pattern with Redis</span>
+    <div class="accordion-item">
+      <div class="accordion-header" onclick="toggleAccordion(this)">
+        <span>Caching Strategies</span>
+        <div class="accordion-icon"></div>
+      </div>
+      <div class="accordion-body">
+        <div class="accordion-body-inner">
+          <p>Caching reduces database load and latency by storing frequently accessed data in fast, in-memory stores like Redis or Memcached. Common patterns include cache-aside (lazy loading), write-through, and write-behind.</p>
+          <p style="margin-top:.5rem"><strong>Cache-aside:</strong> Application checks cache first; on miss, fetches from DB and populates cache. <strong>Write-through:</strong> Writes go to cache and DB simultaneously. <strong>Write-behind:</strong> Writes go to cache first, then async flush to DB. Cache invalidation on writes prevents stale data.</p>
+          <details class="code-example"><summary>💻 Redis cache-aside pattern — Cache reads, invalidate on writes</summary><div class="code-block"><span class="cm">// lib/cache.ts — Cache-aside pattern with Redis</span>
 <span class="kw">import</span> Redis <span class="kw">from</span> <span class="str">'ioredis'</span>;
 
 <span class="kw">const</span> redis = <span class="kw">new</span> <span class="fn">Redis</span>(process.env.REDIS_URL, {
@@ -2128,7 +2076,11 @@ app.<span class="fn">get</span>(<span class="str">'/api/orders/summary'</span>, 
   <span class="kw">const</span> keys = <span class="kw">await</span> redis.<span class="fn">keys</span>(pattern);
   <span class="kw">if</span> (keys.length) <span class="kw">await</span> redis.<span class="fn">del</span>(...keys);
 }
-<span class="cm">// invalidatePattern('order:user:123:*');</span></div></details>  </div>
+<span class="cm">// invalidatePattern('order:user:123:*');</span></div></details>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- ==================== DEPLOYMENT ==================== -->
@@ -2139,7 +2091,7 @@ app.<span class="fn">get</span>(<span class="str">'/api/orders/summary'</span>, 
       <h2>Deployment & Orchestration</h2>
       <p>Containerization, orchestration, CI/CD practices, and deployment strategies for microservices.</p>
     </div>
-    <div class="cards-grid cols-3" style="margin-bottom:2.5rem">
+    <div class="cards-grid cols-2" style="margin-bottom:2.5rem">
       <div class="card">
         <div class="card-icon">🐳</div>
         <h3>Docker & Containers</h3>
@@ -2419,7 +2371,7 @@ app.<span class="fn">get</span>(<span class="str">'/api/orders/summary'</span>, 
       <h2>Monitoring & Observability</h2>
       <p>The three pillars of observability: Metrics, Logs, and Traces — and how to implement them at scale.</p>
     </div>
-    <div class="cards-grid cols-3">
+    <div class="cards-grid cols-2">
       <div class="card" style="border-top:3px solid #6366f1">
         <h3 style="color:#818cf8">📊 Metrics</h3>
         <p>Numerical measurements collected at regular intervals. Enable alerting, dashboarding, and capacity planning.</p>
@@ -2431,6 +2383,57 @@ app.<span class="fn">get</span>(<span class="str">'/api/orders/summary'</span>, 
           <li><strong>USE Method:</strong> Utilization, Saturation, Errors (for resources)</li>
           <li><strong>SLIs/SLOs/SLAs:</strong> Define and measure reliability targets</li>
         </ul>
+        <details class="code-example"><summary>💻 Prometheus metrics + structured logging middleware</summary><div class="code-block"><span class="cm">// lib/metrics.ts — Prometheus metrics for RED method</span>
+<span class="kw">const</span> prom = <span class="fn">require</span>(<span class="str">'prom-client'</span>);
+prom.<span class="fn">collectDefaultMetrics</span>(); <span class="cm">// Node.js runtime metrics</span>
+
+<span class="kw">const</span> httpDuration = <span class="kw">new</span> prom.<span class="fn">Histogram</span>({
+  name: <span class="str">'http_request_duration_seconds'</span>,
+  help: <span class="str">'Duration of HTTP requests in seconds'</span>,
+  labelNames: [<span class="str">'method'</span>, <span class="str">'route'</span>, <span class="str">'status_code'</span>],
+  buckets: [<span class="num">0.01</span>, <span class="num">0.05</span>, <span class="num">0.1</span>, <span class="num">0.3</span>, <span class="num">0.5</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">5</span>],
+});
+
+<span class="kw">const</span> httpErrors = <span class="kw">new</span> prom.<span class="fn">Counter</span>({
+  name: <span class="str">'http_request_errors_total'</span>,
+  help: <span class="str">'Total HTTP errors'</span>,
+  labelNames: [<span class="str">'method'</span>, <span class="str">'route'</span>, <span class="str">'status_code'</span>],
+});
+
+<span class="cm">// Express middleware — tracks RED metrics automatically</span>
+<span class="kw">function</span> <span class="fn">metricsMiddleware</span>(req, res, next) {
+  <span class="kw">const</span> end = httpDuration.<span class="fn">startTimer</span>();
+  res.<span class="fn">on</span>(<span class="str">'finish'</span>, () => {
+    <span class="kw">const</span> labels = { method: req.method, route: req.route?.path || req.path, status_code: res.statusCode };
+    <span class="fn">end</span>(labels);
+    <span class="kw">if</span> (res.statusCode >= <span class="num">400</span>) httpErrors.<span class="fn">inc</span>(labels);
+  });
+  <span class="fn">next</span>();
+}
+
+<span class="cm">// Expose /metrics endpoint for Prometheus scraping</span>
+app.<span class="fn">get</span>(<span class="str">'/metrics'</span>, <span class="kw">async</span> (req, res) => {
+  res.<span class="fn">set</span>(<span class="str">'Content-Type'</span>, prom.register.contentType);
+  res.<span class="fn">end</span>(<span class="kw">await</span> prom.register.<span class="fn">metrics</span>());
+});
+
+<span class="cm">// ---- Structured logging with Pino ----</span>
+<span class="kw">const</span> pino = <span class="fn">require</span>(<span class="str">'pino'</span>);
+<span class="kw">const</span> logger = <span class="fn">pino</span>({
+  level: process.env.LOG_LEVEL || <span class="str">'info'</span>,
+  formatters: { level: (label) => ({ level: label }) },
+  base: { service: <span class="str">'order-service'</span>, version: process.env.APP_VERSION },
+});
+
+<span class="cm">// Every log includes correlation ID for distributed tracing</span>
+app.<span class="fn">use</span>((req, res, next) => {
+  req.log = logger.<span class="fn">child</span>({
+    correlationId: req.headers[<span class="str">'x-correlation-id'</span>] || <span class="fn">uuid</span>(),
+    method: req.method,
+    url: req.url,
+  });
+  <span class="fn">next</span>();
+});</div></details>
       </div>
       <div class="card" style="border-top:3px solid #22d3ee">
         <h3 style="color:#22d3ee">📝 Logs</h3>
@@ -2466,6 +2469,35 @@ app.<span class="fn">get</span>(<span class="str">'/api/orders/summary'</span>, 
         <li><strong>OTel Collector:</strong> Receive, process, and export telemetry to any backend (Jaeger, Prometheus, Datadog, etc.)</li>
         <li><strong>Semantic Conventions:</strong> Standard attribute names for consistency across services</li>
       </ul>
+      <details class="code-example"><summary>💻 Node.js — OpenTelemetry distributed tracing</summary><div class="code-block"><span class="cm">// Node.js — OpenTelemetry distributed tracing</span>
+<span class="kw">const</span> { NodeSDK } = <span class="fn">require</span>(<span class="str">'@opentelemetry/sdk-node'</span>);
+<span class="kw">const</span> { OTLPTraceExporter } = <span class="fn">require</span>(<span class="str">'@opentelemetry/exporter-trace-otlp-grpc'</span>);
+<span class="kw">const</span> { getNodeAutoInstrumentations } = <span class="fn">require</span>(<span class="str">'@opentelemetry/auto-instrumentations-node'</span>);
+<span class="kw">const</span> { trace } = <span class="fn">require</span>(<span class="str">'@opentelemetry/api'</span>);
+
+<span class="cm">// Initialize SDK (startup — run before app imports)</span>
+<span class="kw">const</span> sdk = <span class="kw">new</span> <span class="fn">NodeSDK</span>({
+  traceExporter: <span class="kw">new</span> <span class="fn">OTLPTraceExporter</span>({ url: <span class="str">'otel-collector:4317'</span> }),
+  instrumentations: [<span class="fn">getNodeAutoInstrumentations</span>()],
+  serviceName: <span class="str">'order-service'</span>,
+});
+sdk.<span class="fn">start</span>();
+
+<span class="cm">// Create spans in your handler</span>
+<span class="kw">async function</span> <span class="fn">getOrder</span>(req, res) {
+  <span class="kw">const</span> tracer = trace.<span class="fn">getTracer</span>(<span class="str">'order-service'</span>);
+  <span class="kw">const</span> span = tracer.<span class="fn">startSpan</span>(<span class="str">'GetOrder'</span>);
+  span.<span class="fn">setAttribute</span>(<span class="str">'order.id'</span>, req.params.id);
+  <span class="kw">try</span> {
+    <span class="kw">const</span> order = <span class="kw">await</span> orderRepo.<span class="fn">findById</span>(req.params.id);
+    res.<span class="fn">json</span>(order);
+  } <span class="kw">catch</span> (err) {
+    span.<span class="fn">recordException</span>(err);
+    <span class="kw">throw</span> err;
+  } <span class="kw">finally</span> {
+    span.<span class="fn">end</span>();
+  }
+}</div></details>
     </div>  </div>
 </section>
 
@@ -2798,7 +2830,7 @@ app.<span class="fn">use</span>(<span class="str">'/'</span>, <span class="fn">c
         <button class="tab-btn" onclick="switchTab(event,'tech-obs')">Observability</button>
       </div>
       <div class="tab-panel active" id="tech-lang">
-        <div class="cards-grid cols-3">
+        <div class="cards-grid cols-2">
           <div class="card">
             <h3>Java / Spring Boot</h3>
             <p>Spring Cloud ecosystem: Config, Eureka, Gateway, Circuit Breaker. Mature, enterprise-grade. Spring Boot makes microservice creation trivial with embedded servers and auto-configuration.</p>

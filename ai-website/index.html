@@ -93,9 +93,11 @@ h1,h2,h3,h4{color:var(--text-bright);line-height:1.3}
 
 /* ============== CARDS ============== */
 .cards-grid{display:grid;gap:1.5rem}
-.cards-grid.cols-2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
-.cards-grid.cols-3{grid-template-columns:repeat(auto-fit,minmax(480px,1fr))}
+.cards-grid.cols-2{grid-template-columns:repeat(2,1fr)}
+.cards-grid.cols-3{grid-template-columns:repeat(3,1fr)}
 .cards-grid.cols-4{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+@media(max-width:900px){.cards-grid.cols-3{grid-template-columns:repeat(2,1fr)}.cards-grid.cols-4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.cards-grid.cols-2{grid-template-columns:1fr}.cards-grid.cols-3{grid-template-columns:1fr}.cards-grid.cols-4{grid-template-columns:repeat(2,1fr)}}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;
   transition:var(--transition);position:relative;overflow:hidden}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
@@ -2472,7 +2474,7 @@ epsilon = <span class="num">1.0</span>  <span class="cm"># exploration rate</spa
       </div>
       <div class="tab-panel" id="ml-workflow">
         <h3 style="margin-bottom:1rem;color:var(--accent)">End-to-End ML Pipeline</h3>
-        <div class="cards-grid cols-3">
+        <div class="cards-grid cols-2">
           <div class="card"><h3>1. Problem Definition</h3><p>Define the business problem, success metrics, constraints. Classification vs regression vs clustering? What data is available? What's the baseline?</p></div>
           <div class="card"><h3>2. Data Collection</h3><p>Gather data from databases, APIs, web scraping, sensors. Assess data quality, volume, and relevance. Consider data privacy and compliance (GDPR, HIPAA).</p></div>
           <div class="card"><h3>3. Data Preprocessing</h3><p>Handle missing values (imputation), remove duplicates, fix inconsistencies. Encode categorical variables (one-hot, label encoding). Normalize/standardize numerical features.</p></div>
@@ -4076,7 +4078,7 @@ fair_dpd = <span class="fn">demographic_parity_difference</span>(
         </div>
       </div>
       <div class="tab-panel" id="tool-mlops">
-        <div class="cards-grid cols-3">
+        <div class="cards-grid cols-2">
           <div class="card"><h3>MLflow</h3><p>Experiment tracking, model registry, model serving, project packaging. Open-source MLOps platform by Databricks.</p></div>
           <div class="card"><h3>Weights & Biases</h3><p>Experiment tracking, hyperparameter sweeps, model versioning, dataset versioning, collaborative dashboards.</p>
           <details class="code-example" style="margin-top:2rem"><summary>💻 Weights & Biases — Experiment tracking with hyperparameter sweeps</summary><div class="code-block"><span class="cm"># W&amp;B — Track experiments, visualize metrics, compare runs</span>
@@ -4133,7 +4135,7 @@ wandb.agent(sweep_id, function=train, count=<span class="num">50</span>)</div></
         </div>
       </div>
       <div class="tab-panel" id="tool-data">
-        <div class="cards-grid cols-3">
+        <div class="cards-grid cols-2">
           <div class="card"><h3>Vector Databases</h3><p>Pinecone, Weaviate, Chroma, Milvus, Qdrant, pgvector. Store and search embeddings. Essential for RAG, semantic search, recommendation.</p></div>
           <div class="card"><h3>Label Studio / Labelbox</h3><p>Data labeling platforms. Image annotation, text labeling, video annotation. Active learning for efficient labeling.</p></div>
           <div class="card"><h3>Spark / Dask</h3><p>Distributed data processing for ML. Handle datasets too large for single machine. Feature engineering at scale.</p></div>
