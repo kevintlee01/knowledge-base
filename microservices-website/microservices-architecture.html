@@ -334,6 +334,8 @@ details.code-example .code-block{margin:0;border:none;border-radius:0}
 #back-to-top{position:fixed;bottom:2rem;right:2rem;width:48px;height:48px;border-radius:50%;border:none;background:var(--primary);color:#fff;font-size:1.3rem;cursor:pointer;opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s,transform .3s;z-index:9999;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(99,102,241,.4)}
 #back-to-top.visible{opacity:1;visibility:visible}
 #back-to-top:hover{transform:translateY(-3px);box-shadow:0 6px 28px rgba(99,102,241,.55)}
+#home-btn{position:fixed;bottom:2rem;left:2rem;width:48px;height:48px;border-radius:50%;border:none;background:var(--surface);color:var(--text);font-size:1.3rem;cursor:pointer;transition:transform .3s,box-shadow .3s;z-index:9999;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.4);border:1px solid var(--border);text-decoration:none}
+#home-btn:hover{transform:translateY(-3px);box-shadow:0 6px 28px rgba(99,102,241,.4);border-color:var(--primary)}
 </style>
 </head>
 <body>
@@ -3824,6 +3826,7 @@ kubectl logs -f deployment/order-service -n orders</div>
 </section>
 
 <button id="back-to-top" aria-label="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+<a id="home-btn" href="../index.html" aria-label="Home">🏠</a>
 
 <!-- FOOTER -->
 <footer class="footer">
