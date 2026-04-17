@@ -1,0 +1,3008 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>if('scrollRestoration' in history) history.scrollRestoration='manual';window.scrollTo(0,0);</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Microservices Architecture — The Complete Guide</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔗</text></svg>">
+<style>
+/* ============== RESET & BASE ============== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0e1a;--bg2:#10152a;--bg3:#161c35;
+  --surface:#1a2140;--surface2:#212a4a;
+  --primary:#6366f1;--primary-glow:#818cf8;
+  --accent:#22d3ee;--accent2:#a78bfa;--accent3:#f472b6;
+  --text:#e2e8f0;--text-dim:#94a3b8;--text-bright:#f8fafc;
+  --border:rgba(99,102,241,.2);
+  --radius:16px;--radius-sm:10px;
+  --transition:.35s cubic-bezier(.4,0,.2,1);
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;overflow-x:hidden}
+a{color:var(--accent);text-decoration:none;transition:color var(--transition)}
+a:hover{color:var(--primary-glow)}
+img{max-width:100%;display:block}
+h1,h2,h3,h4{color:var(--text-bright);line-height:1.3}
+
+/* ============== SCROLLBAR ============== */
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--primary);border-radius:4px}
+
+/* ============== PARTICLES CANVAS ============== */
+#particles{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+/* ============== NAV ============== */
+.nav{position:fixed;top:0;left:0;width:100%;z-index:1000;
+  background:rgba(10,14,26,.85);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);transition:var(--transition)}
+.nav-inner{max-width:1400px;margin:auto;display:flex;align-items:center;justify-content:space-between;padding:.8rem 2rem;gap:2rem}
+.nav-logo{font-size:1.3rem;font-weight:800;white-space:nowrap;
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-links{display:flex;gap:.2rem;flex-wrap:wrap}
+.nav-links a{padding:.45rem .9rem;border-radius:8px;font-size:.82rem;font-weight:500;color:var(--text-dim);transition:var(--transition)}
+.nav-links a:hover,.nav-links a.active{color:var(--text-bright);background:rgba(99,102,241,.15)}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px}
+.hamburger span{width:24px;height:2px;background:var(--text);border-radius:2px;transition:var(--transition)}
+@media(max-width:900px){
+  .nav-links{display:none;position:absolute;top:100%;left:0;width:100%;
+    flex-direction:column;background:rgba(10,14,26,.97);padding:1rem;border-bottom:1px solid var(--border)}
+  .nav-links.open{display:flex}
+  .hamburger{display:flex}
+}
+
+/* ============== HERO ============== */
+.hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:6rem 2rem 4rem;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-40%;left:-20%;width:140%;height:140%;
+  background:radial-gradient(ellipse at 30% 50%,rgba(99,102,241,.12) 0%,transparent 60%),
+             radial-gradient(ellipse at 70% 50%,rgba(34,211,238,.08) 0%,transparent 60%);
+  animation:heroGlow 8s ease-in-out infinite alternate;z-index:1}
+@keyframes heroGlow{0%{opacity:.7;transform:scale(1)}100%{opacity:1;transform:scale(1.05)}}
+.hero-content{position:relative;z-index:2;max-width:900px}
+.hero-badge{display:inline-block;padding:.4rem 1.2rem;border-radius:50px;font-size:.78rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;
+  background:rgba(99,102,241,.15);border:1px solid var(--border);color:var(--primary-glow);margin-bottom:1.5rem}
+.hero h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:900;margin-bottom:1.2rem;
+  background:linear-gradient(135deg,#fff 0%,var(--primary-glow) 50%,var(--accent) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:clamp(1rem,2vw,1.3rem);color:var(--text-dim);max-width:700px;margin:0 auto 2rem}
+.hero-cta{display:inline-flex;align-items:center;gap:.5rem;padding:.9rem 2.2rem;border-radius:50px;font-weight:700;font-size:1rem;
+  background:linear-gradient(135deg,var(--primary),#4f46e5);color:#fff;
+  box-shadow:0 4px 30px rgba(99,102,241,.4);transition:var(--transition);cursor:pointer;border:none}
+.hero-cta:hover{transform:translateY(-2px);box-shadow:0 8px 40px rgba(99,102,241,.6)}
+.hero-diagram{margin-top:3rem;position:relative;z-index:2}
+.hero-diagram svg{max-width:700px;margin:auto;filter:drop-shadow(0 0 30px rgba(99,102,241,.2))}
+
+/* ============== SECTIONS ============== */
+.section{position:relative;z-index:2;padding:5rem 2rem}
+.section:nth-child(even){background:var(--bg2)}
+.container{max-width:1200px;margin:auto}
+.section-header{text-align:center;margin-bottom:3.5rem}
+.section-label{display:inline-block;padding:.3rem 1rem;border-radius:50px;font-size:.72rem;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);
+  background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.2);margin-bottom:1rem}
+.section-header h2{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:.8rem}
+.section-header p{color:var(--text-dim);font-size:1.05rem;max-width:650px;margin:auto}
+
+/* ============== CARDS ============== */
+.cards-grid{display:grid;gap:1.5rem}
+.cards-grid.cols-2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.cards-grid.cols-3{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.cards-grid.cols-4{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;
+  transition:var(--transition);position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--primary),var(--accent));opacity:0;transition:var(--transition)}
+.card:hover{transform:translateY(-6px);border-color:rgba(99,102,241,.4);
+  box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.card:hover::before{opacity:1}
+.card-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  margin-bottom:1.2rem;font-size:1.5rem;
+  background:linear-gradient(135deg,rgba(99,102,241,.2),rgba(34,211,238,.15))}
+.card h3{font-size:1.15rem;margin-bottom:.6rem}
+.card p{color:var(--text-dim);font-size:.92rem;line-height:1.7}
+.card ul{list-style:none;margin-top:.7rem}
+.card ul li{position:relative;padding-left:1.3rem;margin-bottom:.35rem;font-size:.88rem;color:var(--text-dim)}
+.card ul li::before{content:'›';position:absolute;left:0;color:var(--accent);font-weight:700}
+
+/* ============== TABBED CONTENT ============== */
+.tabs-wrapper{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.tab-buttons{display:flex;overflow-x:auto;border-bottom:1px solid var(--border);background:rgba(0,0,0,.2)}
+.tab-btn{padding:1rem 1.5rem;font-size:.88rem;font-weight:600;color:var(--text-dim);background:none;border:none;
+  cursor:pointer;white-space:nowrap;transition:var(--transition);position:relative}
+.tab-btn::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--primary);
+  transform:scaleX(0);transition:var(--transition)}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--accent)}
+.tab-btn.active::after{transform:scaleX(1)}
+.tab-panel{display:none;padding:2rem;animation:fadeUp .4s ease}
+.tab-panel.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ============== ACCORDION ============== */
+.accordion-item{border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:.8rem;overflow:hidden;
+  background:var(--surface);transition:var(--transition)}
+.accordion-item:hover{border-color:rgba(99,102,241,.3)}
+.accordion-header{display:flex;align-items:center;justify-content:space-between;padding:1.2rem 1.5rem;
+  cursor:pointer;font-weight:600;font-size:1rem;color:var(--text-bright);transition:var(--transition)}
+.accordion-header:hover{background:rgba(99,102,241,.05)}
+.accordion-icon{width:24px;height:24px;position:relative;flex-shrink:0}
+.accordion-icon::before,.accordion-icon::after{content:'';position:absolute;background:var(--accent);border-radius:2px;transition:var(--transition)}
+.accordion-icon::before{width:14px;height:2px;top:11px;left:5px}
+.accordion-icon::after{width:2px;height:14px;top:5px;left:11px}
+.accordion-item.open .accordion-icon::after{transform:rotate(90deg);opacity:0}
+.accordion-body{max-height:0;overflow:hidden;transition:max-height .4s ease}
+
+.accordion-body-inner{padding:0 1.5rem 1.5rem;color:var(--text-dim);font-size:.92rem;line-height:1.8}
+.accordion-body-inner ul{list-style:none;padding-left:0;margin:.8rem 0}
+.accordion-body-inner li{position:relative;padding-left:1.3rem;margin-bottom:.35rem}
+.accordion-body-inner li::before{content:'›';position:absolute;left:0;color:var(--accent);font-weight:700}
+
+/* ============== INTERACTIVE DIAGRAM ============== */
+.arch-showcase{position:relative;background:linear-gradient(180deg,rgba(26,33,64,.96),rgba(16,21,42,.96));
+  border:1px solid var(--border);border-radius:28px;padding:2rem;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.28)}
+.arch-showcase::before{content:none}
+.arch-topbar,.arch-detail-head{position:relative;z-index:1;display:flex;gap:1.5rem;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+.arch-topbar-copy{max-width:640px}
+.arch-topbar-copy h3{font-size:1.55rem;margin:.8rem 0 .5rem}
+.arch-topbar-copy p{font-size:.95rem;color:var(--text-dim)}
+.arch-mode-switch{display:flex;gap:.6rem;flex-wrap:nowrap;justify-content:flex-end}
+.arch-mode-btn{padding:.75rem 1.05rem;border-radius:999px;border:1px solid rgba(99,102,241,.18);background:rgba(255,255,255,.03);
+  color:var(--text-dim);font-size:.78rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;transition:var(--transition)}
+.arch-mode-btn:hover,.arch-mode-btn.active{color:var(--text-bright);border-color:rgba(99,102,241,.45);background:rgba(99,102,241,.16);box-shadow:0 10px 24px rgba(99,102,241,.18)}
+.arch-map{position:relative;z-index:1;margin-top:1.5rem;padding:1.35rem;background:rgba(10,14,26,.58);border:1px solid rgba(99,102,241,.12);border-radius:24px}
+.arch-grid{display:grid;gap:1rem;grid-template-columns:1fr 1.45fr 1fr;grid-template-areas:'entry core control' 'edge core control' 'data data data'}
+.arch-zone{position:relative;background:rgba(255,255,255,.02);border:1px solid rgba(99,102,241,.12);border-radius:22px;padding:1rem;transition:var(--transition)}
+.arch-zone.is-emphasis{border-color:rgba(99,102,241,.34);background:rgba(22,28,53,.94);box-shadow:0 18px 36px rgba(0,0,0,.22)}
+.arch-zone.is-muted{opacity:.5;filter:saturate(.8)}
+.arch-zone--entry{grid-area:entry}
+.arch-zone--edge{grid-area:edge}
+.arch-zone--core{grid-area:core}
+.arch-zone--control{grid-area:control}
+.arch-zone--data{grid-area:data}
+.arch-zone-label{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;margin-bottom:.9rem}
+.arch-zone-label h4{font-size:1.08rem;margin-top:.2rem}
+.arch-kicker{display:block;font-size:.7rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.arch-hint{font-size:.74rem;color:var(--text-dim);text-align:right;max-width:160px}
+.arch-stack,.arch-control-grid{display:grid;gap:.75rem}
+.arch-node-grid,.arch-data-grid{display:grid;gap:.75rem;grid-template-columns:repeat(2,minmax(0,1fr))}
+.arch-control-grid{grid-template-columns:1fr}
+.arch-node{position:relative;width:100%;text-align:left;padding:1rem;border-radius:18px;border:1px solid rgba(99,102,241,.16);background:linear-gradient(180deg,rgba(33,42,74,.92),rgba(26,33,64,.92));
+  color:var(--text);cursor:pointer;transition:var(--transition);font:inherit;overflow:hidden}
+.arch-node::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;opacity:.95}
+.arch-node:hover{transform:translateY(-3px);border-color:rgba(99,102,241,.34);box-shadow:0 14px 28px rgba(0,0,0,.18)}
+.arch-node.is-selected{border-color:rgba(129,140,248,.7);background:linear-gradient(180deg,rgba(56,67,110,.98),rgba(28,37,72,.98));box-shadow:0 16px 32px rgba(99,102,241,.22);opacity:1}
+.arch-node.is-muted{opacity:.45;filter:saturate(.78)}
+.arch-node strong{display:block;font-size:.92rem;color:var(--text-bright);margin-bottom:.2rem}
+.arch-node small{display:block;font-size:.76rem;color:var(--text-dim);line-height:1.6}
+.arch-node-meta,.arch-detail-tags{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.65rem}
+.arch-node--wide{grid-column:1 / -1}
+.arch-node--client::before{background:linear-gradient(90deg,#f472b6,#fb7185)}
+.arch-node--edge::before{background:linear-gradient(90deg,#6366f1,#818cf8)}
+.arch-node--identity::before{background:linear-gradient(90deg,#a78bfa,#818cf8)}
+.arch-node--service::before{background:linear-gradient(90deg,#22d3ee,#34d399)}
+.arch-node--async::before{background:linear-gradient(90deg,#818cf8,#a78bfa)}
+.arch-node--data::before{background:linear-gradient(90deg,#a78bfa,#f472b6)}
+.arch-node--platform::before{background:linear-gradient(90deg,#34d399,#22d3ee)}
+.arch-chip{display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .55rem;border-radius:999px;border:1px solid rgba(99,102,241,.16);background:rgba(99,102,241,.08);font-size:.68rem;font-weight:700;color:var(--text-dim)}
+.arch-callout{margin-top:.85rem;padding:.9rem 1rem;border-radius:16px;border:1px solid rgba(34,211,238,.12);background:rgba(34,211,238,.06);font-size:.8rem;color:var(--text-dim)}
+.arch-callout strong{color:var(--text-bright)}
+.arch-bus-track{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem}
+.arch-detail-panel{position:relative;z-index:1;margin-top:1.25rem;padding:1.35rem;border-radius:22px;border:1px solid rgba(99,102,241,.18);background:rgba(10,14,26,.72)}
+.arch-detail-copy{max-width:720px}
+.arch-detail-copy h3{font-size:1.4rem;margin:.8rem 0 .45rem}
+.arch-detail-summary{color:var(--text-dim);font-size:.92rem}
+.arch-detail-grid{display:grid;gap:1rem;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:1rem}
+.arch-detail-card{padding:1rem 1.05rem;border-radius:18px;border:1px solid rgba(99,102,241,.14);background:rgba(255,255,255,.02)}
+.arch-detail-card h4{font-size:.9rem;margin-bottom:.75rem;color:var(--text-bright)}
+.arch-detail-card ul{list-style:none;display:grid;gap:.65rem}
+.arch-detail-card li{position:relative;padding-left:1.05rem;font-size:.84rem;line-height:1.65;color:var(--text-dim)}
+.arch-detail-card li::before{content:'›';position:absolute;left:0;top:0;color:var(--accent);font-weight:700}
+.arch-kpi-grid{position:relative;z-index:1;display:grid;gap:.9rem;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:1.2rem}
+.arch-kpi{padding:1rem 1.05rem;border-radius:18px;border:1px solid rgba(99,102,241,.14);background:rgba(255,255,255,.03)}
+.arch-kpi span{display:block;font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim)}
+.arch-kpi strong{display:block;margin-top:.45rem;font-size:1rem;color:var(--text-bright)}
+@media(max-width:1100px){
+  .arch-grid{grid-template-columns:1fr 1fr;grid-template-areas:'entry edge' 'core core' 'control control' 'data data'}
+  .arch-kpi-grid,.arch-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:768px){
+  .arch-showcase{padding:1.25rem}
+  .arch-grid,.arch-node-grid,.arch-data-grid,.arch-kpi-grid,.arch-detail-grid{grid-template-columns:1fr;grid-template-areas:'entry' 'edge' 'core' 'control' 'data'}
+  .arch-zone-label,.arch-detail-head{flex-direction:column;align-items:flex-start}
+  .arch-hint{text-align:left;max-width:none}
+}
+
+/* ============== COMPARISON TABLE ============== */
+.comparison-table{width:100%;border-collapse:separate;border-spacing:0;border-radius:var(--radius);overflow:hidden;
+  border:1px solid var(--border)}
+.comparison-table th{background:rgba(99,102,241,.15);padding:1rem;font-size:.88rem;font-weight:700;text-align:left;color:var(--text-bright)}
+.comparison-table td{padding:.9rem 1rem;font-size:.88rem;border-top:1px solid var(--border);color:var(--text-dim)}
+.comparison-table tr:hover td{background:rgba(99,102,241,.05)}
+.comparison-table .check{color:#34d399;font-weight:700}
+.comparison-table .cross{color:#f87171;font-weight:700}
+
+/* ============== CODE BLOCK ============== */
+.code-block{background:#0d1117;border:1px solid rgba(99,102,241,.15);border-radius:var(--radius-sm);
+  padding:1.2rem 1.5rem;font-family:'Fira Code','Cascadia Code',monospace;font-size:.82rem;
+  line-height:1.8;overflow-x:auto;color:#c9d1d9;margin:1rem 0;white-space:pre;word-wrap:break-word}
+.code-block .kw{color:#ff7b72}.code-block .str{color:#a5d6ff}
+.code-block .fn{color:#d2a8ff}.code-block .cm{color:#8b949e}
+.code-block .type{color:#79c0ff}.code-block .num{color:#79c0ff}
+
+/* ============== COLLAPSIBLE CODE EXAMPLES ============== */
+details.code-example{margin:1rem 0;border:1px solid rgba(99,102,241,.15);border-radius:var(--radius-sm);overflow:hidden}
+details.code-example summary{padding:.7rem 1.2rem;font-family:'Fira Code','Cascadia Code',monospace;font-size:.8rem;font-weight:600;
+  color:var(--accent);background:rgba(13,17,23,.6);cursor:pointer;display:flex;align-items:center;gap:.5rem;
+  transition:var(--transition);list-style:none;user-select:none}
+details.code-example summary::-webkit-details-marker{display:none}
+details.code-example summary::before{content:'▶';font-size:.6rem;transition:transform .2s ease;display:inline-block}
+details.code-example[open] summary::before{transform:rotate(90deg)}
+details.code-example summary:hover{background:rgba(99,102,241,.1);color:#818cf8}
+details.code-example[open] summary{border-bottom:1px solid rgba(99,102,241,.15)}
+details.code-example .code-block{margin:0;border:none;border-radius:0}
+
+/* ============== TIMELINE ============== */
+.timeline{position:relative;padding:2rem 0}
+.timeline::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:2px;background:var(--border);transform:translateX(-50%)}
+.tl-item{display:flex;align-items:flex-start;margin-bottom:2rem;position:relative}
+.tl-item:nth-child(odd){flex-direction:row-reverse;text-align:right}
+.tl-content{width:45%;padding:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);transition:var(--transition)}
+.tl-content:hover{border-color:var(--primary);transform:translateY(-3px)}
+.tl-content h4{font-size:1rem;margin-bottom:.4rem;color:var(--accent)}
+.tl-content p{font-size:.85rem;color:var(--text-dim)}
+.tl-dot{position:absolute;left:50%;top:1.5rem;width:14px;height:14px;border-radius:50%;
+  background:var(--primary);border:3px solid var(--bg);transform:translateX(-50%);z-index:1}
+@media(max-width:768px){
+  .timeline::before{left:20px}
+  .tl-item,.tl-item:nth-child(odd){flex-direction:row;text-align:left}
+  .tl-content{width:calc(100% - 50px);margin-left:40px}
+  .tl-dot{left:20px;top:1.5rem}
+}
+
+/* ============== STATS ============== */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.5rem;margin:2rem 0}
+.stat{text-align:center;padding:2rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);transition:var(--transition)}
+.stat:hover{border-color:var(--primary)}
+.stat-num{font-size:2.5rem;font-weight:900;
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-label{font-size:.85rem;color:var(--text-dim);margin-top:.3rem}
+
+/* ============== FOOTER ============== */
+.footer{position:relative;z-index:2;text-align:center;padding:3rem 2rem;border-top:1px solid var(--border);background:var(--bg)}
+.footer p{color:var(--text-dim);font-size:.85rem}
+
+/* ============== SCROLL ANIMATIONS ============== */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+/* ============== TOOLTIP ============== */
+.tooltip-trigger{position:relative;border-bottom:1px dashed var(--accent);cursor:help}
+.tooltip-trigger .tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%) scale(.95);
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;
+  font-size:.78rem;color:var(--text);white-space:nowrap;opacity:0;pointer-events:none;transition:var(--transition);z-index:100}
+.tooltip-trigger:hover .tip{opacity:1;transform:translateX(-50%) scale(1)}
+
+/* ============== GLOW BADGE ============== */
+.glow-badge{display:inline-block;padding:.25rem .8rem;border-radius:6px;font-size:.72rem;font-weight:700;letter-spacing:.5px}
+.glow-badge.blue{background:rgba(99,102,241,.15);color:var(--primary-glow)}
+.glow-badge.cyan{background:rgba(34,211,238,.12);color:var(--accent)}
+.glow-badge.pink{background:rgba(244,114,182,.12);color:var(--accent3)}
+.glow-badge.purple{background:rgba(167,139,250,.12);color:var(--accent2)}
+
+/* ============== INTERACTIVE FLOW DIAGRAM ============== */
+
+.flow-canvas-wrap{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;overflow:hidden}
+.flow-canvas-wrap canvas{width:100%;height:520px;display:block;border-radius:var(--radius-sm)}
+.flow-toolbar{display:flex;gap:1rem;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;margin-bottom:1rem}
+.flow-controls{display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center}
+.flow-btn,.flow-speed-btn{padding:.6rem 1.4rem;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-dim);
+  font-size:.82rem;font-weight:600;cursor:pointer;transition:var(--transition)}
+.flow-btn:hover,.flow-btn.active,.flow-speed-btn:hover,.flow-speed-btn.active{background:rgba(99,102,241,.2);border-color:var(--primary);color:var(--text-bright)}
+.flow-speed-group{display:flex;gap:.55rem;align-items:center;flex-wrap:wrap}
+.flow-speed-label{font-size:.75rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim)}
+.flow-speed-btn{padding:.5rem .85rem;font-size:.78rem}
+.flow-status{margin:0 0 1rem;color:var(--text-dim);font-size:.84rem;text-align:center}
+.flow-legend{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;margin-top:1rem;font-size:.75rem;color:var(--text-dim)}
+.flow-legend span{display:flex;align-items:center;gap:.4rem}
+.flow-legend .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+@media(max-width:768px){
+  .flow-toolbar{flex-direction:column;align-items:stretch}
+  .flow-speed-group{justify-content:flex-start}
+}
+
+/* ============== DEEP DIVE CODE ============== */
+.deep-code{background:#0d1117;border:1px solid rgba(99,102,241,.12);border-radius:var(--radius-sm);
+  padding:1.5rem;font-family:'Fira Code','Cascadia Code','SF Mono',monospace;font-size:.78rem;
+  line-height:1.9;overflow-x:auto;color:#c9d1d9;margin:.8rem 0;white-space:pre}
+.deep-code .kw{color:#ff7b72}.deep-code .str{color:#a5d6ff}.deep-code .fn{color:#d2a8ff}
+.deep-code .cm{color:#8b949e;font-style:italic}.deep-code .type{color:#79c0ff}.deep-code .num{color:#79c0ff}
+.deep-code .ann{color:#ffa657}.deep-code .op{color:#ff7b72}
+
+.tech-detail{background:rgba(0,0,0,.15);border-left:3px solid var(--primary);border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+  padding:1.2rem 1.5rem;margin:.8rem 0;font-size:.88rem;color:var(--text-dim);line-height:1.8}
+.tech-detail strong{color:var(--text-bright)}
+.tech-detail code{background:rgba(99,102,241,.1);padding:.15rem .4rem;border-radius:4px;font-family:'Fira Code',monospace;font-size:.8rem;color:var(--accent);word-break:break-all}
+</style>
+</head>
+<body>
+
+<!-- PARTICLES -->
+<canvas id="particles"></canvas>
+
+<!-- NAV -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <div class="nav-logo">⬡ Microservices</div>
+    <div class="hamburger" id="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </div>
+    <div class="nav-links" id="navLinks">
+      <a href="#overview">Overview</a>
+      <a href="#principles">Principles</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#flowdiagram">Flow Diagram</a>
+      <a href="#serviceflow">Service Flows</a>
+      <a href="#patterns">Patterns</a>
+      <a href="#internals">Internals</a>
+      <a href="#communication">Communication</a>
+      <a href="#data">Data</a>
+      <a href="#deployment">Deployment</a>
+      <a href="#observability">Observability</a>
+      <a href="#security">Security</a>
+      <a href="#comparison">Comparison</a>
+      <a href="#testing">Testing</a>
+      <a href="#techstack">Tech Stack</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">The Definitive Resource</div>
+    <h1>Microservices Architecture</h1>
+    <p>A comprehensive deep-dive into designing, building, deploying, and operating distributed systems using microservices — from foundational principles to advanced patterns.</p>
+    <a href="#overview" class="hero-cta">Start Exploring ↓</a>
+    <div class="hero-diagram">
+      <svg viewBox="0 0 700 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- service nodes -->
+        <rect x="10" y="60" width="100" height="60" rx="12" fill="rgba(99,102,241,.2)" stroke="#6366f1" stroke-width="1.5"/>
+        <text x="60" y="95" text-anchor="middle" fill="#818cf8" font-size="11" font-weight="600">Auth Service</text>
+        <rect x="150" y="10" width="100" height="60" rx="12" fill="rgba(34,211,238,.15)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="200" y="45" text-anchor="middle" fill="#22d3ee" font-size="11" font-weight="600">User Service</text>
+        <rect x="150" y="110" width="100" height="60" rx="12" fill="rgba(244,114,182,.15)" stroke="#f472b6" stroke-width="1.5"/>
+        <text x="200" y="145" text-anchor="middle" fill="#f472b6" font-size="11" font-weight="600">Order Service</text>
+        <rect x="300" y="60" width="100" height="60" rx="12" fill="rgba(167,139,250,.15)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="350" y="95" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">API Gateway</text>
+        <rect x="450" y="10" width="110" height="60" rx="12" fill="rgba(52,211,153,.15)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="505" y="45" text-anchor="middle" fill="#34d399" font-size="11" font-weight="600">Payment Svc</text>
+        <rect x="450" y="110" width="110" height="60" rx="12" fill="rgba(251,191,36,.15)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="505" y="145" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="600">Notification</text>
+        <rect x="600" y="60" width="90" height="60" rx="12" fill="rgba(99,102,241,.12)" stroke="#6366f1" stroke-width="1.5"/>
+        <text x="645" y="95" text-anchor="middle" fill="#818cf8" font-size="11" font-weight="600">Message Bus</text>
+        <!-- connecting lines -->
+        <line x1="110" y1="90" x2="150" y2="40" stroke="#6366f155" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <line x1="110" y1="90" x2="150" y2="140" stroke="#6366f155" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <line x1="250" y1="40" x2="300" y2="80" stroke="#22d3ee55" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <line x1="250" y1="140" x2="300" y2="100" stroke="#f472b655" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <line x1="400" y1="80" x2="450" y2="40" stroke="#a78bfa55" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <line x1="400" y1="90" x2="450" y2="140" stroke="#a78bfa55" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <line x1="560" y1="40" x2="600" y2="80" stroke="#34d39955" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <line x1="560" y1="140" x2="600" y2="100" stroke="#fbbf2455" stroke-width="1.2" stroke-dasharray="4 3"/>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<!-- ==================== OVERVIEW ==================== -->
+<section class="section" id="overview">
+  <div class="container reveal">
+    <div class="section-header">
+      <div class="section-label">Chapter 1</div>
+      <h2>What Are Microservices?</h2>
+      <p>Microservices is an architectural style that structures an application as a collection of small, autonomous, loosely-coupled services, each responsible for a specific business capability.</p>
+    </div>
+    <div class="cards-grid cols-2">
+      <div class="card">
+        <div class="card-icon">📐</div>
+        <h3>Definition</h3>
+        <p>A microservices architecture decomposes a monolithic application into a suite of independently deployable services. Each service runs its own process, communicates via lightweight protocols (typically HTTP/REST or messaging), and can be developed, deployed, and scaled independently by a small team.</p>
+        <p style="margin-top:.8rem">The term was popularized around 2011–2014 by thought leaders including Martin Fowler, James Lewis, and Sam Newman, though the ideas trace back to Service-Oriented Architecture (SOA) and Unix philosophy.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎯</div>
+        <h3>Key Characteristics</h3>
+        <ul>
+          <li><strong>Single Responsibility:</strong> Each service encapsulates one business domain</li>
+          <li><strong>Autonomous Deployment:</strong> Services deploy independently</li>
+          <li><strong>Decentralized Governance:</strong> Teams choose their own tech stacks</li>
+          <li><strong>Polyglot Persistence:</strong> Different databases per service</li>
+          <li><strong>Fault Isolation:</strong> Failure in one service doesn't cascade</li>
+          <li><strong>Built for Change:</strong> Easy to replace or rewrite individual services</li>
+          <li><strong>Organized Around Business Capabilities:</strong> Aligned with Conway's Law</li>
+          <li><strong>Smart Endpoints, Dumb Pipes:</strong> Logic in services, not middleware</li>
+        </ul>
+      </div>
+    </div>
+    <div class="stats-row" style="margin-top:2.5rem">
+      <div class="stat"><div class="stat-num" data-target="91">0</div><div class="stat-label">% of enterprises adopting microservices</div></div>
+      <div class="stat"><div class="stat-num" data-target="68">0</div><div class="stat-label">% report faster time to deployment</div></div>
+      <div class="stat"><div class="stat-num" data-target="55">0</div><div class="stat-label">% cost reduction in scaling</div></div>
+      <div class="stat"><div class="stat-num" data-target="4">0</div><div class="stat-label">× improvement in release frequency</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== PRINCIPLES ==================== -->
+<section class="section" id="principles">
+  <div class="container reveal">
+    <div class="section-header">
+      <div class="section-label">Chapter 2</div>
+      <h2>Core Principles</h2>
+      <p>The foundational principles that govern the design and operation of microservices architectures.</p>
+    </div>
+    <div class="cards-grid cols-3">
+      <div class="card">
+        <div class="card-icon">🔗</div>
+        <h3>Loose Coupling</h3>
+        <p>Services interact through well-defined interfaces with minimal dependencies on each other's internal implementation. Changes to one service should not require changes in others. This is achieved through API contracts, event-driven communication, and avoiding shared databases.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🧩</div>
+        <h3>High Cohesion</h3>
+        <p>Related functionality is grouped within a single service (Bounded Context from DDD). Each service should contain everything it needs to fulfill its business capability. If you frequently change two services together, they should probably be merged.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🏗️</div>
+        <h3>Domain-Driven Design</h3>
+        <p>Services are modeled around business domains using DDD concepts: Bounded Contexts define service boundaries, Aggregates ensure transactional consistency, Domain Events enable cross-service communication, and Ubiquitous Language aligns code with business terminology.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📦</div>
+        <h3>Single Responsibility</h3>
+        <p>Each microservice does one thing well. It owns its data and business logic for a single business capability. This keeps services small (typically 100–5000 LOC), understandable, and independently replaceable.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🛡️</div>
+        <h3>Design for Failure</h3>
+        <p>In distributed systems, failure is inevitable. Services must implement circuit breakers, retries with exponential backoff, bulkheads, timeouts, and graceful degradation. The system should continue functioning even when individual services are unavailable.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚙️</div>
+        <h3>Infrastructure Automation</h3>
+        <p>CI/CD pipelines, infrastructure as code (IaC), containerization, and orchestration are essential. Automation reduces operational overhead of managing many services. You can't effectively run microservices without automated testing, deployment, and monitoring.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔄</div>
+        <h3>Evolutionary Design</h3>
+        <p>Services should be designed to be disposable and replaceable. Prefer evolutionary improvements over big-bang rewrites. Use the Strangler Fig pattern to incrementally replace monolithic components. Version APIs to prevent breaking changes.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">👥</div>
+        <h3>Decentralized Governance</h3>
+        <p>Each team chooses the best technology for their service. One service might use Node.js with MongoDB while another uses Java with PostgreSQL. This autonomy enables teams to innovate and optimize for their specific domain needs.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <h3>Observability First</h3>
+        <p>Every service must emit metrics, logs, and traces. Distributed tracing (OpenTelemetry), centralized logging (ELK/Loki), and metrics dashboards (Prometheus/Grafana) are non-negotiable. You cannot debug what you cannot observe.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== ARCHITECTURE ==================== -->
+<section class="section" id="architecture">
+  <div class="container reveal">
+    <div class="section-header">
+      <div class="section-label">Chapter 3</div>
+      <h2>Architecture Control Tower</h2>
+      <p>A production-grade topology map that lets you inspect the request path, async choreography, resilience controls, and platform plane from one place.</p>
+    </div>
+
+    <div class="arch-showcase">
+      <div class="arch-topbar">
+        <div class="arch-topbar-copy">
+          <span class="glow-badge blue">Reference Topology</span>
+          <h3>Production E-Commerce Microservices Map</h3>
+          <p>Switch the emphasis mode or click a component to inspect how traffic, events, policies, and operations fit together across the system.</p>
+        </div>
+        <div class="arch-mode-switch" role="tablist" aria-label="Architecture emphasis modes">
+          <button type="button" class="arch-mode-btn active" data-arch-mode-btn onclick="setArchitectureMode('request', this)">Request Path</button>
+          <button type="button" class="arch-mode-btn" data-arch-mode-btn onclick="setArchitectureMode('async', this)">Async Fan-Out</button>
+          <button type="button" class="arch-mode-btn" data-arch-mode-btn onclick="setArchitectureMode('resilience', this)">Resilience</button>
+          <button type="button" class="arch-mode-btn" data-arch-mode-btn onclick="setArchitectureMode('platform', this)">Platform Ops</button>
+        </div>
+      </div>
+
+      <div class="arch-map" id="archSystemMap">
+        <div class="arch-grid">
+          <div class="arch-zone arch-zone--entry" data-arch-focus="request async platform">
+            <div class="arch-zone-label">
+              <div>
+                <span class="arch-kicker">Entry Channels</span>
+                <h4>Experience Layer</h4>
+              </div>
+              <span class="arch-hint">Human users, partner integrations, edge caching</span>
+            </div>
+            <div class="arch-stack">
+              <button type="button" class="arch-node arch-node--client" data-arch-focus="request async" onclick="setArchitectureDetail('clients', this)">
+                <strong>Clients and Channels</strong>
+                <small>Web SPA, native mobile, admin portal, partner API consumers, and support tooling.</small>
+                <div class="arch-node-meta">
+                  <span class="arch-chip">HTTP/2</span>
+                  <span class="arch-chip">CDN</span>
+                  <span class="arch-chip">Sessionless</span>
+                </div>
+              </button>
+              <button type="button" class="arch-node arch-node--edge" data-arch-focus="request platform resilience" onclick="setArchitectureDetail('edge', this)">
+                <strong>CDN, WAF, and Rate-Limit Edge</strong>
+                <small>Terminates TLS, absorbs bot traffic, enforces geo/IP policy, and protects the gateway from bursts.</small>
+                <div class="arch-node-meta">
+                  <span class="arch-chip">TLS</span>
+                  <span class="arch-chip">WAF Rules</span>
+                  <span class="arch-chip">Bot Shield</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div class="arch-zone arch-zone--edge" data-arch-focus="request resilience platform">
+            <div class="arch-zone-label">
+              <div>
+                <span class="arch-kicker">Edge and Identity</span>
+                <h4>Gateway and Access Control</h4>
+              </div>
+              <span class="arch-hint">AuthN, AuthZ, routing, quotas, and protocol mediation</span>
+            </div>
+            <div class="arch-stack">
+              <button type="button" class="arch-node arch-node--edge" data-arch-focus="request resilience platform" onclick="setArchitectureDetail('gateway', this)">
+                <strong>API Gateway and BFF</strong>
+                <small>Route composition, request shaping, schema validation, header enrichment, and client-specific facades.</small>
+                <div class="arch-node-meta">
+                  <span class="arch-chip">Envoy</span>
+                  <span class="arch-chip">BFF</span>
+                  <span class="arch-chip">Quota</span>
+                </div>
+              </button>
+              <button type="button" class="arch-node arch-node--identity" data-arch-focus="request resilience platform" onclick="setArchitectureDetail('identity', this)">
+                <strong>Identity, Tokens, and Policy</strong>
+                <small>OIDC login, JWT minting, claims checks, mTLS identity propagation, and policy-as-code decisions.</small>
+                <div class="arch-node-meta">
+                  <span class="arch-chip">OIDC</span>
+                  <span class="arch-chip">JWT</span>
+                  <span class="arch-chip">OPA</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div class="arch-zone arch-zone--core" data-arch-focus="request async resilience">
+            <div class="arch-zone-label">
+              <div>
+                <span class="arch-kicker">Domain Execution</span>
+                <h4>Business Services and Coordination</h4>
+              </div>
+              <span class="arch-hint">Bounded contexts, sync orchestration, async collaboration</span>
+            </div>
+            <div class="arch-node-grid">
+              <button type="button" class="arch-node arch-node--service" data-arch-focus="request async resilience" onclick="setArchitectureDetail('order', this)">
+                <strong>Order and Checkout</strong>
+                <small>Owns cart confirmation, order aggregate state, and the synchronous write path from the gateway.</small>
+                <div class="arch-node-meta">
+                  <span class="arch-chip">gRPC</span>
+                  <span class="arch-chip">Saga Start</span>
+                </div>
+              </button>
+              <button type="button" class="arch-node arch-node--service" data-arch-focus="request async resilience" onclick="setArchitectureDetail('inventory', this)">
+                <strong>Catalog and Inventory</strong>
+                <small>Reserves stock, maintains availability read models, and publishes stock transitions.</small>
+                <div class="arch-node-meta">
+                  <span class="arch-chip">PostgreSQL</span>
+                  <span class="arch-chip">CQRS</span>
+                </div>
+              </button>
+              <button type="button" class="arch-node arch-node--service" data-arch-focus="request resilience" onclick="setArchitectureDetail('payment', this)">
+                <strong>Payments and Fraud Controls</strong>
+                <small>Handles idempotent PSP requests, fraud checks, retries, and compensating failure paths.</small>
+                <div class="arch-node-meta">
+                  <span class="arch-chip">PSP</span>
+                  <span class="arch-chip">Idempotency</span>
+                </div>
+              </button>
+              <button type="button" class="arch-node arch-node--service" data-arch-focus="request async" onclick="setArchitectureDetail('shipping', this)">
+                <strong>Shipping and Notifications</strong>
+                <small>Consumes confirmed-order events, allocates fulfillment work, and communicates status to customers.</small>
+                <div class="arch-node-meta">
+                  <span class="arch-chip">Async Workers</span>
+                  <span class="arch-chip">Fan-Out</span>
+                </div>
+              </button>
+            </div>
+            <div class="arch-callout" data-arch-focus="request resilience">
+              <strong>Sync lane:</strong> Clients hit the gateway, policy checks run first, then domain owners coordinate via gRPC/REST with explicit latency budgets and timeout boundaries.
+            </div>
+            <div class="arch-callout" data-arch-focus="async resilience">
+              <strong>Async lane:</strong> State changes are emitted from a transactional outbox, shipped through Kafka, and consumed by downstream bounded contexts without reaching into each other’s databases.
+            </div>
+          </div>
+
+          <div class="arch-zone arch-zone--control" data-arch-focus="resilience platform">
+            <div class="arch-zone-label">
+              <div>
+                <span class="arch-kicker">Platform Plane</span>
+                <h4>Control, Policy, and Visibility</h4>
+              </div>
+              <span class="arch-hint">Everything needed to keep the fleet safe and operable</span>
+            </div>
+            <div class="arch-control-grid">
+              <button type="button" class="arch-node arch-node--platform" data-arch-focus="resilience platform" onclick="setArchitectureDetail('mesh', this)">
+                <strong>Service Mesh and Traffic Policy</strong>
+                <small>mTLS, retries, outlier detection, circuit breaking, and canary routing enforced outside service code.</small>
+                <div class="arch-node-meta">
+                  <span class="arch-chip">Istio</span>
+                  <span class="arch-chip">mTLS</span>
+                  <span class="arch-chip">Retries</span>
+                </div>
+              </button>
+              <button type="button" class="arch-node arch-node--platform" data-arch-focus="resilience platform" onclick="setArchitectureDetail('observability', this)">
+                <strong>Observability and Incident Response</strong>
+                <small>Distributed traces, RED metrics, structured logs, alert routing, and dependency maps for fast diagnosis.</small>
+                <div class="arch-node-meta">
+                  <span class="arch-chip">OpenTelemetry</span>
+                  <span class="arch-chip">Prometheus</span>
+                  <span class="arch-chip">Grafana</span>
+                </div>
+              </button>
+              <button type="button" class="arch-node arch-node--platform" data-arch-focus="platform" onclick="setArchitectureDetail('delivery', this)">
+                <strong>Config, Secrets, and Delivery Pipeline</strong>
+                <small>GitOps, image scanning, progressive delivery, secret rotation, and policy gates before rollout.</small>
+                <div class="arch-node-meta">
+                  <span class="arch-chip">Argo CD</span>
+                  <span class="arch-chip">Vault</span>
+                  <span class="arch-chip">Terraform</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div class="arch-zone arch-zone--data" data-arch-focus="request async resilience platform">
+            <div class="arch-zone-label">
+              <div>
+                <span class="arch-kicker">State and Messaging</span>
+                <h4>Event Backbone and Service-Owned Data</h4>
+              </div>
+              <span class="arch-hint">Kafka for choreography, polyglot persistence for autonomy</span>
+            </div>
+            <div class="arch-data-grid">
+              <button type="button" class="arch-node arch-node--async arch-node--wide" data-arch-focus="async resilience" onclick="setArchitectureDetail('events', this)">
+                <strong>Kafka, Outbox, CDC, and Saga Signals</strong>
+                <small>OrderConfirmed, OrderFailed, InventoryReserved, ShipmentCreated, DLQ routing, and replayable event history.</small>
+                <div class="arch-bus-track">
+                  <span class="arch-chip">orders.confirmed</span>
+                  <span class="arch-chip">orders.failed</span>
+                  <span class="arch-chip">inventory.reserved</span>
+                  <span class="arch-chip">shipping.created</span>
+                </div>
+              </button>
+              <button type="button" class="arch-node arch-node--data arch-node--wide" data-arch-focus="request async platform" onclick="setArchitectureDetail('data', this)">
+                <strong>Database per Service and Specialized Stores</strong>
+                <small>Write models stay private to each service while caches, search indexes, and read models are rebuilt through events.</small>
+                <div class="arch-bus-track">
+                  <span class="arch-chip">Order DB</span>
+                  <span class="arch-chip">Inventory DB</span>
+                  <span class="arch-chip">Redis Cache</span>
+                  <span class="arch-chip">Search Index</span>
+                  <span class="arch-chip">Read Models</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="arch-detail-panel">
+        <div class="arch-detail-head">
+          <div class="arch-detail-copy">
+            <span class="glow-badge cyan" id="archDetailBadge">Request Path</span>
+            <h3 id="archDetailTitle">Edge-to-core synchronous execution</h3>
+            <p class="arch-detail-summary" id="archDetailSummary">A user request crosses the CDN/WAF, gateway, identity layer, and bounded-context services before committing to service-owned storage and returning a stable client response.</p>
+          </div>
+          <div class="arch-detail-tags" id="archDetailTags"></div>
+        </div>
+        <div class="arch-detail-grid">
+          <div class="arch-detail-card">
+            <h4>Key Components</h4>
+            <ul id="archDetailComponents"></ul>
+          </div>
+          <div class="arch-detail-card">
+            <h4>Critical Controls</h4>
+            <ul id="archDetailControls"></ul>
+          </div>
+          <div class="arch-detail-card">
+            <h4>Failure Modes</h4>
+            <ul id="archDetailRisks"></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="arch-kpi-grid">
+        <div class="arch-kpi">
+          <span>Sync Latency Budget</span>
+          <strong>250-300ms p95</strong>
+        </div>
+        <div class="arch-kpi">
+          <span>Async Fan-Out Delay</span>
+          <strong>&lt; 1s at steady state</strong>
+        </div>
+        <div class="arch-kpi">
+          <span>Recovery Target</span>
+          <strong>&lt; 5 minutes RTO</strong>
+        </div>
+        <div class="arch-kpi">
+          <span>Deployment Cadence</span>
+          <strong>Multi-service daily releases</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== INTERACTIVE FLOW DIAGRAM ==================== -->
+<section class="section" id="flowdiagram">
+  <div class="container reveal">
+    <div class="section-header">
+      <div class="section-label">Interactive</div>
+      <h2>Request Flow Diagram</h2>
+      <p>Trace a real request through the entire microservices architecture — from client to response. Click a scenario to watch the animated flow.</p>
+    </div>
+
+    <div class="flow-canvas-wrap">
+      <div class="flow-toolbar">
+        <div class="flow-controls">
+          <button type="button" class="flow-btn active" data-flow-scenario onclick="setFlowScenario('order', this)">🛒 Place Order</button>
+          <button type="button" class="flow-btn" data-flow-scenario onclick="setFlowScenario('auth', this)">🔐 Auth + JWT</button>
+          <button type="button" class="flow-btn" data-flow-scenario onclick="setFlowScenario('saga', this)">🔄 Saga Rollback</button>
+          <button type="button" class="flow-btn" data-flow-scenario onclick="setFlowScenario('event', this)">📨 Event-Driven</button>
+          <button type="button" class="flow-btn" data-flow-scenario onclick="setFlowScenario('circuit', this)">⚡ Circuit Breaker</button>
+        </div>
+        <div class="flow-speed-group" aria-label="Animation speed controls">
+          <span class="flow-speed-label">Playback</span>
+          <button type="button" class="flow-speed-btn active" data-flow-speed onclick="setFlowSpeed(0.65, this)">0.65x</button>
+          <button type="button" class="flow-speed-btn" data-flow-speed onclick="setFlowSpeed(0.85, this)">0.85x</button>
+          <button type="button" class="flow-speed-btn" data-flow-speed onclick="setFlowSpeed(1, this)">1.0x</button>
+        </div>
+      </div>
+      <p class="flow-status" id="flowStatus" aria-live="polite">Slower playback is enabled by default so each cross-service hop stays readable.</p>
+      <canvas id="flowCanvas" width="1100" height="520"></canvas>
+      <div class="flow-legend">
+        <span><span class="dot" style="background:#6366f1"></span> Sync Request</span>
+        <span><span class="dot" style="background:#22d3ee"></span> Async Event</span>
+        <span><span class="dot" style="background:#f472b6"></span> Response</span>
+        <span><span class="dot" style="background:#fbbf24"></span> Failure/Rollback</span>
+        <span><span class="dot" style="background:#34d399"></span> Success</span>
+      </div>
+    </div>
+    <div class="cards-grid cols-2" style="margin-top:2rem">
+      <div class="card">
+        <h3>🛒 Place Order — Happy Path</h3>
+        <div class="tech-detail">
+          <strong>1.</strong> Client → <code>POST /api/orders</code> → <strong>API Gateway</strong><br>
+          <strong>2.</strong> Gateway validates JWT, checks rate limit (token bucket: 100 req/s), routes to Order Service<br>
+          <strong>3.</strong> Order Service validates payload (JSON Schema), creates order aggregate<br>
+          <strong>4.</strong> Order Service → <code>gRPC</code> → Inventory Service: <code>ReserveItems(orderId, items[])</code><br>
+          <strong>5.</strong> Inventory Service checks stock using <code>SELECT ... FOR UPDATE</code> (row-level locking), reserves items<br>
+          <strong>6.</strong> Order Service → <code>gRPC</code> → Payment Service: <code>ProcessPayment(orderId, amount, paymentMethod)</code><br>
+          <strong>7.</strong> Payment Service calls PSP (Stripe/Adyen) via idempotent request (idempotency key = orderId)<br>
+          <strong>8.</strong> Payment confirmed → Order Service publishes <code>OrderConfirmed</code> event to Kafka topic <code>orders.confirmed</code><br>
+          <strong>9.</strong> Notification Service consumes event → sends email/push via async worker pool<br>
+          <strong>10.</strong> Shipping Service consumes event → creates shipment label → publishes <code>ShipmentCreated</code><br>
+          <strong>11.</strong> Response: <code>201 Created</code> with order ID and estimated delivery → Client
+        </div>
+      </div>
+      <div class="card">
+        <h3>🔄 Saga Rollback — Payment Fails</h3>
+        <div class="tech-detail">
+          <strong>1.</strong> Steps 1–5 succeed (order created, inventory reserved)<br>
+          <strong>2.</strong> Payment Service returns <code>402 Payment Required</code> (card declined)<br>
+          <strong>3.</strong> Saga Orchestrator initiates compensating transactions:<br>
+          &nbsp;&nbsp;→ <code>ReleaseInventory(orderId, items[])</code> — Inventory Service rolls back reservation<br>
+          &nbsp;&nbsp;→ <code>CancelOrder(orderId)</code> — Order Service sets status to <code>CANCELLED</code><br>
+          <strong>4.</strong> Orchestrator publishes <code>OrderFailed</code> event to <code>orders.failed</code> topic<br>
+          <strong>5.</strong> Notification Service consumes event → notifies customer of failure<br>
+          <strong>6.</strong> <em>Key invariant:</em> Each compensating transaction is <strong>idempotent</strong> — safe to retry on partial failure<br>
+          <strong>7.</strong> Saga state machine transitions: <code>STARTED → RESERVING → PAYING → COMPENSATING → FAILED</code><br>
+          <strong>8.</strong> All state transitions stored in saga log table for auditability
+        </div>
+      </div>
+    </div>
+    <div class="cards-grid cols-2" style="margin-top:1rem">
+      <div class="card">
+        <h3>⚡ Circuit Breaker in Action</h3>
+        <div class="tech-detail">
+          <strong>Config:</strong> <code>failureRateThreshold: 50%</code>, <code>slidingWindowSize: 10</code>, <code>waitDurationInOpenState: 30s</code><br><br>
+          <strong>CLOSED →</strong> 6/10 calls to Payment Service fail (60% > 50%) → circuit <strong>OPENS</strong><br>
+          <strong>OPEN →</strong> All calls fail-fast with <code>503 Service Unavailable</code> for 30 seconds<br>
+          &nbsp;&nbsp;→ Fallback: return cached response or queue for retry<br>
+          <strong>HALF-OPEN →</strong> After 30s, allow 3 probe requests through<br>
+          &nbsp;&nbsp;→ If 2/3 succeed → circuit <strong>CLOSES</strong> (reset counters)<br>
+          &nbsp;&nbsp;→ If 2/3 fail → circuit re-<strong>OPENS</strong> (restart wait timer)<br><br>
+          <strong>Metrics emitted:</strong> <code>circuit_breaker_state{service="payment"}</code>, <code>circuit_breaker_failure_rate</code>, <code>circuit_breaker_calls_total{outcome="success|failure|not_permitted"}</code>
+        </div>
+      </div>
+      <div class="card">
+        <h3>📨 Event-Driven Async Flow</h3>
+        <div class="tech-detail">
+          <strong>Producer (Order Service):</strong><br>
+          1. Write order to DB + outbox row in <em>same transaction</em> (Transactional Outbox)<br>
+          2. Debezium CDC reads PostgreSQL WAL → publishes to Kafka <code>orders.events</code><br>
+          3. Message format: CloudEvents v1.0 envelope with <code>type: com.shop.order.created</code><br><br>
+          <strong>Consumer (Inventory Service):</strong><br>
+          4. Consumer group <code>inventory-svc</code> reads from partition (key = <code>orderId</code> for ordering)<br>
+          5. Process event with <strong>at-least-once</strong> semantics → deduplication via idempotency table<br>
+          6. Commit offset only after successful processing<br>
+          7. Dead Letter Queue (DLQ) for poison messages after 3 retries<br><br>
+          <strong>Kafka config:</strong> <code>acks=all</code>, <code>min.insync.replicas=2</code>, replication-factor=3
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== INTERACTIVE CLIENT-TO-DB SERVICE FLOWS ==================== -->
+<section class="section" id="serviceflow">
+  <div class="container reveal">
+    <div class="section-header">
+      <div class="section-label">Interactive</div>
+      <h2>Client → Service → DB Interaction Map</h2>
+      <p>Watch real requests flow from the client browser through multiple services down to their databases. Each scenario shows cross-service interactions, caching, and data persistence.</p>
+    </div>
+    <div class="flow-canvas-wrap">
+      <div class="flow-toolbar">
+        <div class="flow-controls">
+          <button type="button" class="flow-btn active" data-svcflow-scenario onclick="setSvcFlowScenario('checkout', this)">🛒 Checkout Flow</button>
+          <button type="button" class="flow-btn" data-svcflow-scenario onclick="setSvcFlowScenario('search', this)">🔍 Product Search</button>
+          <button type="button" class="flow-btn" data-svcflow-scenario onclick="setSvcFlowScenario('signup', this)">👤 User Signup</button>
+          <button type="button" class="flow-btn" data-svcflow-scenario onclick="setSvcFlowScenario('inventory', this)">📦 Inventory Sync</button>
+        </div>
+        <div class="flow-speed-group">
+          <span class="flow-speed-label">Speed</span>
+          <button type="button" class="flow-speed-btn" data-svcflow-speed onclick="setSvcFlowSpeed(0.35, this)">0.35x</button>
+          <button type="button" class="flow-speed-btn" data-svcflow-speed onclick="setSvcFlowSpeed(0.5, this)">0.5x</button>
+          <button type="button" class="flow-speed-btn active" data-svcflow-speed onclick="setSvcFlowSpeed(0.7, this)">0.7x</button>
+          <button type="button" class="flow-speed-btn" data-svcflow-speed onclick="setSvcFlowSpeed(1, this)">1.0x</button>
+        </div>
+      </div>
+      <p class="flow-status" id="svcFlowStatus">Checkout flow: vertical swimlane view — traces requests downward through each service tier, with cylinder-shaped databases and caches at the bottom of each lane.</p>
+      <canvas id="svcFlowCanvas" width="1100" height="640"></canvas>
+      <div class="flow-legend">
+        <span><span class="dot" style="background:#6366f1"></span> HTTP / gRPC</span>
+        <span><span class="dot" style="background:#22d3ee"></span> DB Write</span>
+        <span><span class="dot" style="background:#a78bfa"></span> DB Read / Cache</span>
+        <span><span class="dot" style="background:#f472b6"></span> Response</span>
+        <span><span class="dot" style="background:#34d399"></span> Event (Kafka)</span>
+        <span><span class="dot" style="background:#fbbf24"></span> Async Worker</span>
+        <span style="gap:.2rem">⬡ = Service &nbsp; ⌇ = DB/Cache</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SERVICE INTERNALS DEEP DIVE ==================== -->
+<section class="section" id="internals">
+  <div class="container reveal">
+    <div class="section-header">
+      <div class="section-label">Senior Engineer Deep Dive</div>
+      <h2>Service Internals & Production Patterns</h2>
+      <p>Low-level technical details on how production microservices are built, operated, and debugged.</p>
+    </div>
+    <div class="tabs-wrapper">
+      <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab(event,'int-hexagonal')">Hexagonal Architecture</button>
+        <button class="tab-btn" onclick="switchTab(event,'int-k8s')">K8s Manifests</button>
+        <button class="tab-btn" onclick="switchTab(event,'int-grpc')">gRPC & Protobuf</button>
+        <button class="tab-btn" onclick="switchTab(event,'int-kafka')">Kafka Internals</button>
+        <button class="tab-btn" onclick="switchTab(event,'int-mesh')">Service Mesh</button>
+        <button class="tab-btn" onclick="switchTab(event,'int-perf')">Performance</button>
+      </div>
+      <div class="tab-panel active" id="int-hexagonal">
+        <h3 style="margin-bottom:.5rem;color:var(--accent)">Hexagonal Architecture (Ports & Adapters)</h3>
+        <p style="margin-bottom:1rem;color:var(--text-dim)">Each microservice internally uses clean architecture to isolate business logic from infrastructure concerns.</p>
+        <div class="deep-code">order-service/
+├── cmd/
+│   └── server/
+│       └── main.go              <span class="cm">// Bootstrap, DI, graceful shutdown</span>
+├── internal/
+│   ├── domain/                  <span class="cm">// Pure business logic, zero dependencies</span>
+│   │   ├── order.go             <span class="cm">// Order aggregate root</span>
+│   │   ├── order_item.go        <span class="cm">// Value object</span>
+│   │   ├── order_status.go      <span class="cm">// State machine: PENDING→CONFIRMED→SHIPPED→DELIVERED</span>
+│   │   ├── events.go            <span class="cm">// Domain events: OrderCreated, OrderConfirmed</span>
+│   │   └── errors.go            <span class="cm">// Domain-specific errors (InsufficientStock, etc.)</span>
+│   ├── ports/                   <span class="cm">// Interfaces (contracts)</span>
+│   │   ├── inbound/
+│   │   │   └── order_service.go  <span class="cm">// CreateOrder, GetOrder, CancelOrder</span>
+│   │   └── outbound/
+│   │       ├── order_repo.go     <span class="cm">// Repository interface</span>
+│   │       ├── payment_client.go <span class="cm">// Payment port</span>
+│   │       ├── inventory_client.go
+│   │       └── event_publisher.go
+│   ├── application/             <span class="cm">// Use cases / orchestration</span>
+│   │   ├── create_order.go      <span class="cm">// Command handler</span>
+│   │   ├── get_order.go         <span class="cm">// Query handler</span>
+│   │   └── saga_orchestrator.go <span class="cm">// Manages distributed transaction</span>
+│   └── adapters/                <span class="cm">// Infrastructure implementations</span>
+│       ├── inbound/
+│       │   ├── http/             <span class="cm">// REST handlers (Gin/Echo/Chi)</span>
+│       │   └── grpc/             <span class="cm">// gRPC server implementation</span>
+│       └── outbound/
+│           ├── postgres/         <span class="cm">// Repository impl with sqlx/pgx</span>
+│           ├── kafka/            <span class="cm">// Event publisher impl</span>
+│           └── grpc_clients/     <span class="cm">// Payment, Inventory gRPC clients</span>
+├── api/
+│   ├── proto/                   <span class="cm">// .proto definitions</span>
+│   └── openapi/                 <span class="cm">// OpenAPI 3.0 spec</span>
+├── migrations/                  <span class="cm">// SQL migrations (golang-migrate)</span>
+├── Dockerfile
+├── Makefile
+└── go.mod</div>
+        <div class="tech-detail">
+          <strong>Key principles:</strong> The domain layer has <em>zero</em> import dependencies on infrastructure. All external interactions go through port interfaces. Adapters implement ports. This enables: unit testing domain logic without databases, swapping infrastructure (Postgres→DynamoDB) without changing business code, and clear dependency direction (outside → inside).
+        </div>
+      </div>
+      <div class="tab-panel" id="int-k8s">
+        <h3 style="margin-bottom:.5rem;color:var(--accent)">Production Kubernetes Manifests</h3>
+        <div class="deep-code"><span class="cm"># Deployment with production-grade configuration</span>
+<span class="kw">apiVersion:</span> apps/v1
+<span class="kw">kind:</span> Deployment
+<span class="kw">metadata:</span>
+  <span class="kw">name:</span> order-service
+  <span class="kw">labels:</span>
+    app.kubernetes.io/name: order-service
+    app.kubernetes.io/version: "2.4.1"
+<span class="kw">spec:</span>
+  <span class="kw">replicas:</span> <span class="num">3</span>
+  <span class="kw">strategy:</span>
+    <span class="kw">type:</span> RollingUpdate
+    <span class="kw">rollingUpdate:</span>
+      <span class="kw">maxSurge:</span> <span class="num">1</span>           <span class="cm"># Max pods above desired count</span>
+      <span class="kw">maxUnavailable:</span> <span class="num">0</span>    <span class="cm"># Zero downtime — always maintain full capacity</span>
+  <span class="kw">template:</span>
+    <span class="kw">spec:</span>
+      <span class="kw">terminationGracePeriodSeconds:</span> <span class="num">60</span>  <span class="cm"># Allow in-flight requests to drain</span>
+      <span class="kw">topologySpreadConstraints:</span>       <span class="cm"># Spread across AZs</span>
+        - <span class="kw">maxSkew:</span> <span class="num">1</span>
+          <span class="kw">topologyKey:</span> topology.kubernetes.io/zone
+          <span class="kw">whenUnsatisfiable:</span> DoNotSchedule
+      <span class="kw">containers:</span>
+        - <span class="kw">name:</span> order-service
+          <span class="kw">image:</span> registry.example.com/order-service:2.4.1@sha256:abc123
+          <span class="kw">ports:</span>
+            - <span class="kw">containerPort:</span> <span class="num">8080</span>  <span class="cm"># HTTP</span>
+            - <span class="kw">containerPort:</span> <span class="num">9090</span>  <span class="cm"># gRPC</span>
+            - <span class="kw">containerPort:</span> <span class="num">9091</span>  <span class="cm"># Prometheus metrics</span>
+          <span class="kw">resources:</span>
+            <span class="kw">requests:</span>
+              <span class="kw">cpu:</span> <span class="str">"250m"</span>       <span class="cm"># Guaranteed CPU (0.25 cores)</span>
+              <span class="kw">memory:</span> <span class="str">"256Mi"</span>   <span class="cm"># Guaranteed memory</span>
+            <span class="kw">limits:</span>
+              <span class="kw">cpu:</span> <span class="str">"1000m"</span>      <span class="cm"># Burstable to 1 core</span>
+              <span class="kw">memory:</span> <span class="str">"512Mi"</span>   <span class="cm"># OOMKilled if exceeded</span>
+          <span class="kw">livenessProbe:</span>              <span class="cm"># Is the process alive?</span>
+            <span class="kw">httpGet:</span>
+              <span class="kw">path:</span> /healthz
+              <span class="kw">port:</span> <span class="num">8080</span>
+            <span class="kw">initialDelaySeconds:</span> <span class="num">15</span>
+            <span class="kw">periodSeconds:</span> <span class="num">10</span>
+            <span class="kw">failureThreshold:</span> <span class="num">3</span>      <span class="cm"># 3 failures → restart pod</span>
+          <span class="kw">readinessProbe:</span>             <span class="cm"># Can it serve traffic?</span>
+            <span class="kw">httpGet:</span>
+              <span class="kw">path:</span> /readyz
+              <span class="kw">port:</span> <span class="num">8080</span>
+            <span class="kw">periodSeconds:</span> <span class="num">5</span>
+          <span class="kw">startupProbe:</span>               <span class="cm"># Slow start protection</span>
+            <span class="kw">httpGet:</span>
+              <span class="kw">path:</span> /healthz
+              <span class="kw">port:</span> <span class="num">8080</span>
+            <span class="kw">failureThreshold:</span> <span class="num">30</span>
+            <span class="kw">periodSeconds:</span> <span class="num">2</span>
+          <span class="kw">env:</span>
+            - <span class="kw">name:</span> DB_PASSWORD
+              <span class="kw">valueFrom:</span>
+                <span class="kw">secretKeyRef:</span>
+                  <span class="kw">name:</span> order-db-credentials
+                  <span class="kw">key:</span> password
+          <span class="kw">securityContext:</span>
+            <span class="kw">runAsNonRoot:</span> <span class="num">true</span>
+            <span class="kw">readOnlyRootFilesystem:</span> <span class="num">true</span>
+            <span class="kw">allowPrivilegeEscalation:</span> <span class="num">false</span>
+---
+<span class="kw">apiVersion:</span> autoscaling/v2
+<span class="kw">kind:</span> HorizontalPodAutoscaler
+<span class="kw">spec:</span>
+  <span class="kw">minReplicas:</span> <span class="num">3</span>
+  <span class="kw">maxReplicas:</span> <span class="num">20</span>
+  <span class="kw">metrics:</span>
+    - <span class="kw">type:</span> Resource
+      <span class="kw">resource:</span>
+        <span class="kw">name:</span> cpu
+        <span class="kw">target:</span>
+          <span class="kw">averageUtilization:</span> <span class="num">70</span>
+    - <span class="kw">type:</span> Pods           <span class="cm"># Custom metric: scale on request rate</span>
+      <span class="kw">pods:</span>
+        <span class="kw">metric:</span>
+          <span class="kw">name:</span> http_requests_per_second
+        <span class="kw">target:</span>
+          <span class="kw">averageValue:</span> <span class="str">"100"</span></div>
+        <div class="tech-detail">
+          <strong>Production checklist:</strong> Pod Disruption Budgets (<code>minAvailable: 2</code>), Network Policies (deny all ingress/egress by default, explicit allow), Resource Quotas per namespace, LimitRanges for defaults, <code>podAntiAffinity</code> to spread replicas, image digest pinning (not just tags), <code>preStop</code> hook with sleep for graceful LB drain.
+        </div>
+      </div>
+      <div class="tab-panel" id="int-grpc">
+        <h3 style="margin-bottom:.5rem;color:var(--accent)">gRPC & Protocol Buffers</h3>
+        <div class="deep-code"><span class="cm">// order_service.proto — Service contract definition</span>
+<span class="kw">syntax</span> = <span class="str">"proto3"</span>;
+<span class="kw">package</span> order.v1;
+
+<span class="kw">import</span> <span class="str">"google/protobuf/timestamp.proto"</span>;
+<span class="kw">import</span> <span class="str">"google/protobuf/field_mask.proto"</span>;
+
+<span class="kw">service</span> <span class="type">OrderService</span> {
+  <span class="kw">rpc</span> <span class="fn">CreateOrder</span>(<span class="type">CreateOrderRequest</span>) <span class="kw">returns</span> (<span class="type">Order</span>);
+  <span class="kw">rpc</span> <span class="fn">GetOrder</span>(<span class="type">GetOrderRequest</span>) <span class="kw">returns</span> (<span class="type">Order</span>);
+  <span class="kw">rpc</span> <span class="fn">ListOrders</span>(<span class="type">ListOrdersRequest</span>) <span class="kw">returns</span> (<span class="type">ListOrdersResponse</span>);
+  <span class="kw">rpc</span> <span class="fn">StreamOrderUpdates</span>(<span class="type">StreamRequest</span>) <span class="kw">returns</span> (<span class="kw">stream</span> <span class="type">OrderEvent</span>);  <span class="cm">// Server streaming</span>
+}
+
+<span class="kw">message</span> <span class="type">CreateOrderRequest</span> {
+  <span class="type">string</span> customer_id = <span class="num">1</span>;
+  <span class="kw">repeated</span> <span class="type">OrderItem</span> items = <span class="num">2</span>;
+  <span class="type">PaymentMethod</span> payment_method = <span class="num">3</span>;
+  <span class="type">string</span> idempotency_key = <span class="num">4</span>;  <span class="cm">// Client-generated UUID for safe retries</span>
+}
+
+<span class="kw">message</span> <span class="type">Order</span> {
+  <span class="type">string</span> id = <span class="num">1</span>;
+  <span class="type">string</span> customer_id = <span class="num">2</span>;
+  <span class="type">OrderStatus</span> status = <span class="num">3</span>;
+  <span class="kw">repeated</span> <span class="type">OrderItem</span> items = <span class="num">4</span>;
+  <span class="type">Money</span> total = <span class="num">5</span>;
+  google.protobuf.<span class="type">Timestamp</span> created_at = <span class="num">6</span>;
+  google.protobuf.<span class="type">Timestamp</span> updated_at = <span class="num">7</span>;
+}
+
+<span class="kw">enum</span> <span class="type">OrderStatus</span> {
+  ORDER_STATUS_UNSPECIFIED = <span class="num">0</span>;
+  ORDER_STATUS_PENDING = <span class="num">1</span>;
+  ORDER_STATUS_CONFIRMED = <span class="num">2</span>;
+  ORDER_STATUS_SHIPPED = <span class="num">3</span>;
+  ORDER_STATUS_DELIVERED = <span class="num">4</span>;
+  ORDER_STATUS_CANCELLED = <span class="num">5</span>;
+}
+
+<span class="kw">message</span> <span class="type">Money</span> {
+  <span class="type">string</span> currency_code = <span class="num">1</span>;  <span class="cm">// ISO 4217: "USD", "EUR"</span>
+  <span class="type">int64</span> units = <span class="num">2</span>;            <span class="cm">// Whole units (dollars)</span>
+  <span class="type">int32</span> nanos = <span class="num">3</span>;            <span class="cm">// Nano units (avoid float!)</span>
+}</div>
+        <div class="tech-detail">
+          <strong>gRPC production tips:</strong> Use <code>grpc.health.v1.Health</code> for K8s health checks. Enable <code>keepalive</code> pings (every 30s) for long-lived connections through load balancers. Use <code>grpc-gateway</code> for REST transcoding. Implement deadlines (<code>ctx, cancel := context.WithTimeout(ctx, 5*time.Second)</code>) — never make gRPC calls without timeouts. Use interceptors (middleware) for logging, metrics, auth, and tracing. <strong>Backward compatibility:</strong> never reuse field numbers, add fields with new numbers, use <code>reserved</code> for removed fields.
+        </div>
+      </div>
+      <div class="tab-panel" id="int-kafka">
+        <h3 style="margin-bottom:.5rem;color:var(--accent)">Kafka Deep Internals</h3>
+        <div class="cards-grid cols-2">
+          <div class="card">
+            <h3>Partitioning & Consumer Groups</h3>
+            <div class="tech-detail">
+              <strong>Topic:</strong> <code>orders.events</code> — 12 partitions, replication-factor 3<br><br>
+              <strong>Partition key:</strong> <code>orderId</code> (hash mod 12) — guarantees ordering per order<br><br>
+              <strong>Consumer group:</strong> <code>inventory-svc</code> with 4 instances<br>
+              → Each instance gets 3 partitions (12/4 = 3)<br>
+              → If an instance dies, partitions rebalance to remaining 3 instances<br>
+              → <code>session.timeout.ms=30000</code>, <code>heartbeat.interval.ms=10000</code><br><br>
+              <strong>Rebalance protocol:</strong> Cooperative Sticky Assignor (KIP-429) for incremental rebalancing — avoids stop-the-world during deploys<br><br>
+              <strong>Offset management:</strong> Consumer commits offset after processing. <code>enable.auto.commit=false</code> for at-least-once. Sync commit on batch boundaries.
+            </div>
+          </div>
+          <div class="card">
+            <h3>Exactly-Once & Transactions</h3>
+            <div class="tech-detail">
+              <strong>Producer idempotence:</strong> <code>enable.idempotence=true</code><br>
+              → Broker deduplicates by (PID, sequence number) per partition<br><br>
+              <strong>Transactional producer:</strong><br>
+              <code>producer.initTransactions()</code><br>
+              <code>producer.beginTransaction()</code><br>
+              <code>producer.send(record1)</code><br>
+              <code>producer.send(record2)</code><br>
+              <code>producer.sendOffsetsToTransaction(offsets, consumerGroupId)</code><br>
+              <code>producer.commitTransaction()</code><br><br>
+              <strong>Consumer:</strong> <code>isolation.level=read_committed</code> — only sees committed transactional messages<br><br>
+              <strong>Compacted topics:</strong> <code>cleanup.policy=compact</code> for latest-state-per-key semantics (e.g., user profile snapshots)
+            </div>
+          </div>
+        </div>
+        <div class="tech-detail" style="margin-top:1rem">
+          <strong>Performance tuning:</strong> <code>batch.size=65536</code> (64KB), <code>linger.ms=10</code> (batch up to 10ms for throughput), <code>compression.type=zstd</code> (best ratio), <code>buffer.memory=67108864</code> (64MB). Consumer: <code>fetch.min.bytes=1024</code>, <code>max.poll.records=500</code>. <strong>Monitoring:</strong> Track consumer lag via <code>kafka_consumer_group_lag</code> metric. Alert when lag exceeds SLO (e.g., > 10,000 messages for > 5 min).
+        </div>
+      </div>
+      <div class="tab-panel" id="int-mesh">
+        <h3 style="margin-bottom:.5rem;color:var(--accent)">Service Mesh Architecture (Istio)</h3>
+        <div class="cards-grid cols-2">
+          <div class="card">
+            <h3>Data Plane — Envoy Sidecar</h3>
+            <div class="tech-detail">
+              Every pod gets an Envoy proxy sidecar injected via <code>istio-init</code> init container (iptables redirect all traffic through proxy).<br><br>
+              <strong>Per-request path:</strong><br>
+              1. App sends request to <code>payment-svc:8080</code><br>
+              2. iptables redirects to local Envoy (<code>127.0.0.1:15001</code>)<br>
+              3. Envoy performs: mTLS handshake, load balancing (round-robin/least-conn/random), retry (2 attempts, 5xx only), timeout (3s default), circuit breaking<br>
+              4. Envoy on destination pod terminates mTLS, forwards to app on <code>127.0.0.1:8080</code><br><br>
+              <strong>Observability automatically added:</strong><br>
+              → Distributed tracing headers (B3/W3C) propagated<br>
+              → Metrics: <code>istio_requests_total</code>, <code>istio_request_duration_milliseconds</code><br>
+              → Access logs with upstream/downstream details
+            </div>
+          </div>
+          <div class="card">
+            <h3>Control Plane — istiod</h3>
+            <div class="tech-detail">
+              <strong>istiod</strong> = Pilot + Citadel + Galley merged into single binary<br><br>
+              <strong>Pilot:</strong> Converts high-level routing rules (VirtualService, DestinationRule) into Envoy xDS configuration. Pushes config to all sidecars via gRPC streaming.<br><br>
+              <strong>Citadel:</strong> Certificate authority for mTLS. Issues SPIFFE identity certs (<code>spiffe://cluster.local/ns/default/sa/order-service</code>). Auto-rotates every 24h.<br><br>
+              <strong>Traffic management examples:</strong><br>
+              → <code>VirtualService</code>: route 90% traffic to v1, 10% to v2 (canary)<br>
+              → <code>DestinationRule</code>: circuit breaker config (<code>outlierDetection</code>)<br>
+              → <code>AuthorizationPolicy</code>: only allow payment-svc to call fraud-svc<br>
+              → <code>PeerAuthentication</code>: enforce STRICT mTLS namespace-wide
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-panel" id="int-perf">
+        <h3 style="margin-bottom:.5rem;color:var(--accent)">Performance Engineering</h3>
+        <div class="cards-grid cols-2">
+          <div class="card">
+            <h3>Latency Budget Breakdown</h3>
+            <div class="tech-detail">
+              <strong>Target:</strong> p99 &lt; 500ms for Place Order API<br><br>
+              <strong>Budget allocation:</strong><br>
+              → API Gateway (auth + routing): <strong>15ms</strong><br>
+              → Order Service (validation + DB write): <strong>50ms</strong><br>
+              → Inventory Service gRPC call: <strong>30ms</strong> (network: 2ms, processing: 28ms)<br>
+              → Payment Service gRPC call: <strong>200ms</strong> (PSP external call dominates)<br>
+              → Kafka produce (acks=all): <strong>10ms</strong><br>
+              → Overhead (serialization, middleware): <strong>15ms</strong><br>
+              → <strong>Buffer: 180ms</strong> for retries/jitter<br><br>
+              <strong>Key optimizations:</strong><br>
+              → Connection pooling: <code>pgxpool</code> with <code>MaxConns=25</code>, <code>MinConns=5</code><br>
+              → gRPC connection reuse (HTTP/2 multiplexing eliminates per-request TCP handshake)<br>
+              → Parallel calls where possible (inventory + fraud check concurrently via <code>errgroup</code>)<br>
+              → Response caching at gateway (product catalog: 60s TTL, stale-while-revalidate)
+            </div>
+          </div>
+          <div class="card">
+            <h3>Load Testing & Capacity Planning</h3>
+            <div class="tech-detail">
+              <strong>Tools:</strong> k6 (JavaScript DSL), Gatling (Scala), Locust (Python), vegeta (Go CLI)<br><br>
+              <strong>k6 test example:</strong><br>
+              → Ramp: 0→500 VUs over 2min<br>
+              → Steady: 500 VUs for 10min<br>
+              → Spike: 500→2000 VUs in 30s, hold 2min<br>
+              → Cool-down: 2000→0 over 2min<br><br>
+              <strong>SLO-based thresholds:</strong><br>
+              → <code>http_req_duration{p95} < 300ms</code><br>
+              → <code>http_req_failed < 0.1%</code><br>
+              → <code>http_reqs > 1000/s</code> (throughput floor)<br><br>
+              <strong>Capacity formula:</strong> Required pods = (peak_rps × p99_latency_sec) / concurrency_per_pod<br>
+              Example: (5000 × 0.5) / 100 = 25 pods minimum<br><br>
+              <strong>Always test:</strong> Graceful degradation under overload, cascading failure scenarios, DB connection exhaustion, message backlog handling
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== PATTERNS ==================== -->
+<section class="section" id="patterns">
+  <div class="container reveal">
+    <div class="section-header">
+      <div class="section-label">Chapter 4</div>
+      <h2>Design Patterns</h2>
+      <p>Battle-tested patterns for solving common challenges in microservices architectures.</p>
+    </div>
+    <div class="tabs-wrapper">
+      <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab(event,'pat-decomp')">Decomposition</button>
+        <button class="tab-btn" onclick="switchTab(event,'pat-integration')">Integration</button>
+        <button class="tab-btn" onclick="switchTab(event,'pat-database')">Database</button>
+        <button class="tab-btn" onclick="switchTab(event,'pat-resilience')">Resilience</button>
+        <button class="tab-btn" onclick="switchTab(event,'pat-observability')">Observability</button>
+      </div>
+      <!-- Decomposition -->
+      <div class="tab-panel active" id="pat-decomp">
+        <h3 style="margin-bottom:1rem;color:var(--accent)">Decomposition Patterns</h3>
+        <div class="cards-grid cols-2">
+          <div class="card">
+            <h3>Decompose by Business Capability</h3>
+            <p>Identify business capabilities (what the org does) and create one service per capability. Example: Order Management, Inventory Management, Customer Management. Aligns with Conway's Law — team boundaries mirror service boundaries.</p>
+          </div>
+          <div class="card">
+            <h3>Decompose by Subdomain (DDD)</h3>
+            <p>Use Domain-Driven Design to identify subdomains: <strong>Core</strong> (competitive advantage), <strong>Supporting</strong> (necessary but not differentiating), <strong>Generic</strong> (commodity functionality). Each bounded context becomes a service.</p>
+          </div>
+          <div class="card">
+            <h3>Strangler Fig Pattern</h3>
+            <p>Incrementally migrate from monolith to microservices. Place a facade in front of the monolith, gradually route traffic to new services. Old functionality is "strangled" as new services replace it. Minimizes migration risk.</p>
+          </div>
+          <div class="card">
+            <h3>Sidecar Pattern</h3>
+            <p>Deploy helper components alongside each service (as a separate process/container). The sidecar handles cross-cutting concerns: logging, monitoring, networking, security. Central to service mesh implementations like Istio and Linkerd.</p>
+          </div>
+        </div>
+      </div>
+      <!-- Integration -->
+      <div class="tab-panel" id="pat-integration">
+        <h3 style="margin-bottom:1rem;color:var(--accent)">Integration Patterns</h3>
+        <div class="cards-grid cols-2">
+          <div class="card">
+            <h3>API Gateway</h3>
+            <p>Single entry point for all clients. Routes requests to appropriate services, handles cross-cutting concerns (auth, rate limiting, caching). Can perform request aggregation — combining multiple service responses into one client response.</p>
+            <ul>
+              <li>Request routing and composition</li>
+              <li>Protocol translation (REST → gRPC)</li>
+              <li>Response caching and transformation</li>
+              <li>Authentication and authorization</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Backend for Frontend (BFF)</h3>
+            <p>Dedicated API gateway per client type (web, mobile, IoT). Each BFF optimizes the API for its client's needs — different response formats, aggregation strategies, and error handling. Prevents a one-size-fits-all API.</p>
+          </div>
+          <div class="card">
+            <h3>Saga Pattern</h3>
+            <p>Manages distributed transactions across services without 2PC (two-phase commit). Two types:</p>
+            <ul>
+              <li><strong>Choreography:</strong> Each service publishes events that trigger the next step. Decentralized but complex to debug.</li>
+              <li><strong>Orchestration:</strong> A central coordinator directs the saga steps. Easier to understand but creates a single point of coordination.</li>
+            </ul>
+            <p style="margin-top:.5rem">Compensating transactions handle rollback on failure.</p>
+          </div>
+          <div class="card">
+            <h3>Event Sourcing + CQRS</h3>
+            <p><strong>Event Sourcing:</strong> Store state changes as an immutable sequence of events rather than current state. Enables complete audit trail, temporal queries, and event replay.</p>
+            <p style="margin-top:.5rem"><strong>CQRS (Command Query Responsibility Segregation):</strong> Separate read and write models. Write side appends events, read side projects optimized views. Enables independent scaling of reads vs writes.</p>
+          </div>
+        </div>
+      </div>
+      <!-- Database -->
+      <div class="tab-panel" id="pat-database">
+        <h3 style="margin-bottom:1rem;color:var(--accent)">Database Patterns</h3>
+        <div class="cards-grid cols-2">
+          <div class="card">
+            <h3>Database per Service</h3>
+            <p>Each service owns its private database. No sharing of data stores. This ensures loose coupling and allows polyglot persistence. Data is accessed only through the service's API. This is the <strong>most fundamental</strong> microservices data pattern.</p>
+            <details class="code-example"><summary>💻 Service A: PostgreSQL for ACID transactions</summary><div class="code-block"><span class="cm">// Service A: PostgreSQL for ACID transactions</span>
+<span class="cm">// Service B: MongoDB for flexible documents</span>
+<span class="cm">// Service C: Redis for high-speed caching</span>
+<span class="cm">// Service D: Elasticsearch for full-text search</span></div></details>
+          </div>
+          <div class="card">
+            <h3>Shared Database (Anti-pattern)</h3>
+            <p>Multiple services sharing a single database. While simpler initially, it creates tight coupling — schema changes affect all services, and cross-service transactions are tempting. Generally considered an anti-pattern but sometimes pragmatic for migrations.</p>
+          </div>
+          <div class="card">
+            <h3>Transactional Outbox</h3>
+            <p>Solves the dual-write problem: how to atomically update a database and publish an event. The service writes to an outbox table in the same transaction as the business data. A separate process (Debezium/CDC) reads the outbox and publishes events to the message broker.</p>
+          </div>
+          <div class="card">
+            <h3>API Composition</h3>
+            <p>Implements queries that span multiple services by invoking each service's API and combining results in-memory. The API Gateway or a dedicated composer service performs the aggregation. Works well for simple queries but can have latency and consistency challenges.</p>
+          </div>
+        </div>
+      </div>
+      <!-- Resilience -->
+      <div class="tab-panel" id="pat-resilience">
+        <h3 style="margin-bottom:1rem;color:var(--accent)">Resilience Patterns</h3>
+        <div class="cards-grid cols-2">
+          <div class="card">
+            <h3>Circuit Breaker</h3>
+            <p>Prevents cascading failures by monitoring failure rates. Three states:</p>
+            <ul>
+              <li><strong>Closed:</strong> Normal operation, requests pass through</li>
+              <li><strong>Open:</strong> Failure threshold exceeded, requests fail fast</li>
+              <li><strong>Half-Open:</strong> After timeout, allows test requests to check recovery</li>
+            </ul>
+            <p style="margin-top:.5rem">Implementations: Resilience4j, Hystrix (deprecated), Polly (.NET), gobreaker (Go).</p>
+            <details class="code-example"><summary>💻 Java — Resilience4j Circuit Breaker</summary><div class="code-block"><span class="cm">// Java — Resilience4j Circuit Breaker</span>
+<span class="kw">@CircuitBreaker</span>(name = <span class="str">"paymentService"</span>, fallbackMethod = <span class="str">"paymentFallback"</span>)
+<span class="kw">public</span> PaymentResult <span class="fn">processPayment</span>(PaymentRequest req) {
+    <span class="kw">return</span> paymentClient.<span class="fn">charge</span>(req);  <span class="cm">// calls downstream service</span>
+}
+
+<span class="kw">private</span> PaymentResult <span class="fn">paymentFallback</span>(PaymentRequest req, Throwable t) {
+    log.<span class="fn">warn</span>(<span class="str">"Payment service unavailable, queuing for retry"</span>, t);
+    retryQueue.<span class="fn">enqueue</span>(req);
+    <span class="kw">return</span> PaymentResult.<span class="fn">pending</span>();
+}
+
+<span class="cm">// application.yml</span>
+<span class="cm">// resilience4j.circuitbreaker.instances.paymentService:</span>
+<span class="cm">//   failureRateThreshold: 50</span>
+<span class="cm">//   waitDurationInOpenState: 30s</span>
+<span class="cm">//   slidingWindowSize: 10</span></div></details>
+          </div>
+          <div class="card">
+            <h3>Bulkhead</h3>
+            <p>Isolates resources so a failure in one component doesn't exhaust resources for others. Like bulkheads in a ship prevent flooding of all compartments. Implementation: dedicated thread pools/connection pools per downstream service, or process-level isolation via containers.</p>
+          </div>
+          <div class="card">
+            <h3>Retry with Backoff</h3>
+            <p>Automatically retry failed requests with increasing delays. Prevents overwhelming a recovering service. Use exponential backoff with jitter to avoid thundering herd problems. Always set a maximum retry count and use idempotent operations.</p>
+            <details class="code-example"><summary>💻 Exponential backoff with jitter</summary><div class="code-block"><span class="cm">// Exponential backoff with jitter</span>
+<span class="kw">delay</span> = <span class="fn">min</span>(base * 2^attempt + <span class="fn">random</span>(0, base), maxDelay)</div></details>
+          </div>
+          <div class="card">
+            <h3>Timeout & Fallback</h3>
+            <p>Every external call must have a timeout. Without timeouts, a slow downstream service can cause thread pool exhaustion upstream. Combine with fallbacks: return cached data, default values, or degraded functionality when the primary path fails.</p>
+          </div>
+        </div>
+      </div>
+      <!-- Observability -->
+      <div class="tab-panel" id="pat-observability">
+        <h3 style="margin-bottom:1rem;color:var(--accent)">Observability Patterns</h3>
+        <div class="cards-grid cols-2">
+          <div class="card">
+            <h3>Distributed Tracing</h3>
+            <p>Track requests as they flow across services. Each request gets a unique trace ID propagated through all service calls. Spans represent individual operations within a trace. Essential for debugging latency and understanding request paths.</p>
+            <ul>
+              <li><strong>OpenTelemetry:</strong> The unified standard for traces, metrics, and logs</li>
+              <li><strong>Jaeger / Zipkin:</strong> Trace collection and visualization</li>
+              <li><strong>Context Propagation:</strong> W3C TraceContext, B3 headers</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Log Aggregation</h3>
+            <p>Centralize logs from all services into one searchable system. Each log entry must include correlation IDs for cross-service request tracking. Structured logging (JSON) enables efficient querying.</p>
+            <ul>
+              <li><strong>ELK Stack:</strong> Elasticsearch, Logstash, Kibana</li>
+              <li><strong>Loki + Grafana:</strong> Lightweight, label-based log aggregation</li>
+              <li><strong>Fluentd / Fluent Bit:</strong> Log collection and forwarding</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Health Check API</h3>
+            <p>Every service exposes health endpoints. Liveness probes indicate if the service is running. Readiness probes indicate if it can handle traffic. Used by load balancers and orchestrators (Kubernetes) for routing and restart decisions.</p>
+          </div>
+          <div class="card">
+            <h3>Metrics & Alerting</h3>
+            <p>The four golden signals: <strong>Latency</strong> (response time), <strong>Traffic</strong> (requests/sec), <strong>Errors</strong> (failure rate), <strong>Saturation</strong> (resource utilization). RED method for services, USE method for resources. Prometheus + Grafana is the industry standard stack.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== COMMUNICATION ==================== -->
+<section class="section" id="communication">
+  <div class="container reveal">
+    <div class="section-header">
+      <div class="section-label">Chapter 5</div>
+      <h2>Communication Patterns</h2>
+      <p>How services talk to each other — synchronous vs asynchronous, protocols, and messaging strategies.</p>
+    </div>
+    <div class="cards-grid cols-2" style="margin-bottom:2rem">
+      <div class="card" style="border-left:3px solid var(--primary)">
+        <h3>🔵 Synchronous Communication</h3>
+        <p>Request-response pattern. The caller waits for a response. Simple to understand but creates temporal coupling — both services must be available simultaneously.</p>
+        <h4 style="margin-top:1rem;font-size:.95rem;color:var(--accent)">REST / HTTP</h4>
+        <ul>
+          <li>Most common protocol for microservices APIs</li>
+          <li>Uses standard HTTP methods: GET, POST, PUT, PATCH, DELETE</li>
+          <li>JSON or XML payloads, OpenAPI/Swagger for documentation</li>
+          <li>Stateless, cacheable, uses standard HTTP status codes</li>
+          <li>Content negotiation via Accept/Content-Type headers</li>
+          <li>HATEOAS for discoverability (rarely used in practice)</li>
+        </ul>
+        <h4 style="margin-top:1rem;font-size:.95rem;color:var(--accent)">gRPC</h4>
+        <ul>
+          <li>High-performance RPC framework by Google</li>
+          <li>Protocol Buffers (protobuf) for serialization — 3-10× faster than JSON</li>
+          <li>HTTP/2 with multiplexing, bidirectional streaming</li>
+          <li>Strongly typed contracts via .proto files</li>
+          <li>Code generation for 12+ languages</li>
+          <li>Best for internal service-to-service communication</li>
+        </ul>
+        <h4 style="margin-top:1rem;font-size:.95rem;color:var(--accent)">GraphQL</h4>
+        <ul>
+          <li>Query language for APIs — clients specify exactly what data they need</li>
+          <li>Single endpoint, eliminates over/under-fetching</li>
+          <li>Schema stitching/federation for composing across services</li>
+          <li>Best suited for the API Gateway / BFF layer</li>
+        </ul>
+      </div>
+      <div class="card" style="border-left:3px solid var(--accent)">
+        <h3>🟢 Asynchronous Communication</h3>
+        <p>Fire-and-forget or pub/sub patterns. Services are temporally decoupled — the sender doesn't wait for processing. Higher fault tolerance but more complex to debug.</p>
+        <h4 style="margin-top:1rem;font-size:.95rem;color:var(--accent)">Message Brokers</h4>
+        <ul>
+          <li><strong>Apache Kafka:</strong> Distributed event streaming platform. Append-only log, consumer groups, exactly-once semantics. Best for high-throughput event streaming and event sourcing.</li>
+          <li><strong>RabbitMQ:</strong> AMQP message broker. Exchanges, queues, routing keys. Best for task queues and complex routing scenarios.</li>
+          <li><strong>AWS SQS/SNS:</strong> Managed queuing (SQS) and pub/sub (SNS) services. Zero infrastructure management.</li>
+          <li><strong>NATS:</strong> Lightweight, high-performance messaging. JetStream for persistence. Best for cloud-native microservices.</li>
+          <li><strong>Redis Streams:</strong> Built on Redis, low-latency stream processing.</li>
+        </ul>
+        <h4 style="margin-top:1rem;font-size:.95rem;color:var(--accent)">Event-Driven Patterns</h4>
+        <ul>
+          <li><strong>Event Notification:</strong> Lightweight events trigger further processing</li>
+          <li><strong>Event-Carried State Transfer:</strong> Events carry complete state</li>
+          <li><strong>Domain Events:</strong> Business-meaningful events (OrderPlaced, PaymentProcessed)</li>
+          <li><strong>Integration Events:</strong> Cross-boundary communication events</li>
+        </ul>
+        <h4 style="margin-top:1rem;font-size:.95rem;color:var(--accent)">Eventual Consistency</h4>
+        <p style="margin-top:.5rem">Async communication typically means eventual consistency. Data across services is not immediately consistent but converges over time. Design UIs and business processes to accommodate this reality.</p>
+      </div>
+    </div>
+    <details class="code-example"><summary>💻 Node.js Express — REST API for an order service</summary><div class="code-block"><span class="cm">// Node.js Express — REST API for an order service</span>
+<span class="kw">const</span> express = <span class="fn">require</span>(<span class="str">'express'</span>);
+<span class="kw">const</span> app = <span class="fn">express</span>();
+app.<span class="fn">use</span>(express.<span class="fn">json</span>());
+
+app.<span class="fn">post</span>(<span class="str">'/api/orders'</span>, <span class="kw">async</span> (req, res) => {
+  <span class="kw">const</span> { userId, items } = req.body;
+  <span class="kw">const</span> order = <span class="kw">await</span> db.orders.<span class="fn">create</span>({ userId, items, status: <span class="str">'pending'</span> });
+  <span class="cm">// Publish domain event for async processing</span>
+  <span class="kw">await</span> kafka.<span class="fn">publish</span>(<span class="str">'order.created'</span>, { orderId: order.id, userId, items });
+  res.<span class="fn">status</span>(<span class="num">201</span>).<span class="fn">json</span>(order);
+});
+
+app.<span class="fn">get</span>(<span class="str">'/api/orders/:id'</span>, <span class="kw">async</span> (req, res) => {
+  <span class="kw">const</span> order = <span class="kw">await</span> db.orders.<span class="fn">findById</span>(req.params.id);
+  <span class="kw">if</span> (!order) <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">404</span>).<span class="fn">json</span>({ error: <span class="str">'Not found'</span> });
+  res.<span class="fn">json</span>(order);
+});
+
+app.<span class="fn">listen</span>(<span class="num">3000</span>);</div></details>
+    <details class="code-example"><summary>💻 Go — gRPC service implementation</summary><div class="code-block"><span class="cm">// Go — gRPC service implementation</span>
+<span class="kw">package</span> main
+
+<span class="kw">import</span> (
+    <span class="str">"context"</span>
+    pb <span class="str">"order-service/proto"</span>
+    <span class="str">"google.golang.org/grpc"</span>
+)
+
+<span class="kw">type</span> <span class="type">orderServer</span> <span class="kw">struct</span> {
+    pb.<span class="type">UnimplementedOrderServiceServer</span>
+}
+
+<span class="kw">func</span> (s *<span class="type">orderServer</span>) <span class="fn">GetOrder</span>(ctx context.Context, req *pb.GetOrderRequest) (*pb.Order, <span class="type">error</span>) {
+    order, err := s.repo.<span class="fn">FindByID</span>(ctx, req.OrderId)
+    <span class="kw">if</span> err != <span class="kw">nil</span> {
+        <span class="kw">return</span> <span class="kw">nil</span>, status.<span class="fn">Errorf</span>(codes.NotFound, <span class="str">"order %s not found"</span>, req.OrderId)
+    }
+    <span class="kw">return</span> &amp;pb.Order{Id: order.ID, Status: order.Status}, <span class="kw">nil</span>
+}
+
+grpcServer := grpc.<span class="fn">NewServer</span>()
+pb.<span class="fn">RegisterOrderServiceServer</span>(grpcServer, &amp;<span class="type">orderServer</span>{})
+grpcServer.<span class="fn">Serve</span>(lis)  <span class="cm">// listen on :50051</span></div></details>
+    <details class="code-example"><summary>💻 Java — Kafka producer & consumer (Spring Boot)</summary><div class="code-block"><span class="cm">// Java — Kafka producer &amp; consumer (Spring Boot)</span>
+<span class="cm">// Producer Service</span>
+<span class="kw">@Service</span>
+<span class="kw">public class</span> <span class="type">OrderEventPublisher</span> {
+    <span class="kw">private final</span> KafkaTemplate&lt;String, OrderEvent&gt; kafka;
+
+    <span class="kw">public void</span> <span class="fn">publishOrderCreated</span>(Order order) {
+        kafka.<span class="fn">send</span>(<span class="str">"orders"</span>, order.getId(), <span class="kw">new</span> <span class="fn">OrderCreatedEvent</span>(order));
+    }
+}
+
+<span class="cm">// Consumer Service</span>
+<span class="kw">@Service</span>
+<span class="kw">public class</span> <span class="type">PaymentEventConsumer</span> {
+    <span class="kw">private final</span> PaymentService paymentService;
+
+    <span class="kw">@KafkaListener</span>(topics = <span class="str">"orders"</span>, groupId = <span class="str">"payment-service"</span>)
+    <span class="kw">public void</span> <span class="fn">handleOrderCreated</span>(OrderCreatedEvent event) {
+        paymentService.<span class="fn">processPayment</span>(event.getOrderId(), event.getTotal());
+    }
+}</div></details>
+  </div>
+</section>
+
+<!-- ==================== DATA MANAGEMENT ==================== -->
+<section class="section" id="data">
+  <div class="container reveal">
+    <div class="section-header">
+      <div class="section-label">Chapter 6</div>
+      <h2>Data Management</h2>
+      <p>Strategies for managing data in a distributed microservices environment.</p>
+    </div>
+
+    <div class="accordion-item open">
+      <div class="accordion-header" onclick="toggleAccordion(this)">
+        <span>Database per Service — The Fundamental Rule</span>
+        <div class="accordion-icon"></div>
+      </div>
+      <div class="accordion-body" style="max-height:500px">
+        <div class="accordion-body-inner">
+          <p>Each microservice has exclusive ownership of its data store. Other services can only access data through the owning service's API. This ensures:</p>
+          <ul style="margin:.8rem 0">
+            <li><strong>Loose coupling:</strong> Schema changes don't propagate across services</li>
+            <li><strong>Independent scalability:</strong> Scale databases based on each service's needs</li>
+            <li><strong>Technology freedom:</strong> Choose the best database for each use case</li>
+            <li><strong>Independent deployability:</strong> Database migrations don't require coordinated deployments</li>
+          </ul>
+          <p>The trade-off: cross-service queries, distributed transactions, and data consistency become significantly more complex.</p>
+        </div>
+      </div>
+    </div>
+    <div class="accordion-item">
+      <div class="accordion-header" onclick="toggleAccordion(this)">
+        <span>Event Sourcing</span>
+        <div class="accordion-icon"></div>
+      </div>
+      <div class="accordion-body">
+        <div class="accordion-body-inner">
+          <p>Instead of storing current state, store the full history of state-changing events in an append-only event store.</p>
+          <details class="code-example"><summary>💻 Traditional: Store current state</summary><div class="code-block"><span class="cm">// Traditional: Store current state</span>
+Order { id: 123, status: "shipped", total: 59.99 }
+
+<span class="cm">// Event Sourcing: Store event history</span>
+OrderCreated { id: 123, items: [...], total: 59.99 }
+PaymentReceived { id: 123, amount: 59.99 }
+OrderShipped { id: 123, tracking: "1Z999..." }</div></details>
+          <p><strong>Benefits:</strong> Complete audit trail, temporal queries (state at any point in time), event replay for rebuilding state, debugging, and analytics. <strong>Challenges:</strong> Event schema evolution, large event stores, eventual consistency in projections.</p>
+        </div>
+      </div>
+    </div>
+    <div class="accordion-item">
+      <div class="accordion-header" onclick="toggleAccordion(this)">
+        <span>CQRS — Command Query Responsibility Segregation</span>
+        <div class="accordion-icon"></div>
+      </div>
+      <div class="accordion-body">
+        <div class="accordion-body-inner">
+          <p>Separate the write model (commands) from the read model (queries). The command side handles business logic and validation, while the query side provides optimized read views.</p>
+          <p style="margin:.8rem 0"><strong>Write Side:</strong> Validates commands → Produces domain events → Stores in event store or database</p>
+          <p><strong>Read Side:</strong> Subscribes to events → Projects into read-optimized views (denormalized, pre-aggregated) → Serves queries</p>
+          <p style="margin-top:.8rem">CQRS allows independent scaling (often reads >> writes), different data models optimized for their purpose, and pairs naturally with Event Sourcing.</p>
+        </div>
+      </div>
+    </div>
+    <div class="accordion-item">
+      <div class="accordion-header" onclick="toggleAccordion(this)">
+        <span>Saga Pattern for Distributed Transactions</span>
+        <div class="accordion-icon"></div>
+      </div>
+      <div class="accordion-body">
+        <div class="accordion-body-inner">
+          <p>A saga is a sequence of local transactions in different services. Each step either succeeds and triggers the next step, or fails and triggers compensating transactions to undo previous steps.</p>
+          <p style="margin:.8rem 0"><strong>Example — Order Processing Saga:</strong></p>
+          <p>1. Create Order (Order Service) → 2. Reserve Items (Inventory Service) → 3. Process Payment (Payment Service) → 4. Ship Order (Shipping Service)</p>
+          <p style="margin-top:.5rem">If step 3 fails: Compensate step 2 (Release inventory) → Compensate step 1 (Cancel order)</p>
+          <p style="margin-top:.8rem"><strong>Choreography:</strong> Each service emits events, no central coordinator. Pros: Simple, loosely coupled. Cons: Difficult to track, cyclic dependencies possible.</p>
+          <p><strong>Orchestration:</strong> A saga orchestrator coordinates steps. Pros: Clear flow, easy to understand. Cons: Central point of control, must avoid business logic leaking into orchestrator.</p>
+        </div>
+      </div>
+    </div>
+    <div class="accordion-item">
+      <div class="accordion-header" onclick="toggleAccordion(this)">
+        <span>Change Data Capture (CDC)</span>
+        <div class="accordion-icon"></div>
+      </div>
+      <div class="accordion-body">
+        <div class="accordion-body-inner">
+          <p>CDC captures row-level changes in a database and publishes them as events. Debezium is the most popular open-source CDC platform. It reads the database's transaction log (WAL in PostgreSQL, binlog in MySQL) and produces change events to Kafka.</p>
+          <p style="margin-top:.5rem">Use cases: Maintaining read replicas, populating search indices, synchronizing data between services, implementing the Outbox pattern. CDC ensures reliable event publishing without dual-write problems.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== DEPLOYMENT ==================== -->
+<section class="section" id="deployment">
+  <div class="container reveal">
+    <div class="section-header">
+      <div class="section-label">Chapter 7</div>
+      <h2>Deployment & Orchestration</h2>
+      <p>Containerization, orchestration, CI/CD practices, and deployment strategies for microservices.</p>
+    </div>
+    <div class="cards-grid cols-3" style="margin-bottom:2.5rem">
+      <div class="card">
+        <div class="card-icon">🐳</div>
+        <h3>Docker & Containers</h3>
+        <p>Containers package a service with its dependencies into a lightweight, portable unit. Each microservice runs in its own container with its own OS-level isolation.</p>
+        <ul>
+          <li><strong>Dockerfile:</strong> Defines how to build the image</li>
+          <li><strong>Multi-stage builds:</strong> Minimize image size</li>
+          <li><strong>Image registries:</strong> Docker Hub, ECR, GCR, ACR</li>
+          <li><strong>containerd / CRI-O:</strong> Container runtimes</li>
+          <li><strong>OCI Standards:</strong> Open Container Initiative for portability</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-icon">☸️</div>
+        <h3>Kubernetes (K8s)</h3>
+        <p>The de facto orchestration platform for microservices. Automates deployment, scaling, and management of containerized applications.</p>
+        <ul>
+          <li><strong>Pods:</strong> Smallest deployable unit (1+ containers)</li>
+          <li><strong>Deployments:</strong> Desired state declaration, rolling updates</li>
+          <li><strong>Services:</strong> Stable network endpoint for pods</li>
+          <li><strong>Ingress:</strong> External access routing</li>
+          <li><strong>ConfigMaps & Secrets:</strong> Configuration management</li>
+          <li><strong>HPA:</strong> Horizontal Pod Autoscaler</li>
+          <li><strong>Namespaces:</strong> Resource isolation and multi-tenancy</li>
+          <li><strong>Helm:</strong> Package manager for K8s</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔄</div>
+        <h3>CI/CD Pipelines</h3>
+        <p>Each microservice should have its own CI/CD pipeline for independent deployment.</p>
+        <ul>
+          <li><strong>Build:</strong> Compile, lint, unit tests</li>
+          <li><strong>Test:</strong> Integration tests, contract tests</li>
+          <li><strong>Security scan:</strong> SAST, dependency vulnerabilities</li>
+          <li><strong>Package:</strong> Build Docker image, push to registry</li>
+          <li><strong>Deploy:</strong> Stage → Test → Production</li>
+          <li><strong>Tools:</strong> GitHub Actions, GitLab CI, Jenkins, ArgoCD (GitOps)</li>
+        </ul>
+      </div>
+    </div>
+    <h3 style="text-align:center;margin-bottom:1.5rem;color:var(--text-bright)">Deployment Strategies</h3>
+    <div class="cards-grid cols-2">
+      <div class="card">
+        <h3><span class="glow-badge blue">Strategy</span> Blue-Green Deployment</h3>
+        <p>Run two identical production environments (Blue and Green). Deploy new version to the idle environment, run smoke tests, then switch traffic. Instant rollback by switching back. Requires double the infrastructure during deployment.</p>
+      </div>
+      <div class="card">
+        <h3><span class="glow-badge cyan">Strategy</span> Canary Deployment</h3>
+        <p>Gradually route traffic to the new version: 1% → 5% → 25% → 100%. Monitor error rates and performance at each stage. Automatic rollback if anomalies are detected. Minimizes blast radius of failed deployments.</p>
+      </div>
+      <div class="card">
+        <h3><span class="glow-badge purple">Strategy</span> Rolling Update</h3>
+        <p>Gradually replace old instances with new ones. Kubernetes default strategy. Configure maxSurge and maxUnavailable to control the update pace. Zero downtime but both versions run simultaneously during the update.</p>
+      </div>
+      <div class="card">
+        <h3><span class="glow-badge pink">Strategy</span> Feature Flags</h3>
+        <p>Deploy code with features disabled, then enable them gradually per user/group. Decouples deployment from release. Tools: LaunchDarkly, Unleash, Flagsmith. Enables A/B testing, gradual rollout, and instant kill switches.</p>
+      </div>
+    </div>
+    <details class="code-example"><summary>💻 Dockerfile — Multi-stage build for a Go microservice</summary><div class="code-block"><span class="cm"># Dockerfile — Multi-stage build for a Go microservice</span>
+<span class="kw">FROM</span> golang:1.22-alpine <span class="kw">AS</span> builder
+<span class="kw">WORKDIR</span> /app
+<span class="kw">COPY</span> go.mod go.sum ./
+<span class="kw">RUN</span> go mod download
+<span class="kw">COPY</span> . .
+<span class="kw">RUN</span> CGO_ENABLED=0 go build -o /order-service ./cmd/server
+
+<span class="kw">FROM</span> gcr.io/distroless/static:nonroot
+<span class="kw">COPY</span> --from=builder /order-service /order-service
+<span class="kw">EXPOSE</span> 8080
+<span class="kw">USER</span> nonroot:nonroot
+<span class="kw">ENTRYPOINT</span> ["/order-service"]</div></details>
+    <details class="code-example"><summary>💻 GitHub Actions — CI/CD pipeline for a microservice</summary><div class="code-block"><span class="cm"># GitHub Actions — CI/CD pipeline for a microservice</span>
+<span class="kw">name:</span> CI/CD
+<span class="kw">on:</span>
+  <span class="kw">push:</span>
+    <span class="kw">branches:</span> [main]
+  <span class="kw">pull_request:</span>
+    <span class="kw">branches:</span> [main]
+
+<span class="kw">jobs:</span>
+  <span class="kw">build-and-deploy:</span>
+    <span class="kw">runs-on:</span> ubuntu-latest
+    <span class="kw">steps:</span>
+      - <span class="kw">uses:</span> actions/checkout@v4
+      - <span class="kw">name:</span> Run tests
+        <span class="kw">run:</span> go test ./... -race -coverprofile=coverage.out
+      - <span class="kw">name:</span> Build &amp; push Docker image
+        <span class="kw">run:</span> |
+          docker build -t ghcr.io/${{ <span class="fn">github.repository</span> }}:${{ <span class="fn">github.sha</span> }} .
+          docker push ghcr.io/${{ <span class="fn">github.repository</span> }}:${{ <span class="fn">github.sha</span> }}
+      - <span class="kw">name:</span> Deploy to Kubernetes
+        <span class="kw">run:</span> |
+          kubectl set image deployment/order-service \
+            order-service=ghcr.io/${{ <span class="fn">github.repository</span> }}:${{ <span class="fn">github.sha</span> }}</div></details>
+  </div>
+</section>
+
+<!-- ==================== OBSERVABILITY ==================== -->
+<section class="section" id="observability">
+  <div class="container reveal">
+    <div class="section-header">
+      <div class="section-label">Chapter 8</div>
+      <h2>Monitoring & Observability</h2>
+      <p>The three pillars of observability: Metrics, Logs, and Traces — and how to implement them at scale.</p>
+    </div>
+    <div class="cards-grid cols-3">
+      <div class="card" style="border-top:3px solid #6366f1">
+        <h3 style="color:#818cf8">📊 Metrics</h3>
+        <p>Numerical measurements collected at regular intervals. Enable alerting, dashboarding, and capacity planning.</p>
+        <ul>
+          <li><strong>Prometheus:</strong> Pull-based metric collection, PromQL query language, alerting rules</li>
+          <li><strong>Grafana:</strong> Visualization and dashboarding</li>
+          <li><strong>Four Golden Signals:</strong> Latency, Traffic, Errors, Saturation</li>
+          <li><strong>RED Method:</strong> Rate, Errors, Duration (for services)</li>
+          <li><strong>USE Method:</strong> Utilization, Saturation, Errors (for resources)</li>
+          <li><strong>SLIs/SLOs/SLAs:</strong> Define and measure reliability targets</li>
+        </ul>
+      </div>
+      <div class="card" style="border-top:3px solid #22d3ee">
+        <h3 style="color:#22d3ee">📝 Logs</h3>
+        <p>Structured, timestamped records of discrete events within a service.</p>
+        <ul>
+          <li><strong>Structured Logging:</strong> JSON format with consistent fields</li>
+          <li><strong>Correlation IDs:</strong> Track requests across services</li>
+          <li><strong>Log Levels:</strong> DEBUG, INFO, WARN, ERROR for filtering</li>
+          <li><strong>ELK Stack:</strong> Elasticsearch + Logstash + Kibana</li>
+          <li><strong>Loki:</strong> Lightweight, Prometheus-like log aggregation</li>
+          <li><strong>Fluentd/Fluent Bit:</strong> Unified logging layer</li>
+        </ul>
+      </div>
+      <div class="card" style="border-top:3px solid #a78bfa">
+        <h3 style="color:#a78bfa">🔍 Traces</h3>
+        <p>End-to-end tracking of requests as they traverse multiple services.</p>
+        <ul>
+          <li><strong>OpenTelemetry:</strong> Vendor-neutral instrumentation standard</li>
+          <li><strong>Jaeger:</strong> Distributed tracing backend by Uber</li>
+          <li><strong>Zipkin:</strong> Distributed tracing system by Twitter</li>
+          <li><strong>Context Propagation:</strong> W3C TraceContext headers</li>
+          <li><strong>Spans:</strong> Individual operations within a trace</li>
+          <li><strong>Sampling:</strong> Head-based vs tail-based sampling strategies</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card" style="margin-top:2rem">
+      <h3 style="margin-bottom:.8rem">🏗️ OpenTelemetry — The Unified Standard</h3>
+      <p>OpenTelemetry (OTel) merges OpenTracing and OpenCensus into a single, vendor-neutral framework for generating telemetry data (traces, metrics, logs). It provides:</p>
+      <ul>
+        <li><strong>APIs & SDKs:</strong> Instrument your code in any language (Go, Java, Python, Node.js, .NET, Rust, etc.)</li>
+        <li><strong>Auto-instrumentation:</strong> Zero-code instrumentation for popular frameworks</li>
+        <li><strong>OTel Collector:</strong> Receive, process, and export telemetry to any backend (Jaeger, Prometheus, Datadog, etc.)</li>
+        <li><strong>Semantic Conventions:</strong> Standard attribute names for consistency across services</li>
+      </ul>
+    </div>
+    <details class="code-example"><summary>💻 Go — OpenTelemetry distributed tracing</summary><div class="code-block"><span class="cm">// Go — OpenTelemetry distributed tracing</span>
+<span class="kw">import</span> (
+    <span class="str">"go.opentelemetry.io/otel"</span>
+    <span class="str">"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"</span>
+    sdktrace <span class="str">"go.opentelemetry.io/otel/sdk/trace"</span>
+)
+
+<span class="cm">// Initialize tracer provider (startup)</span>
+exporter, _ := otlptracegrpc.<span class="fn">New</span>(ctx,
+    otlptracegrpc.<span class="fn">WithEndpoint</span>(<span class="str">"otel-collector:4317"</span>),
+)
+tp := sdktrace.<span class="fn">NewTracerProvider</span>(
+    sdktrace.<span class="fn">WithBatcher</span>(exporter),
+    sdktrace.<span class="fn">WithResource</span>(resource),
+)
+otel.<span class="fn">SetTracerProvider</span>(tp)
+
+<span class="cm">// Create spans in your handler</span>
+<span class="kw">func</span> <span class="fn">GetOrder</span>(ctx context.Context, id <span class="type">string</span>) (*Order, <span class="type">error</span>) {
+    ctx, span := otel.<span class="fn">Tracer</span>(<span class="str">"order-service"</span>).<span class="fn">Start</span>(ctx, <span class="str">"GetOrder"</span>)
+    <span class="kw">defer</span> span.<span class="fn">End</span>()
+
+    span.<span class="fn">SetAttributes</span>(attribute.<span class="fn">String</span>(<span class="str">"order.id"</span>, id))
+    order, err := repo.<span class="fn">FindByID</span>(ctx, id)  <span class="cm">// ctx propagates trace</span>
+    <span class="kw">if</span> err != <span class="kw">nil</span> {
+        span.<span class="fn">RecordError</span>(err)
+        <span class="kw">return</span> <span class="kw">nil</span>, err
+    }
+    <span class="kw">return</span> order, <span class="kw">nil</span>
+}</div></details>
+  </div>
+</section>
+
+<!-- ==================== SECURITY ==================== -->
+<section class="section" id="security">
+  <div class="container reveal">
+    <div class="section-header">
+      <div class="section-label">Chapter 9</div>
+      <h2>Security in Microservices</h2>
+      <p>Securing distributed systems at every layer — from the network to the application to the data.</p>
+    </div>
+    <div class="cards-grid cols-2">
+      <div class="card">
+        <h3>🔐 Authentication & Authorization</h3>
+        <ul>
+          <li><strong>OAuth 2.0 / OpenID Connect:</strong> Industry standard for delegated authorization and identity. Auth server issues JWT tokens.</li>
+          <li><strong>JWT (JSON Web Tokens):</strong> Self-contained tokens carrying user claims. Validated without hitting the auth server on every request.</li>
+          <li><strong>API Keys:</strong> For service-to-service or third-party access. Simpler but less flexible.</li>
+          <li><strong>RBAC / ABAC:</strong> Role-Based or Attribute-Based Access Control for fine-grained permissions.</li>
+          <li><strong>Token Propagation:</strong> Pass JWT tokens through service calls for end-to-end identity context.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>🛡️ Network Security</h3>
+        <ul>
+          <li><strong>mTLS (Mutual TLS):</strong> Both client and server authenticate each other. Service mesh (Istio/Linkerd) automates certificate management and rotation.</li>
+          <li><strong>Zero Trust Architecture:</strong> Never trust, always verify. Every service call is authenticated and authorized, regardless of network location.</li>
+          <li><strong>Network Policies:</strong> Kubernetes NetworkPolicies restrict pod-to-pod communication. Default deny, explicit allow.</li>
+          <li><strong>API Gateway Security:</strong> Rate limiting, WAF (Web Application Firewall), IP filtering, DDoS protection.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>🔑 Secrets Management</h3>
+        <ul>
+          <li><strong>HashiCorp Vault:</strong> Dynamic secrets, encryption as a service, PKI, database credentials rotation.</li>
+          <li><strong>Kubernetes Secrets:</strong> Base64-encoded (not encrypted by default). Use with external secret operators.</li>
+          <li><strong>Cloud KMS:</strong> AWS KMS, GCP KMS, Azure Key Vault for managed encryption.</li>
+          <li><strong>Never hardcode secrets</strong> in code, config files, or Docker images.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>📋 Security Best Practices</h3>
+        <ul>
+          <li><strong>Shift-left security:</strong> SAST/DAST in CI/CD pipelines</li>
+          <li><strong>Container security:</strong> Minimal base images, non-root users, read-only filesystems, image scanning (Trivy, Snyk)</li>
+          <li><strong>Dependency scanning:</strong> SCA for known vulnerabilities</li>
+          <li><strong>Supply chain security:</strong> Signed images, SBOM, verified base images</li>
+          <li><strong>Runtime security:</strong> Falco, Sysdig for anomaly detection</li>
+          <li><strong>Data encryption:</strong> At rest (AES-256) and in transit (TLS 1.3)</li>
+        </ul>
+      </div>
+    </div>
+    <details class="code-example"><summary>💻 Go — JWT validation middleware</summary><div class="code-block"><span class="cm">// Go — JWT validation middleware</span>
+<span class="kw">func</span> <span class="fn">JWTAuth</span>(next http.Handler) http.Handler {
+    <span class="kw">return</span> http.<span class="fn">HandlerFunc</span>(<span class="kw">func</span>(w http.ResponseWriter, r *http.Request) {
+        tokenStr := r.Header.<span class="fn">Get</span>(<span class="str">"Authorization"</span>)
+        <span class="kw">if</span> !strings.<span class="fn">HasPrefix</span>(tokenStr, <span class="str">"Bearer "</span>) {
+            http.<span class="fn">Error</span>(w, <span class="str">"missing token"</span>, http.StatusUnauthorized)
+            <span class="kw">return</span>
+        }
+        tokenStr = tokenStr[<span class="num">7</span>:]
+
+        token, err := jwt.<span class="fn">Parse</span>(tokenStr, <span class="kw">func</span>(t *jwt.Token) (<span class="kw">interface</span>{}, <span class="type">error</span>) {
+            <span class="cm">// Validate signing method</span>
+            <span class="kw">if</span> _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
+                <span class="kw">return</span> <span class="kw">nil</span>, fmt.<span class="fn">Errorf</span>(<span class="str">"unexpected signing method"</span>)
+            }
+            <span class="kw">return</span> publicKey, <span class="kw">nil</span>  <span class="cm">// RSA public key from JWKS endpoint</span>
+        })
+        <span class="kw">if</span> err != <span class="kw">nil</span> || !token.Valid {
+            http.<span class="fn">Error</span>(w, <span class="str">"invalid token"</span>, http.StatusUnauthorized)
+            <span class="kw">return</span>
+        }
+        claims := token.Claims.(jwt.MapClaims)
+        ctx := context.<span class="fn">WithValue</span>(r.<span class="fn">Context</span>(), <span class="str">"user_id"</span>, claims[<span class="str">"sub"</span>])
+        next.<span class="fn">ServeHTTP</span>(w, r.<span class="fn">WithContext</span>(ctx))
+    })
+}</div></details>
+    <details class="code-example"><summary>💻 Istio — Enforce mTLS across all services</summary><div class="code-block"><span class="cm"># Istio — Enforce mTLS across all services</span>
+<span class="kw">apiVersion:</span> security.istio.io/v1beta1
+<span class="kw">kind:</span> PeerAuthentication
+<span class="kw">metadata:</span>
+  <span class="kw">name:</span> default
+  <span class="kw">namespace:</span> production
+<span class="kw">spec:</span>
+  <span class="kw">mtls:</span>
+    <span class="kw">mode:</span> STRICT   <span class="cm"># All traffic must be mTLS</span>
+---
+<span class="kw">apiVersion:</span> security.istio.io/v1beta1
+<span class="kw">kind:</span> AuthorizationPolicy
+<span class="kw">metadata:</span>
+  <span class="kw">name:</span> order-service-policy
+<span class="kw">spec:</span>
+  <span class="kw">selector:</span>
+    <span class="kw">matchLabels:</span>
+      <span class="kw">app:</span> order-service
+  <span class="kw">rules:</span>
+  - <span class="kw">from:</span>
+    - <span class="kw">source:</span>
+        <span class="kw">principals:</span> [<span class="str">"cluster.local/ns/production/sa/api-gateway"</span>]</div></details>
+  </div>
+</section>
+
+<!-- ==================== COMPARISON ==================== -->
+<section class="section" id="comparison">
+  <div class="container reveal">
+    <div class="section-header">
+      <div class="section-label">Chapter 10</div>
+      <h2>Monolith vs. Microservices</h2>
+      <p>Understanding when to use (and when not to use) a microservices architecture.</p>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th style="width:25%">Aspect</th>
+            <th style="width:37.5%">Monolith</th>
+            <th style="width:37.5%">Microservices</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Deployment</strong></td><td>All-or-nothing deployment</td><td>Independent deployment per service</td></tr>
+          <tr><td><strong>Scaling</strong></td><td>Scale entire application</td><td>Scale individual services based on demand</td></tr>
+          <tr><td><strong>Technology</strong></td><td>Single tech stack</td><td>Polyglot — best tool per service</td></tr>
+          <tr><td><strong>Data Management</strong></td><td>Shared database, ACID transactions</td><td>Database per service, eventual consistency</td></tr>
+          <tr><td><strong>Team Structure</strong></td><td>Large, cross-functional team</td><td>Small, autonomous teams (2-pizza teams)</td></tr>
+          <tr><td><strong>Complexity</strong></td><td>Simple to develop, grows complex over time</td><td>Distributed complexity from day one</td></tr>
+          <tr><td><strong>Testing</strong></td><td>Simpler integration testing</td><td>Requires contract tests, E2E tests</td></tr>
+          <tr><td><strong>Communication</strong></td><td>In-process function calls</td><td>Network calls (HTTP/gRPC/messaging)</td></tr>
+          <tr><td><strong>Debugging</strong></td><td>Single process, stack traces</td><td>Distributed tracing required</td></tr>
+          <tr><td><strong>Infrastructure</strong></td><td>Minimal operational overhead</td><td>Requires container orchestration, service mesh</td></tr>
+          <tr><td><strong>Time to Market</strong></td><td>Fast initially, slows with growth</td><td>Slow initially, faster at scale</td></tr>
+          <tr><td><strong>Fault Isolation</strong></td><td>Single failure can crash everything</td><td>Failures are contained per service</td></tr>
+          <tr><td><strong>Best For</strong></td><td>Small teams, MVPs, simple domains</td><td>Large teams, complex domains, high scale</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:2.5rem;border-left:3px solid var(--accent3)">
+      <h3>⚠️ When NOT to Use Microservices</h3>
+      <ul>
+        <li>Small team (fewer than ~8-10 developers) — the overhead isn't worth it</li>
+        <li>Simple domain with few bounded contexts</li>
+        <li>Startup/MVP phase where you're still discovering the domain</li>
+        <li>Lack of DevOps maturity (no CI/CD, no container orchestration experience)</li>
+        <li>Tight coupling between components that can't be cleanly separated</li>
+        <li>When latency requirements prohibit network hops between components</li>
+      </ul>
+      <p style="margin-top:.8rem;color:var(--text-dim)"><strong>Martin Fowler's advice:</strong> "Don't even consider microservices unless you have a system that's too complex to manage as a monolith." Start with a well-structured monolith and extract microservices as needed (Monolith First approach).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== TESTING ==================== -->
+<section class="section" id="testing">
+  <div class="container reveal">
+    <div class="section-header">
+      <div class="section-label">Chapter 11</div>
+      <h2>Testing Strategies</h2>
+      <p>The testing pyramid for microservices — from unit tests to contract tests to end-to-end validation.</p>
+    </div>
+    <div class="cards-grid cols-2">
+      <div class="card">
+        <h3>🧪 Testing Pyramid</h3>
+        <ul>
+          <li><strong>Unit Tests (Base):</strong> Test individual functions/classes in isolation. Fast, numerous (70-80% of tests). Mock external dependencies.</li>
+          <li><strong>Integration Tests:</strong> Test service with its real dependencies (database, cache). Use Docker/Testcontainers to spin up real databases.</li>
+          <li><strong>Contract Tests:</strong> Verify service interactions match agreed contracts. Pact or Spring Cloud Contract. Consumer-driven contracts prevent breaking changes.</li>
+          <li><strong>Component Tests:</strong> Test an entire service in isolation with mocked external services.</li>
+          <li><strong>End-to-End Tests (Top):</strong> Test the entire system. Expensive, slow, flaky. Keep these minimal — test critical paths only.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>🔥 Chaos Engineering</h3>
+        <p>Proactively inject failures to verify system resilience. "Break things on purpose in production (safely) to learn how the system behaves."</p>
+        <ul>
+          <li><strong>Netflix Chaos Monkey:</strong> Randomly terminates instances</li>
+          <li><strong>Litmus:</strong> Kubernetes-native chaos engineering</li>
+          <li><strong>Gremlin:</strong> Enterprise chaos-as-a-service</li>
+          <li><strong>Chaos Mesh:</strong> Cloud-native chaos platform for K8s</li>
+          <li><strong>Experiments:</strong> Kill instances, inject latency, simulate network partitions, exhaust CPU/memory, corrupt DNS</li>
+        </ul>
+        <p style="margin-top:.5rem">Run Game Days — scheduled chaos experiments with the whole team observing and responding.</p>
+      </div>
+    </div>
+    <details class="code-example"><summary>💻 Go — Integration test with Testcontainers</summary><div class="code-block"><span class="cm">// Go — Integration test with Testcontainers</span>
+<span class="kw">func</span> <span class="fn">TestOrderService_CreateOrder</span>(t *testing.T) {
+    ctx := context.<span class="fn">Background</span>()
+
+    <span class="cm">// Spin up real PostgreSQL in Docker</span>
+    pgContainer, _ := postgres.<span class="fn">RunContainer</span>(ctx,
+        testcontainers.<span class="fn">WithImage</span>(<span class="str">"postgres:16-alpine"</span>),
+        postgres.<span class="fn">WithDatabase</span>(<span class="str">"orders_test"</span>),
+    )
+    <span class="kw">defer</span> pgContainer.<span class="fn">Terminate</span>(ctx)
+
+    connStr, _ := pgContainer.<span class="fn">ConnectionString</span>(ctx)
+    svc := orderservice.<span class="fn">New</span>(connStr)
+
+    order, err := svc.<span class="fn">CreateOrder</span>(ctx, orderservice.CreateOrderRequest{
+        UserID: <span class="str">"user-123"</span>,
+        Items:  []orderservice.Item{{SKU: <span class="str">"WIDGET-1"</span>, Qty: <span class="num">2</span>}},
+    })
+    <span class="fn">assert</span>.NoError(t, err)
+    <span class="fn">assert</span>.Equal(t, <span class="str">"pending"</span>, order.Status)
+    <span class="fn">assert</span>.NotEmpty(t, order.ID)
+}</div></details>
+    <details class="code-example"><summary>💻 JavaScript — Pact consumer-driven contract test</summary><div class="code-block"><span class="cm">// JavaScript — Pact consumer-driven contract test</span>
+<span class="kw">const</span> { Pact } = <span class="fn">require</span>(<span class="str">'@pact-foundation/pact'</span>);
+
+<span class="kw">const</span> provider = <span class="kw">new</span> <span class="fn">Pact</span>({
+  consumer: <span class="str">'OrderUI'</span>,
+  provider: <span class="str">'OrderService'</span>,
+});
+
+<span class="fn">describe</span>(<span class="str">'Order API Contract'</span>, () => {
+  <span class="fn">beforeAll</span>(() => provider.<span class="fn">setup</span>());
+  <span class="fn">afterAll</span>(() => provider.<span class="fn">finalize</span>());
+
+  <span class="fn">it</span>(<span class="str">'returns order by ID'</span>, <span class="kw">async</span> () => {
+    <span class="kw">await</span> provider.<span class="fn">addInteraction</span>({
+      state: <span class="str">'order 123 exists'</span>,
+      uponReceiving: <span class="str">'a GET request for order 123'</span>,
+      withRequest: { method: <span class="str">'GET'</span>, path: <span class="str">'/api/orders/123'</span> },
+      willRespondWith: {
+        status: <span class="num">200</span>,
+        body: { id: <span class="str">'123'</span>, status: <span class="str">'pending'</span>, items: Matchers.<span class="fn">eachLike</span>({}) },
+      },
+    });
+    <span class="kw">const</span> order = <span class="kw">await</span> orderClient.<span class="fn">getOrder</span>(<span class="str">'123'</span>);
+    <span class="fn">expect</span>(order.status).<span class="fn">toBe</span>(<span class="str">'pending'</span>);
+  });
+});</div></details>
+  </div>
+</section>
+
+<!-- ==================== TECH STACK ==================== -->
+<section class="section" id="techstack">
+  <div class="container reveal">
+    <div class="section-header">
+      <div class="section-label">Chapter 12</div>
+      <h2>Technology Ecosystem</h2>
+      <p>The tools and frameworks powering modern microservices architectures.</p>
+    </div>
+    <div class="tabs-wrapper">
+      <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab(event,'tech-lang')">Languages & Frameworks</button>
+        <button class="tab-btn" onclick="switchTab(event,'tech-infra')">Infrastructure</button>
+        <button class="tab-btn" onclick="switchTab(event,'tech-data')">Data & Messaging</button>
+        <button class="tab-btn" onclick="switchTab(event,'tech-obs')">Observability</button>
+      </div>
+      <div class="tab-panel active" id="tech-lang">
+        <div class="cards-grid cols-3">
+          <div class="card">
+            <h3>Java / Spring Boot</h3>
+            <p>Spring Cloud ecosystem: Config, Eureka, Gateway, Circuit Breaker. Mature, enterprise-grade. Spring Boot makes microservice creation trivial with embedded servers and auto-configuration.</p>
+          </div>
+          <div class="card">
+            <h3>Go</h3>
+            <p>Fast compilation, small binaries, excellent concurrency (goroutines). Popular for infrastructure tooling (Docker, Kubernetes, Istio are all written in Go). Go kit, Micro, Fiber for microservice frameworks.</p>
+          </div>
+          <div class="card">
+            <h3>Node.js / TypeScript</h3>
+            <p>Non-blocking I/O, excellent for I/O-bound services. NestJS provides enterprise structure with dependency injection. Express/Fastify for lightweight services. Large npm ecosystem.</p>
+          </div>
+          <div class="card">
+            <h3>Python</h3>
+            <p>FastAPI (async, type-safe, auto-docs), Flask, Django. Excellent for ML/AI microservices, data processing services, and rapid prototyping. Strong ecosystem for data science workloads.</p>
+          </div>
+          <div class="card">
+            <h3>Rust</h3>
+            <p>Memory safety without garbage collection. Excellent for performance-critical services. Actix-web, Axum, Tonic (gRPC). Growing adoption for latency-sensitive microservices.</p>
+          </div>
+          <div class="card">
+            <h3>.NET / C#</h3>
+            <p>ASP.NET Core with built-in DI, middleware pipeline, gRPC support. Dapr (Distributed Application Runtime) for portable microservices. Strong enterprise ecosystem.</p>
+          </div>
+        </div>
+      </div>
+      <div class="tab-panel" id="tech-infra">
+        <div class="cards-grid cols-3">
+          <div class="card"><h3>Docker</h3><p>Container runtime and image format. Foundation of all containerized microservices deployments.</p></div>
+          <div class="card"><h3>Kubernetes</h3><p>Container orchestration. Pods, Services, Deployments, StatefulSets, Ingress, RBAC, CRDs.</p></div>
+          <div class="card"><h3>Istio</h3><p>Service mesh providing traffic management, security (mTLS), observability via Envoy sidecars.</p></div>
+          <div class="card"><h3>Terraform</h3><p>Infrastructure as Code. Define cloud resources declaratively. Provider ecosystem for all major clouds.</p></div>
+          <div class="card"><h3>ArgoCD</h3><p>GitOps continuous delivery for Kubernetes. Git as single source of truth for cluster state.</p></div>
+          <div class="card"><h3>Consul</h3><p>Service discovery, configuration, segmentation. Provides service mesh and KV store.</p></div>
+        </div>
+      </div>
+      <div class="tab-panel" id="tech-data">
+        <div class="cards-grid cols-3">
+          <div class="card"><h3>Apache Kafka</h3><p>Distributed event streaming. Partitioned, replicated, append-only log. Kafka Streams, Kafka Connect, ksqlDB.</p></div>
+          <div class="card"><h3>RabbitMQ</h3><p>AMQP message broker. Exchanges, queues, routing keys, dead letter queues. Excellent for task distribution.</p></div>
+          <div class="card"><h3>Redis</h3><p>In-memory data store. Caching, session store, pub/sub, Streams. Sub-millisecond latency.</p></div>
+          <div class="card"><h3>PostgreSQL</h3><p>Advanced relational database. JSONB, full-text search, extensions. Most popular choice for microservice data stores.</p></div>
+          <div class="card"><h3>MongoDB</h3><p>Document database. Flexible schema, horizontal scaling via sharding. Good for services with evolving data models.</p></div>
+          <div class="card"><h3>Elasticsearch</h3><p>Full-text search and analytics engine. Real-time indexing, aggregations. Powers search microservices.</p></div>
+        </div>
+      </div>
+      <div class="tab-panel" id="tech-obs">
+        <div class="cards-grid cols-3">
+          <div class="card"><h3>Prometheus</h3><p>Pull-based metric collection. PromQL query language. Alertmanager for alerting. Cloud-native standard.</p></div>
+          <div class="card"><h3>Grafana</h3><p>Visualization platform for metrics, logs, and traces. Dashboards, alerting, data source plugins.</p></div>
+          <div class="card"><h3>Jaeger</h3><p>Distributed tracing system by Uber. OpenTelemetry-compatible. Trace visualization and dependency analysis.</p></div>
+          <div class="card"><h3>OpenTelemetry</h3><p>Vendor-neutral observability framework. APIs, SDKs, Collector for traces, metrics, logs.</p></div>
+          <div class="card"><h3>ELK Stack</h3><p>Elasticsearch + Logstash + Kibana. Log aggregation, search, visualization. Industry standard logging platform.</p></div>
+          <div class="card"><h3>PagerDuty / OpsGenie</h3><p>Incident management. On-call scheduling, alert routing, escalation policies, postmortem tracking.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <p>Microservices Architecture — The Complete Interactive Guide</p>
+  <p style="margin-top:.5rem;font-size:.75rem;color:var(--text-dim)">A comprehensive educational resource covering distributed system design principles and patterns.</p>
+</footer>
+
+<script>
+/* ============ PARTICLES ============ */
+(function(){
+  const c=document.getElementById('particles'),ctx=c.getContext('2d');
+  let w,h,particles=[];
+  function resize(){w=c.width=window.innerWidth;h=c.height=window.innerHeight}
+  window.addEventListener('resize',resize);resize();
+  class P{
+    constructor(){this.reset()}
+    reset(){this.x=Math.random()*w;this.y=Math.random()*h;this.vx=(Math.random()-.5)*.3;this.vy=(Math.random()-.5)*.3;this.r=Math.random()*1.5+.5;this.o=Math.random()*.4+.1}
+    update(){this.x+=this.vx;this.y+=this.vy;if(this.x<0||this.x>w)this.vx*=-1;if(this.y<0||this.y>h)this.vy*=-1}
+    draw(){ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fillStyle=`rgba(99,102,241,${this.o})`;ctx.fill()}
+  }
+  for(let i=0;i<80;i++)particles.push(new P());
+  function animate(){
+    ctx.clearRect(0,0,w,h);
+    particles.forEach(p=>{p.update();p.draw()});
+    for(let i=0;i<particles.length;i++)
+      for(let j=i+1;j<particles.length;j++){
+        const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,d=Math.sqrt(dx*dx+dy*dy);
+        if(d<120){ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);
+          ctx.strokeStyle=`rgba(99,102,241,${.08*(1-d/120)})`;ctx.stroke()}
+      }
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+
+/* ============ SCROLL REVEAL ============ */
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible')}})
+},{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+
+/* ============ COUNTER ANIMATION ============ */
+const statObserver=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const el=e.target;const target=parseInt(el.dataset.target);
+      let current=0;const step=target/40;
+      const timer=setInterval(()=>{current+=step;if(current>=target){current=target;clearInterval(timer)}
+        el.textContent=Math.round(current)+(target<10?'':'')},30);
+      statObserver.unobserve(el);
+    }
+  })
+},{threshold:.5});
+document.querySelectorAll('.stat-num').forEach(el=>statObserver.observe(el));
+
+/* ============ TABS ============ */
+function switchTab(e,id){
+  const wrapper=e.target.closest('.tabs-wrapper');
+  wrapper.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  wrapper.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  e.target.classList.add('active');
+  wrapper.querySelector('#'+id).classList.add('active');
+}
+
+/* ============ ACCORDION ============ */
+function toggleAccordion(header){
+  const item=header.parentElement;
+  const body=item.querySelector('.accordion-body');
+  const isOpen=item.classList.contains('open');
+  // close all in same container
+  item.parentElement.querySelectorAll('.accordion-item').forEach(ai=>{
+    ai.classList.remove('open');ai.querySelector('.accordion-body').style.maxHeight='0';
+  });
+  if(!isOpen){item.classList.add('open');body.style.maxHeight=body.scrollHeight+'px';}
+}
+/* Update accordion max-height when code examples are toggled */
+document.querySelectorAll('details.code-example').forEach(d=>{
+  d.addEventListener('toggle',()=>{
+    const body=d.closest('.accordion-body');
+    if(body&&body.parentElement.classList.contains('open')){
+      setTimeout(()=>{body.style.maxHeight=body.scrollHeight+'px';},50);
+    }
+  });
+});
+
+/* ============ ARCHITECTURE EXPLORER ============ */
+const architectureModeContent={
+  request:{
+    badge:'Request Path',
+    title:'Edge-to-core synchronous execution',
+    summary:'A user request crosses the CDN/WAF, gateway, identity layer, and bounded-context services before committing to service-owned storage and returning a stable client response.',
+    tags:['HTTPS / HTTP2','OIDC + JWT','gRPC / REST','p95 < 300ms'],
+    components:[
+      'CDN/WAF and the gateway terminate TLS, enforce quotas, and normalize the request envelope.',
+      'Identity checks happen before the order path reaches payment or inventory owners.',
+      'Bounded-context services only expose contracts, not their private tables or internal workflows.',
+      'The write path ends in service-owned stores, then the response contract is returned to the client.'
+    ],
+    controls:[
+      'Set explicit per-hop timeouts so one slow dependency cannot consume the entire latency budget.',
+      'Use idempotency keys on payment and order writes so retries are safe.',
+      'Propagate correlation IDs from the gateway through every downstream call.',
+      'Prefer gRPC for internal low-latency calls and keep response aggregation at the edge.'
+    ],
+    risks:[
+      'Gateway fan-out can create hidden coupling and oversized request graphs.',
+      'Identity or payment slowness amplifies quickly across the sync path.',
+      'Direct database access shortcuts break autonomy and deployment safety.',
+      'Unbounded retries create retry storms instead of recovering cleanly.'
+    ]
+  },
+  async:{
+    badge:'Async Fan-Out',
+    title:'Event choreography across bounded contexts',
+    summary:'The system publishes durable business events from an outbox, fans them out through Kafka, and lets downstream services react independently without synchronous lockstep coupling.',
+    tags:['Kafka','Outbox + CDC','Consumer Groups','Read Models'],
+    components:[
+      'Order writes emit domain events through a transactional outbox so state and messages stay aligned.',
+      'Kafka partitions preserve per-order ordering while enabling horizontal consumer scale.',
+      'Shipping, notifications, and read-model builders subscribe independently to the same event stream.',
+      'Replayable events support new projections, backfills, and incident recovery.'
+    ],
+    controls:[
+      'Use stable event schemas, version envelopes, and a schema registry for compatibility.',
+      'Commit consumer offsets only after side effects succeed or are durably recorded.',
+      'Route poison messages to a DLQ after bounded retries with trace context preserved.',
+      'Keep events coarse-grained and business meaningful rather than leaking internal state chatter.'
+    ],
+    risks:[
+      'At-least-once delivery means every consumer must be idempotent.',
+      'Partition key mistakes create ordering bugs or hot partitions.',
+      'Lagging consumers can silently age read models and downstream SLAs.',
+      'Chatty event contracts can recreate tight coupling in a different form.'
+    ]
+  },
+  resilience:{
+    badge:'Resilience',
+    title:'Failure containment and graceful degradation',
+    summary:'Failures are expected, so the topology emphasizes timeout budgets, circuit breakers, retry discipline, fallback behavior, and compensation paths that keep the wider platform alive.',
+    tags:['Timeouts','Circuit Breakers','Bulkheads','Sagas'],
+    components:[
+      'The service mesh enforces retries, outlier ejection, and mTLS without duplicating policy code in every service.',
+      'Sagas model multi-service business transactions with compensating actions instead of distributed XA.',
+      'Caches and queued fallbacks preserve core UX when a downstream owner is degraded.',
+      'Telemetry ties failures to a dependency graph instead of isolated log lines.'
+    ],
+    controls:[
+      'Set per-hop deadlines and retry only idempotent operations with jittered backoff.',
+      'Open the circuit before a failing dependency exhausts worker pools upstream.',
+      'Keep compensating actions idempotent and durably logged for replay.',
+      'Model graceful degradation explicitly in APIs and UI states.'
+    ],
+    risks:[
+      'Blind retries amplify partial outages into platform-wide latency collapse.',
+      'Half-open probes need small sample sizes or they become a secondary surge.',
+      'Shared worker pools can still create cross-service blast radius if bulkheads are missing.',
+      'Compensation gaps leave inventory, payment, and order state drifting apart.'
+    ]
+  },
+  platform:{
+    badge:'Platform Ops',
+    title:'Control plane, delivery, and operational guardrails',
+    summary:'A microservices platform only scales if the operational plane is first-class: GitOps, secrets, image security, service discovery, observability, and progressive delivery all live here.',
+    tags:['GitOps','Secrets','Progressive Delivery','OpenTelemetry'],
+    components:[
+      'Git becomes the desired state source for manifests, traffic policy, and configuration.',
+      'Secret material stays outside runtime images and rotates through a dedicated secrets engine.',
+      'Tracing, logs, metrics, and SLOs are shipped centrally so teams debug with shared context.',
+      'Deployment pipelines enforce contract checks, security scanning, and rollout policy gates.'
+    ],
+    controls:[
+      'Promote artifacts, never rebuild them differently between environments.',
+      'Use canary or blue-green release steps with rollback hooks wired to SLO alerts.',
+      'Keep infra, app config, and policy reviews visible in the same delivery workflow.',
+      'Expose platform golden paths so teams do not reinvent auth, telemetry, or secret handling.'
+    ],
+    risks:[
+      'Tool sprawl can erase the supposed productivity gain of microservices.',
+      'Undocumented platform conventions create accidental snowflakes per team.',
+      'Static secrets or unmanaged certificates turn the control plane into a security liability.',
+      'Missing release automation makes multi-service coordination brittle and slow.'
+    ]
+  }
+};
+
+const architectureNodeContent={
+  clients:{
+    badge:'Experience Layer',
+    title:'Clients and channels',
+    summary:'Every client reaches the platform through the same edge controls, but each still needs a tailored contract shape and latency target.',
+    tags:['Web','Mobile','Partner API'],
+    components:['SPA and mobile clients consume stable APIs instead of service-specific contracts.','Admin and support tooling often expose broader query surfaces than customer paths.','Partner integrations need stronger rate controls and contract versioning.'],
+    controls:['Use BFFs or API composition so mobile and web do not overfetch.','Keep sessions stateless and rely on tokens or signed cookies.','Cache public and semi-static content aggressively at the edge.'],
+    risks:['Overly generic APIs force clients to orchestrate backend complexity.','Long-tail partner traffic patterns can bypass browser-centric assumptions.','Client-specific hacks inside core services quickly erode service boundaries.']
+  },
+  edge:{
+    badge:'Edge Controls',
+    title:'CDN, WAF, and rate-limit edge',
+    summary:'The edge is where untrusted traffic gets normalized, filtered, and throttled before it can stress the application tier.',
+    tags:['TLS','WAF','Rate Limits'],
+    components:['Static asset caching and TLS termination reduce load on the gateway.','WAF rules and bot detection remove abusive traffic before application code runs.','Global rate limiting protects the platform during bursts or attack traffic.'],
+    controls:['Separate soft quotas from hard abuse controls.','Propagate origin, user, and request IDs past the edge for observability.','Tune caching rules so sensitive API responses never leak into shared caches.'],
+    risks:['Misconfigured caches can leak personalized data.','A gateway-only defense strategy is too late for volumetric abuse.','Edge policy drift across regions can make production behavior inconsistent.']
+  },
+  gateway:{
+    badge:'Gateway',
+    title:'API gateway and BFF',
+    summary:'The gateway composes a stable client contract while centralizing auth, routing, and traffic policy.',
+    tags:['Envoy','Schema Validation','Header Enrichment'],
+    components:['Routes traffic to service owners using path, host, and client context.','Transforms headers and claims into downstream-friendly request metadata.','Applies coarse response aggregation without leaking domain ownership.'],
+    controls:['Keep gateway logic thin and declarative.','Push business decisions back into owning services.','Publish explicit error contracts for degraded states.'],
+    risks:['Gateway logic can become a second monolith.','Over-aggregation adds hidden N+1 fan-out costs.','Protocol translation bugs are easy to miss without end-to-end tracing.']
+  },
+  identity:{
+    badge:'Security',
+    title:'Identity, tokens, and policy',
+    summary:'Authentication proves who the caller is. Authorization and policy determine what they can do on each call path.',
+    tags:['OIDC','JWT','OPA'],
+    components:['OIDC brokers login and token issuance.','JWT claims propagate caller identity through the platform.','Policy engines evaluate entitlements without hard-coding role logic everywhere.'],
+    controls:['Rotate signing keys and validate issuer, audience, and expiry on every hop.','Keep fine-grained authorization close to domain owners.','Use short-lived access tokens and refresh flows for longer sessions.'],
+    risks:['Trusting gateway-only validation leaves internal hops exposed.','Role explosion makes token claims hard to reason about.','Opaque downstream auth failures create painful debugging loops.']
+  },
+  order:{
+    badge:'Domain Owner',
+    title:'Order and checkout orchestration',
+    summary:'Order service owns the order aggregate and coordinates the checkout write path without owning every downstream concern directly.',
+    tags:['Aggregate','Saga Start','Idempotent Writes'],
+    components:['Validates order state transitions and invariant rules.','Starts the sync call graph into inventory and payment.','Publishes business events for the async fan-out path.'],
+    controls:['Persist order state and outbox rows atomically.','Keep orchestration observable with correlation IDs and saga state logs.','Expose idempotent create and cancel semantics to callers.'],
+    risks:['Order can become a god service if it absorbs too many cross-domain rules.','Missing state-machine validation causes impossible transitions.','Outbox failures leave checkout state invisible to downstream subscribers.']
+  },
+  inventory:{
+    badge:'Domain Owner',
+    title:'Catalog and inventory',
+    summary:'Inventory separates authoritative stock mutations from faster read models and search projections.',
+    tags:['Reservations','Read Models','CQRS'],
+    components:['Holds the source of truth for stock levels and reservations.','Uses projections or caches for high-volume availability reads.','Publishes stock events for fulfillment, search, and merchandising flows.'],
+    controls:['Use row-level locking or optimistic concurrency on reservation paths.','Expire stale reservations with explicit compensating jobs.','Keep read models disposable and rebuildable from the event stream.'],
+    risks:['Shared stock tables across services couple release schedules.','Reservation leaks quietly erode sellable inventory.','Search freshness targets can conflict with transactional correctness.']
+  },
+  payment:{
+    badge:'Domain Owner',
+    title:'Payments and fraud controls',
+    summary:'Payments is the most failure-prone sync dependency, so idempotency, timeouts, and compensation discipline matter more here than anywhere else.',
+    tags:['PSP','Fraud','Idempotency'],
+    components:['Wraps PSP APIs behind internal contracts.','Evaluates risk or fraud signals before capture.','Returns machine-actionable failure codes for orchestration.'],
+    controls:['Use idempotency keys that survive retries and worker restarts.','Separate authorization from capture when fulfillment timing demands it.','Record every PSP interaction with full trace context and reconciliation hooks.'],
+    risks:['Timeout ambiguity can mean payment succeeded but the caller did not observe it.','Retrying non-idempotent charges creates double-charge risk.','Fraud checks that run inline can blow the sync latency budget.']
+  },
+  shipping:{
+    badge:'Async Consumer',
+    title:'Shipping and notifications',
+    summary:'Downstream fulfillment and communication services should react independently to order events and stay decoupled from checkout response time.',
+    tags:['Async Workers','Fan-Out','Compensation Aware'],
+    components:['Shipping allocates labels and warehouse work from confirmed-order events.','Notifications fan out customer-facing updates through email, SMS, or push.','Both services consume the same business event stream with separate SLAs.'],
+    controls:['Design consumers to resume safely after lag or replay.','Keep customer notifications eventually consistent but traceable to order state.','Use dead-letter policies that surface business meaning, not just technical errors.'],
+    risks:['Coupling fulfillment to the sync path hurts checkout latency.','Duplicate event delivery can spam customers if consumers are not idempotent.','Downstream backlog can make the system feel broken even when checkout succeeds.']
+  },
+  mesh:{
+    badge:'Control Plane',
+    title:'Service mesh and traffic policy',
+    summary:'The mesh gives you consistent transport security and traffic behavior without forcing every team to re-implement the same plumbing.',
+    tags:['Istio','mTLS','Canaries'],
+    components:['Sidecars or ambient proxies enforce mTLS and collect traffic telemetry.','VirtualService and DestinationRule objects shape retries, timeouts, and canaries.','Mesh policy decouples transport governance from business handlers.'],
+    controls:['Tune retry budgets per endpoint rather than globally.','Enable outlier detection for flaky downstreams.','Use progressive delivery with weighted routes before full rollout.'],
+    risks:['Bad retry policy in the mesh can amplify failure globally.','Mesh configuration drift is hard to reason about without good tooling.','Teams may lose protocol visibility if the mesh becomes a black box.']
+  },
+  observability:{
+    badge:'Operations',
+    title:'Observability and incident response',
+    summary:'The system is only operable if traces, metrics, logs, and alerts describe the same request from edge to database.',
+    tags:['Tracing','RED Metrics','SLOs'],
+    components:['Traces link gateway spans, service spans, and database spans into one timeline.','RED metrics expose rate, errors, and duration for every critical endpoint.','Alert routing turns SLO breaches into actionable incidents tied to service ownership.'],
+    controls:['Propagate trace IDs through sync and async paths.','Measure queue lag and consumer freshness, not just HTTP latency.','Keep dashboards aligned to user journeys and business outcomes.'],
+    risks:['Logs without correlation IDs force manual forensic work.','Noise-heavy alerts train teams to ignore genuine incidents.','Missing async telemetry hides real backlog and data-staleness problems.']
+  },
+  delivery:{
+    badge:'Platform Ops',
+    title:'Config, secrets, and delivery pipeline',
+    summary:'A mature platform turns infrastructure, runtime config, and rollout policy into versioned assets instead of tribal knowledge.',
+    tags:['GitOps','Vault','Terraform'],
+    components:['GitOps reconciles desired state into the cluster.','Secrets engines keep credentials out of images and manifests.','Progressive delivery gates rollouts on health checks and SLO signals.'],
+    controls:['Promote immutable images between environments.','Scan images and dependencies before deployment.','Keep rollback automation as well tested as the forward path.'],
+    risks:['Manual hotfixes create config drift and surprise outages.','Static credentials become a platform-wide blast radius.','Release pipelines without contract checks allow incompatible service changes into production.']
+  },
+  events:{
+    badge:'Async Backbone',
+    title:'Kafka, outbox, CDC, and saga signals',
+    summary:'The messaging backbone carries durable business facts, failure signals, and replayable history that decouple consumers from the original request timing.',
+    tags:['Kafka','CDC','DLQ'],
+    components:['Outbox rows are emitted after the local transaction commits.','CDC or relay workers publish to ordered Kafka partitions.','Downstream services subscribe in separate groups and evolve independently.'],
+    controls:['Version schemas and treat event names as public contracts.','Keep consumer offsets, side effects, and dedupe strategy aligned.','Retain enough history to support replay and audit needs.'],
+    risks:['Partition imbalance can make some domains appear randomly slow.','Consumer lag hides stale downstream state until users notice.','Business events that leak internal implementation details freeze service evolution.']
+  },
+  data:{
+    badge:'Data Plane',
+    title:'Database per service and specialized stores',
+    summary:'Service autonomy depends on private write stores, intentionally derived read models, and a clear contract that other teams do not bypass ownership boundaries.',
+    tags:['Polyglot Persistence','Redis','Search Index'],
+    components:['Transactional stores stay private to their owning bounded context.','Caches and search indexes are derivative and disposable.','Read models can be rebuilt from events instead of hand-maintained shared joins.'],
+    controls:['Publish APIs or events instead of direct SQL access.','Choose datastore technology to fit access patterns, not fashion.','Automate migrations and backfills per service release cadence.'],
+    risks:['Shared schemas recreate monolith-style coordination debt.','Cross-service joins in production reporting silently couple teams.','Caches treated as source-of-truth create data recovery blind spots.']
+  }
+};
+
+function populateArchitectureList(elementId,items){
+  const el=document.getElementById(elementId);
+  if(!el)return;
+  el.innerHTML=items.map(item=>'<li>'+item+'</li>').join('');
+}
+
+function renderArchitectureDetail(content){
+  const badge=document.getElementById('archDetailBadge');
+  const title=document.getElementById('archDetailTitle');
+  const summary=document.getElementById('archDetailSummary');
+  const tags=document.getElementById('archDetailTags');
+  if(!badge||!title||!summary||!tags)return;
+  badge.textContent=content.badge;
+  title.textContent=content.title;
+  summary.textContent=content.summary;
+  tags.innerHTML=content.tags.map(tag=>'<span class="arch-chip">'+tag+'</span>').join('');
+  populateArchitectureList('archDetailComponents',content.components);
+  populateArchitectureList('archDetailControls',content.controls);
+  populateArchitectureList('archDetailRisks',content.risks);
+}
+
+function applyArchitectureMode(mode){
+  const scope=document.getElementById('architecture');
+  if(!scope)return;
+  scope.querySelectorAll('[data-arch-focus]').forEach(item=>{
+    const focuses=(item.dataset.archFocus||'').split(/\s+/).filter(Boolean);
+    const matches=focuses.includes(mode);
+    item.classList.toggle('is-emphasis',matches&&item.classList.contains('arch-zone'));
+    item.classList.toggle('is-muted',!matches);
+  });
+}
+
+window.setArchitectureMode=function(mode,button){
+  document.querySelectorAll('#architecture [data-arch-mode-btn]').forEach(btn=>btn.classList.remove('active'));
+  if(button)button.classList.add('active');
+  document.querySelectorAll('#architecture .arch-node').forEach(node=>node.classList.remove('is-selected'));
+  applyArchitectureMode(mode);
+  renderArchitectureDetail(architectureModeContent[mode]);
+};
+
+window.setArchitectureDetail=function(key,button){
+  document.querySelectorAll('#architecture .arch-node').forEach(node=>node.classList.remove('is-selected'));
+  if(button)button.classList.add('is-selected');
+  renderArchitectureDetail(architectureNodeContent[key]);
+};
+
+const defaultArchitectureMode=document.querySelector('#architecture [data-arch-mode-btn]');
+if(defaultArchitectureMode){
+  window.setArchitectureMode('request',defaultArchitectureMode);
+}
+
+/* ============ NAV ACTIVE ============ */
+window.addEventListener('scroll',()=>{
+  const sections=document.querySelectorAll('.section');
+  const navLinks=document.querySelectorAll('.nav-links a');
+  let current='';
+  sections.forEach(s=>{if(window.scrollY>=s.offsetTop-200)current=s.id});
+  navLinks.forEach(a=>{a.classList.remove('active');if(a.getAttribute('href')==='#'+current)a.classList.add('active')});
+});
+
+/* ============ INTERACTIVE FLOW DIAGRAM ============ */
+(function(){
+  const canvas=document.getElementById('flowCanvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const flowStatus=document.getElementById('flowStatus');
+  let W=0,H=520,dpr=window.devicePixelRatio||1,flowRafId=0;
+
+  const scenarioLabels={
+    order:'Place Order',
+    auth:'Auth + JWT',
+    saga:'Saga Rollback',
+    event:'Event-Driven',
+    circuit:'Circuit Breaker'
+  };
+  const scenarioSummaries={
+    order:'Follows auth, inventory reservation, payment processing, Kafka fan-out, and the final order confirmation response.',
+    auth:'Shows the login path, token verification, cache lookup, and how authenticated claims re-enter the order flow.',
+    saga:'Highlights compensation when payment fails after stock reservation so state converges safely.',
+    event:'Focuses on the outbox-to-Kafka pipeline, downstream consumers, read-model updates, and cache invalidation.',
+    circuit:'Shows a dependency degrading, the breaker opening, fallback behavior, and the half-open recovery probe.'
+  };
+
+  const nodes=[
+    {id:'client',label:'Client\n(Browser/Mobile)',x:.06,y:.42,w:110,h:52,color:'#f472b6'},
+    {id:'gateway',label:'API Gateway\nKong / Envoy',x:.22,y:.42,w:110,h:52,color:'#6366f1'},
+    {id:'auth',label:'Auth Service\nOIDC + JWT',x:.22,y:.08,w:110,h:46,color:'#a78bfa'},
+    {id:'order',label:'Order Service',x:.40,y:.42,w:100,h:52,color:'#22d3ee'},
+    {id:'inventory',label:'Inventory Svc\nPostgreSQL',x:.40,y:.08,w:100,h:46,color:'#34d399'},
+    {id:'payment',label:'Payment Svc\nStripe PSP',x:.58,y:.42,w:100,h:52,color:'#fbbf24'},
+    {id:'kafka',label:'Kafka\nEvent Bus',x:.58,y:.82,w:100,h:46,color:'#818cf8'},
+    {id:'notify',label:'Notification\nSvc',x:.76,y:.82,w:100,h:46,color:'#fb7185'},
+    {id:'shipping',label:'Shipping Svc',x:.76,y:.42,w:100,h:52,color:'#34d399'},
+    {id:'saga',label:'Saga\nOrchestrator',x:.40,y:.82,w:100,h:46,color:'#fbbf24'},
+    {id:'cache',label:'Redis Cache\nL1/L2',x:.22,y:.82,w:100,h:46,color:'#f97316'}
+  ];
+
+  const scenarios={
+    order:[
+      {from:'client',to:'gateway',label:'POST /orders',color:'#6366f1',delay:0},
+      {from:'gateway',to:'auth',label:'Validate JWT',color:'#a78bfa',delay:700},
+      {from:'auth',to:'gateway',label:'200 OK',color:'#34d399',delay:1450},
+      {from:'gateway',to:'order',label:'Route request',color:'#6366f1',delay:2250},
+      {from:'order',to:'inventory',label:'gRPC: ReserveItems',color:'#22d3ee',delay:3100},
+      {from:'inventory',to:'order',label:'Reserved OK',color:'#34d399',delay:3900},
+      {from:'order',to:'payment',label:'gRPC: ProcessPayment',color:'#22d3ee',delay:4700},
+      {from:'payment',to:'order',label:'Payment OK',color:'#34d399',delay:5700},
+      {from:'order',to:'kafka',label:'Publish: OrderConfirmed',color:'#818cf8',delay:6600},
+      {from:'kafka',to:'notify',label:'Consume event',color:'#818cf8',delay:7600},
+      {from:'kafka',to:'shipping',label:'Consume event',color:'#818cf8',delay:7900},
+      {from:'order',to:'gateway',label:'201 Created',color:'#34d399',delay:8600},
+      {from:'gateway',to:'client',label:'Order confirmed',color:'#34d399',delay:9400}
+    ],
+    auth:[
+      {from:'client',to:'gateway',label:'POST /auth/login',color:'#6366f1',delay:0},
+      {from:'gateway',to:'auth',label:'Forward credentials',color:'#a78bfa',delay:700},
+      {from:'auth',to:'cache',label:'Check token cache',color:'#f97316',delay:1450},
+      {from:'cache',to:'auth',label:'Cache MISS',color:'#fbbf24',delay:2150},
+      {from:'auth',to:'gateway',label:'JWT + Refresh token',color:'#34d399',delay:3000},
+      {from:'gateway',to:'client',label:'Set-Cookie: httpOnly',color:'#34d399',delay:3850},
+      {from:'client',to:'gateway',label:'GET /orders (Bearer JWT)',color:'#6366f1',delay:4850},
+      {from:'gateway',to:'auth',label:'Verify signature (RS256)',color:'#a78bfa',delay:5650},
+      {from:'auth',to:'gateway',label:'Claims: {sub,roles,exp}',color:'#34d399',delay:6450},
+      {from:'gateway',to:'order',label:'Route + X-User-Id header',color:'#6366f1',delay:7300},
+      {from:'order',to:'gateway',label:'200 + order list',color:'#34d399',delay:8150},
+      {from:'gateway',to:'client',label:'Response',color:'#34d399',delay:9000}
+    ],
+    saga:[
+      {from:'client',to:'gateway',label:'POST /orders',color:'#6366f1',delay:0},
+      {from:'gateway',to:'order',label:'Route',color:'#6366f1',delay:650},
+      {from:'order',to:'saga',label:'Start saga',color:'#fbbf24',delay:1450},
+      {from:'saga',to:'inventory',label:'Step 1: Reserve',color:'#22d3ee',delay:2350},
+      {from:'inventory',to:'saga',label:'Reserved OK',color:'#34d399',delay:3200},
+      {from:'saga',to:'payment',label:'Step 2: Charge',color:'#22d3ee',delay:4050},
+      {from:'payment',to:'saga',label:'402 DECLINED',color:'#f87171',delay:5000},
+      {from:'saga',to:'inventory',label:'COMPENSATE: Release',color:'#fbbf24',delay:5900},
+      {from:'inventory',to:'saga',label:'Released',color:'#34d399',delay:6750},
+      {from:'saga',to:'order',label:'Mark CANCELLED',color:'#fbbf24',delay:7550},
+      {from:'order',to:'kafka',label:'OrderFailed event',color:'#818cf8',delay:8350},
+      {from:'kafka',to:'notify',label:'Notify customer',color:'#fb7185',delay:9250},
+      {from:'order',to:'gateway',label:'409 Conflict',color:'#f87171',delay:10050},
+      {from:'gateway',to:'client',label:'Payment failed',color:'#f87171',delay:10850}
+    ],
+    event:[
+      {from:'order',to:'kafka',label:'OrderCreated (Outbox+CDC)',color:'#818cf8',delay:0},
+      {from:'kafka',to:'inventory',label:'Consume: reserve stock',color:'#818cf8',delay:950},
+      {from:'kafka',to:'notify',label:'Consume: send email',color:'#818cf8',delay:1250},
+      {from:'kafka',to:'shipping',label:'Consume: prep label',color:'#818cf8',delay:1550},
+      {from:'inventory',to:'kafka',label:'StockReserved event',color:'#34d399',delay:2550},
+      {from:'shipping',to:'kafka',label:'ShipmentCreated event',color:'#34d399',delay:3450},
+      {from:'kafka',to:'order',label:'Update read model (CQRS)',color:'#818cf8',delay:4400},
+      {from:'kafka',to:'cache',label:'Invalidate cache',color:'#f97316',delay:4750},
+      {from:'notify',to:'kafka',label:'EmailSent event',color:'#fb7185',delay:5450}
+    ],
+    circuit:[
+      {from:'order',to:'payment',label:'Call 1: OK (200ms)',color:'#34d399',delay:0},
+      {from:'order',to:'payment',label:'Call 2: OK (180ms)',color:'#34d399',delay:900},
+      {from:'order',to:'payment',label:'Call 3: TIMEOUT (5s)',color:'#f87171',delay:1900},
+      {from:'order',to:'payment',label:'Call 4: 503 Error',color:'#f87171',delay:3050},
+      {from:'order',to:'payment',label:'Call 5: 503 Error',color:'#f87171',delay:3950},
+      {from:'order',to:'cache',label:'CIRCUIT OPEN -> fallback',color:'#fbbf24',delay:4900},
+      {from:'cache',to:'order',label:'Cached/queued response',color:'#f97316',delay:5850},
+      {from:'order',to:'payment',label:'HALF-OPEN: probe',color:'#a78bfa',delay:7600},
+      {from:'payment',to:'order',label:'200 OK - recovering',color:'#34d399',delay:8800},
+      {from:'order',to:'payment',label:'CLOSED: normal traffic',color:'#34d399',delay:9800}
+    ]
+  };
+
+  let currentScenario='order';
+  let playbackRate=0.65;
+  let animStart=performance.now();
+  const packetDuration=920;
+  const loopPause=2600;
+
+  function resize(){
+    const rect=canvas.parentElement.getBoundingClientRect();
+    W=Math.max(rect.width-48,320);
+    canvas.width=W*dpr;
+    canvas.height=H*dpr;
+    canvas.style.width=W+'px';
+    canvas.style.height=H+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+
+  function getNodePos(node){
+    return{x:node.x*W,y:node.y*H};
+  }
+
+  function drawRoundRect(x,y,w,h,r,fill,stroke){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.lineTo(x+w-r,y);
+    ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r);
+    ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h);
+    ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r);
+    ctx.quadraticCurveTo(x,y,x+r,y);
+    ctx.closePath();
+    if(fill){ctx.fillStyle=fill;ctx.fill();}
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1.5;ctx.stroke();}
+  }
+
+  function drawNodes(){
+    nodes.forEach(node=>{
+      const pos=getNodePos(node);
+      drawRoundRect(pos.x-node.w/2,pos.y-node.h/2,node.w,node.h,10,node.color+'18',node.color+'88');
+      const lines=node.label.split('\n');
+      lines.forEach((line,index)=>{
+        ctx.fillStyle=index===0?'#f8fafc':'#94a3b8';
+        ctx.font=index===0?'bold 10px system-ui':'9px system-ui';
+        ctx.textAlign='center';
+        ctx.fillText(line,pos.x,pos.y-((lines.length-1)*6)+index*13);
+      });
+    });
+  }
+
+  function nodeById(id){
+    return nodes.find(node=>node.id===id);
+  }
+
+  function updateFlowStatus(){
+    if(!flowStatus)return;
+    const speedLabel=(Math.round(playbackRate*100)/100).toFixed(playbackRate===1?1:2).replace(/0$/,'').replace(/\.$/,'');
+    flowStatus.textContent=scenarioLabels[currentScenario]+' at '+speedLabel+'x playback. '+scenarioSummaries[currentScenario];
+  }
+
+  function activateButtons(selector,button){
+    document.querySelectorAll(selector).forEach(el=>el.classList.remove('active'));
+    if(button)button.classList.add('active');
+  }
+
+  function drawFrame(now){
+    ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle='rgba(99,102,241,.04)';
+    ctx.lineWidth=1;
+    for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    drawNodes();
+
+    const steps=scenarios[currentScenario];
+    const elapsed=(now-animStart)*playbackRate;
+    steps.forEach(step=>{
+      const t=(elapsed-step.delay)/packetDuration;
+      if(t<0||t>1.45)return;
+      const progress=Math.min(t,1);
+      const from=getNodePos(nodeById(step.from));
+      const to=getNodePos(nodeById(step.to));
+      const currentX=from.x+(to.x-from.x)*progress;
+      const currentY=from.y+(to.y-from.y)*progress;
+
+      ctx.beginPath();
+      ctx.moveTo(from.x,from.y);
+      ctx.lineTo(currentX,currentY);
+      ctx.strokeStyle=step.color+'66';
+      ctx.lineWidth=2;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(currentX,currentY,6,0,Math.PI*2);
+      ctx.fillStyle=step.color;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(currentX,currentY,12,0,Math.PI*2);
+      ctx.fillStyle=step.color+'33';
+      ctx.fill();
+
+      if(progress>.22&&progress<1.05){
+        const labelX=from.x+(to.x-from.x)*.5;
+        const labelY=from.y+(to.y-from.y)*.5-15;
+        ctx.font='bold 9px system-ui';
+        const textWidth=ctx.measureText(step.label).width+12;
+        drawRoundRect(labelX-textWidth/2,labelY-9,textWidth,18,4,'#0d1117dd',null);
+        ctx.fillStyle=step.color;
+        ctx.textAlign='center';
+        ctx.fillText(step.label,labelX,labelY+4);
+      }
+    });
+
+    const lastDelay=steps[steps.length-1].delay;
+    if(elapsed>lastDelay+packetDuration+loopPause){
+      animStart=now;
+    }
+    flowRafId=requestAnimationFrame(drawFrame);
+  }
+
+  function startLoop(){
+    if(flowRafId)cancelAnimationFrame(flowRafId);
+    flowRafId=requestAnimationFrame(drawFrame);
+  }
+
+  window.setFlowScenario=function(name,button){
+    currentScenario=name;
+    animStart=performance.now();
+    activateButtons('#flowdiagram [data-flow-scenario]',button);
+    updateFlowStatus();
+  };
+
+  window.setFlowSpeed=function(rate,button){
+    playbackRate=rate;
+    animStart=performance.now();
+    activateButtons('#flowdiagram [data-flow-speed]',button);
+    updateFlowStatus();
+  };
+
+  window.addEventListener('resize',resize);
+  resize();
+  updateFlowStatus();
+  startLoop();
+})();
+
+/* ============ SERVICE FLOW DIAGRAM — VERTICAL SWIMLANE LAYOUT ============ */
+(function(){
+  const canvas=document.getElementById('svcFlowCanvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  let W=1100,H=640;
+  const flowStatus=document.getElementById('svcFlowStatus');
+
+  /* ---------- SWIMLANE NODE DEFINITIONS ----------
+     Layout: 3 horizontal tiers
+       Row 0 = edge / entry (y ~.08)
+       Row 1 = services     (y ~.35)
+       Row 2 = DB / cache   (y ~.72)
+     Columns spread across x from .05 to .95
+  */
+  const svcNodes=[
+    /* --- Tier 0: entry --- */
+    {id:'browser',   label:'Browser\nClient',       x:.05, y:.07,  w:95, h:44, color:'#f472b6', tier:'entry'},
+    {id:'cdn',       label:'CDN / WAF\nEdge',        x:.17, y:.07,  w:95, h:44, color:'#818cf8', tier:'entry'},
+    /* --- Tier 1: services --- */
+    {id:'gateway',   label:'API Gateway\nEnvoy',      x:.05, y:.34,  w:105,h:48, color:'#6366f1', tier:'svc'},
+    {id:'auth',      label:'Auth Service',            x:.17, y:.34,  w:95, h:44, color:'#a78bfa', tier:'svc'},
+    {id:'order',     label:'Order Service',           x:.30, y:.34,  w:100,h:44, color:'#22d3ee', tier:'svc'},
+    {id:'inventory', label:'Inventory Svc',           x:.43, y:.34,  w:100,h:44, color:'#34d399', tier:'svc'},
+    {id:'payment',   label:'Payment Svc\nStripe',     x:.56, y:.34,  w:100,h:48, color:'#fbbf24', tier:'svc'},
+    {id:'shipping',  label:'Shipping Svc',            x:.69, y:.34,  w:100,h:44, color:'#34d399', tier:'svc'},
+    {id:'notify',    label:'Notification\nWorker',    x:.82, y:.34,  w:100,h:44, color:'#fb7185', tier:'svc'},
+    {id:'user',      label:'User Service',            x:.95, y:.34,  w:95, h:44, color:'#a78bfa', tier:'svc'},
+    /* --- Tier 2: databases / caches (cylinders) --- */
+    {id:'authdb',      label:'Auth DB\nPostgres',      x:.17, y:.70,  w:88, h:48, color:'#a78bfa', tier:'db'},
+    {id:'orderdb',     label:'Order DB\nPostgres',     x:.30, y:.70,  w:88, h:48, color:'#22d3ee', tier:'db'},
+    {id:'inventorydb', label:'Inventory DB\nPostgres', x:.43, y:.70,  w:88, h:48, color:'#34d399', tier:'db'},
+    {id:'paymentdb',   label:'Payment DB\nPostgres',   x:.56, y:.70,  w:88, h:48, color:'#fbbf24', tier:'db'},
+    {id:'shippingdb',  label:'Shipping DB',            x:.69, y:.70,  w:88, h:48, color:'#34d399', tier:'db'},
+    {id:'redis',       label:'Redis Cache\nL1 / L2',   x:.82, y:.70,  w:88, h:48, color:'#f97316', tier:'db'},
+    /* --- Tier 2-b: event / search (also cylinder-shaped) --- */
+    {id:'kafka',  label:'Kafka\nEvent Bus',      x:.05, y:.70,  w:95, h:48, color:'#818cf8', tier:'db'},
+    {id:'search', label:'Elasticsearch\nIndex',  x:.95, y:.70,  w:88, h:48, color:'#06b6d4', tier:'db'},
+  ];
+
+  /* ---------- SCENARIOS ---------- */
+  const svcScenarios={
+    checkout:[
+      {from:'browser',to:'cdn',label:'POST /checkout',color:'#6366f1',delay:0},
+      {from:'cdn',to:'gateway',label:'Forward (TLS)',color:'#6366f1',delay:700},
+      {from:'gateway',to:'auth',label:'Validate JWT',color:'#a78bfa',delay:1400},
+      {from:'auth',to:'authdb',label:'SELECT session',color:'#22d3ee',delay:2100},
+      {from:'authdb',to:'auth',label:'Session valid',color:'#f472b6',delay:2800},
+      {from:'auth',to:'gateway',label:'Claims OK',color:'#f472b6',delay:3450},
+      {from:'gateway',to:'order',label:'CreateOrder',color:'#6366f1',delay:4100},
+      {from:'order',to:'orderdb',label:'INSERT order',color:'#22d3ee',delay:4750},
+      {from:'orderdb',to:'order',label:'Order ID: 4821',color:'#f472b6',delay:5400},
+      {from:'order',to:'inventory',label:'gRPC: ReserveItems',color:'#6366f1',delay:6050},
+      {from:'inventory',to:'inventorydb',label:'UPDATE stock SET qty=qty-1',color:'#22d3ee',delay:6700},
+      {from:'inventorydb',to:'inventory',label:'1 row updated',color:'#f472b6',delay:7350},
+      {from:'inventory',to:'order',label:'Reserved OK',color:'#f472b6',delay:8000},
+      {from:'order',to:'payment',label:'gRPC: Charge $49.99',color:'#6366f1',delay:8650},
+      {from:'payment',to:'paymentdb',label:'INSERT payment',color:'#22d3ee',delay:9300},
+      {from:'paymentdb',to:'payment',label:'Stored',color:'#f472b6',delay:9950},
+      {from:'payment',to:'order',label:'Charge OK: txn_abc',color:'#f472b6',delay:10600},
+      {from:'order',to:'kafka',label:'Publish: OrderConfirmed',color:'#34d399',delay:11250},
+      {from:'kafka',to:'notify',label:'Send confirmation email',color:'#fbbf24',delay:11900},
+      {from:'kafka',to:'shipping',label:'Create shipment',color:'#fbbf24',delay:12200},
+      {from:'shipping',to:'shippingdb',label:'INSERT shipment',color:'#22d3ee',delay:12850},
+      {from:'order',to:'gateway',label:'201 Created',color:'#f472b6',delay:13500},
+      {from:'gateway',to:'browser',label:'Order confirmed!',color:'#f472b6',delay:14150},
+    ],
+    search:[
+      {from:'browser',to:'cdn',label:'GET /search?q=shoes',color:'#6366f1',delay:0},
+      {from:'cdn',to:'gateway',label:'Forward request',color:'#6366f1',delay:700},
+      {from:'gateway',to:'inventory',label:'Route to catalog',color:'#6366f1',delay:1400},
+      {from:'inventory',to:'redis',label:'Cache lookup',color:'#a78bfa',delay:2100},
+      {from:'redis',to:'inventory',label:'MISS',color:'#a78bfa',delay:2750},
+      {from:'inventory',to:'search',label:'Elastic: full-text query',color:'#22d3ee',delay:3400},
+      {from:'search',to:'inventory',label:'50 results (12ms)',color:'#f472b6',delay:4050},
+      {from:'inventory',to:'inventorydb',label:'SELECT stock levels',color:'#22d3ee',delay:4700},
+      {from:'inventorydb',to:'inventory',label:'Availability data',color:'#f472b6',delay:5350},
+      {from:'inventory',to:'redis',label:'SET cache (TTL 60s)',color:'#a78bfa',delay:6000},
+      {from:'inventory',to:'gateway',label:'200 + results',color:'#f472b6',delay:6600},
+      {from:'gateway',to:'browser',label:'Product listing',color:'#f472b6',delay:7250},
+    ],
+    signup:[
+      {from:'browser',to:'cdn',label:'POST /signup',color:'#6366f1',delay:0},
+      {from:'cdn',to:'gateway',label:'Forward',color:'#6366f1',delay:600},
+      {from:'gateway',to:'auth',label:'Register user',color:'#a78bfa',delay:1200},
+      {from:'auth',to:'authdb',label:'SELECT email check',color:'#22d3ee',delay:1850},
+      {from:'authdb',to:'auth',label:'Not found (OK)',color:'#f472b6',delay:2500},
+      {from:'auth',to:'authdb',label:'INSERT user + hash pwd',color:'#22d3ee',delay:3100},
+      {from:'authdb',to:'auth',label:'user_id: u_9821',color:'#f472b6',delay:3750},
+      {from:'auth',to:'kafka',label:'Publish: UserCreated',color:'#34d399',delay:4400},
+      {from:'kafka',to:'user',label:'Create user profile',color:'#fbbf24',delay:5050},
+      {from:'kafka',to:'notify',label:'Send welcome email',color:'#fbbf24',delay:5350},
+      {from:'kafka',to:'search',label:'Index user doc',color:'#fbbf24',delay:5650},
+      {from:'auth',to:'gateway',label:'JWT + refresh token',color:'#f472b6',delay:6200},
+      {from:'gateway',to:'browser',label:'201 + Set-Cookie',color:'#f472b6',delay:6850},
+    ],
+    inventory:[
+      {from:'inventory',to:'inventorydb',label:'BEGIN transaction',color:'#22d3ee',delay:0},
+      {from:'inventorydb',to:'inventory',label:'Lock rows FOR UPDATE',color:'#f472b6',delay:650},
+      {from:'inventory',to:'inventorydb',label:'UPDATE quantities',color:'#22d3ee',delay:1300},
+      {from:'inventorydb',to:'inventory',label:'5 rows updated',color:'#f472b6',delay:1950},
+      {from:'inventory',to:'inventorydb',label:'INSERT into outbox',color:'#22d3ee',delay:2600},
+      {from:'inventorydb',to:'inventory',label:'COMMIT',color:'#f472b6',delay:3250},
+      {from:'inventory',to:'kafka',label:'CDC: StockUpdated event',color:'#34d399',delay:3900},
+      {from:'kafka',to:'search',label:'Reindex availability',color:'#fbbf24',delay:4550},
+      {from:'kafka',to:'redis',label:'Invalidate stock cache',color:'#fbbf24',delay:4850},
+      {from:'kafka',to:'order',label:'Update read model',color:'#fbbf24',delay:5150},
+      {from:'order',to:'orderdb',label:'UPDATE order status',color:'#22d3ee',delay:5800},
+      {from:'search',to:'inventory',label:'Reindex complete',color:'#f472b6',delay:6450},
+    ],
+  };
+
+  const svcDescriptions={
+    checkout:'Checkout flow: vertical swimlane view — browser → CDN → Gateway → Auth DB check → Order DB insert → Inventory DB reserve → Payment DB charge → Kafka event → Notification + Shipping workers.',
+    search:'Product search: swimlane view — browser → CDN → Gateway → Inventory → Redis cache MISS → Elasticsearch full-text → Postgres stock check → Cache write → Response with results.',
+    signup:'User signup: swimlane view — browser → Gateway → Auth → Postgres email check → Insert user → Kafka UserCreated → Profile + Welcome email + Search index.',
+    inventory:'Inventory sync: swimlane view — transactional outbox pattern — BEGIN → lock → update → outbox insert → COMMIT → CDC → Kafka → cache invalidation + reindex + read model update.',
+  };
+
+  let currentSvcScenario='checkout';
+  let svcPlaybackRate=0.7;
+  let svcAnimStart=performance.now();
+  const svcPacketDuration=900;
+  const svcLoopPause=2800;
+  let svcRafId;
+
+  function svcResize(){
+    const rect=canvas.parentElement.getBoundingClientRect();
+    W=Math.max(rect.width-48,320);
+    canvas.width=W*dpr;canvas.height=H*dpr;
+    canvas.style.width=W+'px';canvas.style.height=H+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+
+  function svcNodePos(node){return{x:node.x*W,y:node.y*H};}
+  function svcNodeById(id){return svcNodes.find(n=>n.id===id);}
+
+  /* --- draw a rounded rectangle --- */
+  function drawSvcRoundRect(x,y,w,h,r,fill,stroke){
+    ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);
+    ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+    if(fill){ctx.fillStyle=fill;ctx.fill();}
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1.5;ctx.stroke();}
+  }
+
+  /* --- draw a 3-D cylinder shape for DB / cache nodes --- */
+  function drawCylinder(cx,cy,w,h,fill,stroke){
+    const hw=w/2, hh=h/2;
+    const ry=10; // vertical radius of ellipse caps
+    const bodyTop=cy-hh+ry;
+    const bodyBot=cy+hh-ry;
+    // body rectangle
+    ctx.beginPath();
+    ctx.moveTo(cx-hw,bodyTop);ctx.lineTo(cx-hw,bodyBot);
+    ctx.ellipse(cx,bodyBot,hw,ry,0,Math.PI,0,true);
+    ctx.lineTo(cx+hw,bodyTop);
+    ctx.ellipse(cx,bodyTop,hw,ry,0,0,Math.PI,true);
+    ctx.closePath();
+    if(fill){ctx.fillStyle=fill;ctx.fill();}
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1.5;ctx.stroke();}
+    // top cap (filled slightly brighter)
+    ctx.beginPath();ctx.ellipse(cx,bodyTop,hw,ry,0,0,Math.PI*2);ctx.closePath();
+    if(fill){ctx.fillStyle=fill;ctx.fill();}
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1.5;ctx.stroke();}
+    // highlight ring on top
+    ctx.beginPath();ctx.ellipse(cx,bodyTop,hw*0.7,ry*0.55,0,0,Math.PI*2);
+    ctx.strokeStyle=(stroke||fill)+'44';ctx.lineWidth=0.7;ctx.stroke();
+  }
+
+  /* --- draw tier labels and lane dividers --- */
+  function drawSwimlanes(){
+    // Horizontal tier divider lines
+    const tierY1=H*0.20;
+    const tierY2=H*0.54;
+    ctx.save();
+    ctx.setLineDash([6,6]);
+    ctx.strokeStyle='rgba(148,163,184,.12)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(0,tierY1);ctx.lineTo(W,tierY1);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,tierY2);ctx.lineTo(W,tierY2);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+    // Tier labels on left
+    ctx.save();ctx.fillStyle='#475569';ctx.font='bold 9px system-ui';ctx.textAlign='left';
+    ctx.fillText('EDGE / CLIENT',8,tierY1-6);
+    ctx.fillText('SERVICES',8,tierY2-6);
+    ctx.fillText('DATA STORES',8,tierY2+18);
+    ctx.restore();
+  }
+
+  /* --- draw all nodes --- */
+  function drawSvcNodes(){
+    svcNodes.forEach(node=>{
+      const pos=svcNodePos(node);
+      if(node.tier==='db'){
+        drawCylinder(pos.x,pos.y,node.w,node.h,node.color+'1c',node.color+'88');
+      } else {
+        drawSvcRoundRect(pos.x-node.w/2,pos.y-node.h/2,node.w,node.h,10,node.color+'18',node.color+'88');
+      }
+      const lines=node.label.split('\n');
+      lines.forEach((line,i)=>{
+        ctx.fillStyle=i===0?'#f8fafc':'#94a3b8';
+        ctx.font=i===0?'bold 10px system-ui':'9px system-ui';
+        ctx.textAlign='center';
+        ctx.fillText(line,pos.x,pos.y-((lines.length-1)*6)+i*13);
+      });
+    });
+  }
+
+  /* --- animation frame --- */
+  function drawSvcFrame(now){
+    ctx.clearRect(0,0,W,H);
+    // subtle grid
+    ctx.strokeStyle='rgba(99,102,241,.025)';ctx.lineWidth=1;
+    for(let x=0;x<W;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+    drawSwimlanes();
+    drawSvcNodes();
+    const steps=svcScenarios[currentSvcScenario];
+    const elapsed=(now-svcAnimStart)*svcPlaybackRate;
+
+    steps.forEach(step=>{
+      const t=(elapsed-step.delay)/svcPacketDuration;
+      if(t<0||t>1.45)return;
+      const progress=Math.min(t,1);
+      const from=svcNodePos(svcNodeById(step.from));
+      const to=svcNodePos(svcNodeById(step.to));
+      const cx=from.x+(to.x-from.x)*progress;
+      const cy=from.y+(to.y-from.y)*progress;
+
+      ctx.beginPath();ctx.moveTo(from.x,from.y);ctx.lineTo(cx,cy);
+      ctx.strokeStyle=step.color+'66';ctx.lineWidth=2;ctx.stroke();
+
+      ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.fillStyle=step.color;ctx.fill();
+      ctx.beginPath();ctx.arc(cx,cy,11,0,Math.PI*2);ctx.fillStyle=step.color+'28';ctx.fill();
+
+      if(progress>.2&&progress<1.05){
+        const lx=from.x+(to.x-from.x)*.5,ly=from.y+(to.y-from.y)*.5-15;
+        ctx.font='bold 8.5px system-ui';
+        const tw=ctx.measureText(step.label).width+10;
+        drawSvcRoundRect(lx-tw/2,ly-8,tw,16,3,'#0d1117dd',null);
+        ctx.fillStyle=step.color;ctx.textAlign='center';ctx.fillText(step.label,lx,ly+3);
+      }
+    });
+
+    const lastDelay=steps[steps.length-1].delay;
+    if(elapsed>lastDelay+svcPacketDuration+svcLoopPause)svcAnimStart=now;
+    svcRafId=requestAnimationFrame(drawSvcFrame);
+  }
+
+  window.setSvcFlowScenario=function(name,button){
+    currentSvcScenario=name;svcAnimStart=performance.now();
+    document.querySelectorAll('#serviceflow [data-svcflow-scenario]').forEach(b=>b.classList.remove('active'));
+    if(button)button.classList.add('active');
+    if(flowStatus)flowStatus.textContent=svcDescriptions[name];
+  };
+  window.setSvcFlowSpeed=function(rate,button){
+    svcPlaybackRate=rate;svcAnimStart=performance.now();
+    document.querySelectorAll('#serviceflow [data-svcflow-speed]').forEach(b=>b.classList.remove('active'));
+    if(button)button.classList.add('active');
+  };
+
+  window.addEventListener('resize',svcResize);
+  svcResize();
+  svcRafId=requestAnimationFrame(drawSvcFrame);
+})();
+</script>
+</body>
+</html>
