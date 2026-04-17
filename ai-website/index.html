@@ -4195,6 +4195,444 @@ demo.<span class="fn">launch</span>(share=<span class="kw">True</span>)  <span c
   </div>
 </section>
 
+<!-- ============================================================
+     CHAPTER — PRODUCTION-READY ML INFERENCE SERVICE
+     ============================================================ -->
+<section class="chapter" id="ch-production">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">Production Reference</div>
+      <h2>Production-Ready ML Inference Service</h2>
+      <p>A complete, deployable inference API with FastAPI, model versioning, preprocessing pipeline, health checks, Docker, and Kubernetes manifests.</p>
+    </div>
+
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;margin-bottom:2rem">
+      <h3 style="color:var(--accent);margin-bottom:1rem">🧠 Sentiment Analysis Service — Full Project Structure</h3>
+      <p style="color:var(--text-dim);font-size:.92rem;margin-bottom:1.5rem">A production-grade sentiment analysis microservice built with Python, FastAPI, and Hugging Face Transformers. Includes model registry loading, input validation, structured logging, Prometheus metrics, Docker containerization, and Kubernetes deployment.</p>
+
+      <details class="code-example">
+        <summary>📄 app/main.py — FastAPI application entry point</summary>
+        <div class="code-block"><span class="cm"># app/main.py — FastAPI inference service</span>
+<span class="kw">import</span> <span class="type">logging</span>
+<span class="kw">import</span> <span class="type">uuid</span>
+<span class="kw">from</span> <span class="type">contextlib</span> <span class="kw">import</span> asynccontextmanager
+
+<span class="kw">from</span> <span class="type">fastapi</span> <span class="kw">import</span> FastAPI, Request
+<span class="kw">from</span> <span class="type">fastapi.middleware.cors</span> <span class="kw">import</span> CORSMiddleware
+<span class="kw">from</span> <span class="type">fastapi.responses</span> <span class="kw">import</span> JSONResponse
+
+<span class="kw">from</span> <span class="type">app.config</span> <span class="kw">import</span> settings
+<span class="kw">from</span> <span class="type">app.model</span> <span class="kw">import</span> ModelRegistry
+<span class="kw">from</span> <span class="type">app.routes</span> <span class="kw">import</span> router
+<span class="kw">from</span> <span class="type">app.metrics</span> <span class="kw">import</span> setup_metrics
+
+logger = logging.<span class="fn">getLogger</span>(__name__)
+
+
+<span class="fn">@asynccontextmanager</span>
+<span class="kw">async def</span> <span class="fn">lifespan</span>(app: FastAPI):
+    <span class="cm"># Startup: load model into memory</span>
+    logger.<span class="fn">info</span>(<span class="str">"Loading model: %s"</span>, settings.MODEL_NAME)
+    app.state.registry = <span class="type">ModelRegistry</span>()
+    app.state.registry.<span class="fn">load</span>(settings.MODEL_NAME, settings.MODEL_REVISION)
+    logger.<span class="fn">info</span>(<span class="str">"Model loaded — ready to serve"</span>)
+    <span class="kw">yield</span>
+    <span class="cm"># Shutdown: release resources</span>
+    app.state.registry.<span class="fn">unload</span>()
+    logger.<span class="fn">info</span>(<span class="str">"Model unloaded — shutting down"</span>)
+
+
+app = <span class="type">FastAPI</span>(
+    title=<span class="str">"Sentiment Analysis API"</span>,
+    version=settings.APP_VERSION,
+    lifespan=lifespan,
+)
+
+app.<span class="fn">add_middleware</span>(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_methods=[<span class="str">"POST"</span>, <span class="str">"GET"</span>],
+    allow_headers=[<span class="str">"*"</span>],
+)
+<span class="fn">setup_metrics</span>(app)
+
+
+<span class="fn">@app.middleware</span>(<span class="str">"http"</span>)
+<span class="kw">async def</span> <span class="fn">request_id_middleware</span>(request: Request, call_next):
+    request_id = request.headers.<span class="fn">get</span>(<span class="str">"x-request-id"</span>, <span class="fn">str</span>(uuid.<span class="fn">uuid4</span>()))
+    response = <span class="kw">await</span> <span class="fn">call_next</span>(request)
+    response.headers[<span class="str">"x-request-id"</span>] = request_id
+    <span class="kw">return</span> response
+
+
+app.<span class="fn">include_router</span>(router, prefix=<span class="str">"/api/v1"</span>)</div>
+      </details>
+
+      <details class="code-example">
+        <summary>📄 app/routes.py — Prediction &amp; health endpoints</summary>
+        <div class="code-block"><span class="cm"># app/routes.py — Prediction + health endpoints</span>
+<span class="kw">import</span> <span class="type">time</span>
+<span class="kw">import</span> <span class="type">logging</span>
+<span class="kw">from</span> <span class="type">typing</span> <span class="kw">import</span> <span class="type">List</span>
+
+<span class="kw">from</span> <span class="type">fastapi</span> <span class="kw">import</span> APIRouter, Request, HTTPException
+<span class="kw">from</span> <span class="type">pydantic</span> <span class="kw">import</span> BaseModel, Field, field_validator
+<span class="kw">from</span> <span class="type">app.metrics</span> <span class="kw">import</span> PREDICTION_LATENCY, PREDICTION_COUNT
+
+logger = logging.<span class="fn">getLogger</span>(__name__)
+router = <span class="type">APIRouter</span>()
+
+
+<span class="kw">class</span> <span class="type">PredictionRequest</span>(BaseModel):
+    texts: <span class="type">List</span>[<span class="type">str</span>] = <span class="fn">Field</span>(..., min_length=<span class="num">1</span>, max_length=<span class="num">32</span>)
+
+    <span class="fn">@field_validator</span>(<span class="str">"texts"</span>)
+    <span class="fn">@classmethod</span>
+    <span class="kw">def</span> <span class="fn">validate_texts</span>(cls, v):
+        <span class="kw">for</span> t <span class="kw">in</span> v:
+            <span class="kw">if</span> <span class="kw">not</span> t.<span class="fn">strip</span>():
+                <span class="kw">raise</span> <span class="type">ValueError</span>(<span class="str">"Empty strings not allowed"</span>)
+            <span class="kw">if</span> <span class="fn">len</span>(t) &gt; <span class="num">5000</span>:
+                <span class="kw">raise</span> <span class="type">ValueError</span>(<span class="str">"Text exceeds 5000 char limit"</span>)
+        <span class="kw">return</span> v
+
+
+<span class="kw">class</span> <span class="type">SentimentResult</span>(BaseModel):
+    text: <span class="type">str</span>
+    label: <span class="type">str</span>
+    score: <span class="type">float</span>
+
+
+<span class="fn">@router.post</span>(<span class="str">"/predict"</span>, response_model=<span class="type">List</span>[<span class="type">SentimentResult</span>])
+<span class="kw">async def</span> <span class="fn">predict</span>(request: Request, body: <span class="type">PredictionRequest</span>):
+    start = time.<span class="fn">perf_counter</span>()
+    registry = request.app.state.registry
+
+    results = registry.<span class="fn">predict</span>(body.texts)
+
+    latency = time.<span class="fn">perf_counter</span>() - start
+    PREDICTION_LATENCY.<span class="fn">observe</span>(latency)
+    PREDICTION_COUNT.<span class="fn">inc</span>(<span class="fn">len</span>(body.texts))
+
+    logger.<span class="fn">info</span>(
+        <span class="str">"Predicted %d texts in %.3fs"</span>,
+        <span class="fn">len</span>(body.texts), latency
+    )
+    <span class="kw">return</span> results
+
+
+<span class="fn">@router.get</span>(<span class="str">"/health/live"</span>)
+<span class="kw">async def</span> <span class="fn">liveness</span>():
+    <span class="kw">return</span> {<span class="str">"status"</span>: <span class="str">"ok"</span>}
+
+
+<span class="fn">@router.get</span>(<span class="str">"/health/ready"</span>)
+<span class="kw">async def</span> <span class="fn">readiness</span>(request: Request):
+    registry = request.app.state.registry
+    <span class="kw">if not</span> registry.is_loaded:
+        <span class="kw">raise</span> <span class="type">HTTPException</span>(status_code=<span class="num">503</span>, detail=<span class="str">"Model not loaded"</span>)
+    <span class="kw">return</span> {
+        <span class="str">"status"</span>: <span class="str">"ready"</span>,
+        <span class="str">"model"</span>: registry.model_name,
+        <span class="str">"revision"</span>: registry.revision,
+    }</div>
+      </details>
+
+      <details class="code-example">
+        <summary>📄 app/model.py — Model registry with preprocessing pipeline</summary>
+        <div class="code-block"><span class="cm"># app/model.py — Model loading, preprocessing, inference</span>
+<span class="kw">import</span> <span class="type">logging</span>
+<span class="kw">from</span> <span class="type">typing</span> <span class="kw">import</span> <span class="type">List, Dict</span>
+
+<span class="kw">import</span> <span class="type">torch</span>
+<span class="kw">from</span> <span class="type">transformers</span> <span class="kw">import</span> (
+    AutoTokenizer,
+    AutoModelForSequenceClassification,
+    pipeline,
+)
+
+logger = logging.<span class="fn">getLogger</span>(__name__)
+
+
+<span class="kw">class</span> <span class="type">ModelRegistry</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self):
+        self.pipe = <span class="kw">None</span>
+        self.model_name = <span class="kw">None</span>
+        self.revision = <span class="kw">None</span>
+
+    <span class="fn">@property</span>
+    <span class="kw">def</span> <span class="fn">is_loaded</span>(self) -&gt; <span class="type">bool</span>:
+        <span class="kw">return</span> self.pipe <span class="kw">is not None</span>
+
+    <span class="kw">def</span> <span class="fn">load</span>(self, model_name: <span class="type">str</span>, revision: <span class="type">str</span> = <span class="str">"main"</span>):
+        device = <span class="str">"cuda"</span> <span class="kw">if</span> torch.cuda.<span class="fn">is_available</span>() <span class="kw">else</span> <span class="str">"cpu"</span>
+        logger.<span class="fn">info</span>(<span class="str">"Loading %s (rev=%s) on %s"</span>, model_name, revision, device)
+
+        tokenizer = AutoTokenizer.<span class="fn">from_pretrained</span>(
+            model_name, revision=revision
+        )
+        model = AutoModelForSequenceClassification.<span class="fn">from_pretrained</span>(
+            model_name, revision=revision
+        )
+
+        self.pipe = <span class="fn">pipeline</span>(
+            <span class="str">"sentiment-analysis"</span>,
+            model=model,
+            tokenizer=tokenizer,
+            device=device,
+            batch_size=<span class="num">16</span>,
+            truncation=<span class="kw">True</span>,
+            max_length=<span class="num">512</span>,
+        )
+        self.model_name = model_name
+        self.revision = revision
+
+    <span class="kw">def</span> <span class="fn">predict</span>(self, texts: <span class="type">List</span>[<span class="type">str</span>]) -&gt; <span class="type">List</span>[<span class="type">Dict</span>]:
+        <span class="kw">if not</span> self.is_loaded:
+            <span class="kw">raise</span> <span class="type">RuntimeError</span>(<span class="str">"Model not loaded"</span>)
+
+        <span class="cm"># Preprocess: strip whitespace, normalize unicode</span>
+        cleaned = [t.<span class="fn">strip</span>() <span class="kw">for</span> t <span class="kw">in</span> texts]
+        raw_results = self.<span class="fn">pipe</span>(cleaned)
+
+        <span class="kw">return</span> [
+            {
+                <span class="str">"text"</span>: text,
+                <span class="str">"label"</span>: result[<span class="str">"label"</span>],
+                <span class="str">"score"</span>: <span class="fn">round</span>(result[<span class="str">"score"</span>], <span class="num">4</span>),
+            }
+            <span class="kw">for</span> text, result <span class="kw">in</span> <span class="fn">zip</span>(texts, raw_results)
+        ]
+
+    <span class="kw">def</span> <span class="fn">unload</span>(self):
+        self.pipe = <span class="kw">None</span>
+        <span class="kw">if</span> torch.cuda.<span class="fn">is_available</span>():
+            torch.cuda.<span class="fn">empty_cache</span>()
+        logger.<span class="fn">info</span>(<span class="str">"Model unloaded, GPU cache cleared"</span>)</div>
+      </details>
+
+      <details class="code-example">
+        <summary>📄 app/config.py — Settings with environment variable loading</summary>
+        <div class="code-block"><span class="cm"># app/config.py — Centralized configuration</span>
+<span class="kw">from</span> <span class="type">pydantic_settings</span> <span class="kw">import</span> BaseSettings
+<span class="kw">from</span> <span class="type">typing</span> <span class="kw">import</span> <span class="type">List</span>
+
+
+<span class="kw">class</span> <span class="type">Settings</span>(BaseSettings):
+    APP_VERSION: <span class="type">str</span> = <span class="str">"1.0.0"</span>
+    MODEL_NAME: <span class="type">str</span> = <span class="str">"distilbert-base-uncased-finetuned-sst-2-english"</span>
+    MODEL_REVISION: <span class="type">str</span> = <span class="str">"main"</span>
+    LOG_LEVEL: <span class="type">str</span> = <span class="str">"INFO"</span>
+    CORS_ORIGINS: <span class="type">List</span>[<span class="type">str</span>] = [<span class="str">"*"</span>]
+    WORKERS: <span class="type">int</span> = <span class="num">1</span>
+
+    <span class="kw">class</span> <span class="type">Config</span>:
+        env_file = <span class="str">".env"</span>
+
+
+settings = <span class="type">Settings</span>()</div>
+      </details>
+
+      <details class="code-example">
+        <summary>📄 app/metrics.py — Prometheus metrics instrumentation</summary>
+        <div class="code-block"><span class="cm"># app/metrics.py — Prometheus metrics for inference monitoring</span>
+<span class="kw">from</span> <span class="type">prometheus_client</span> <span class="kw">import</span> (
+    Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+)
+<span class="kw">from</span> <span class="type">fastapi</span> <span class="kw">import</span> FastAPI, Response
+
+PREDICTION_COUNT = <span class="type">Counter</span>(
+    <span class="str">"ml_predictions_total"</span>,
+    <span class="str">"Total number of predictions served"</span>,
+)
+PREDICTION_LATENCY = <span class="type">Histogram</span>(
+    <span class="str">"ml_prediction_duration_seconds"</span>,
+    <span class="str">"Inference latency in seconds"</span>,
+    buckets=[<span class="num">0.01</span>, <span class="num">0.05</span>, <span class="num">0.1</span>, <span class="num">0.25</span>, <span class="num">0.5</span>, <span class="num">1.0</span>, <span class="num">2.5</span>],
+)
+
+
+<span class="kw">def</span> <span class="fn">setup_metrics</span>(app: FastAPI):
+    <span class="fn">@app.get</span>(<span class="str">"/metrics"</span>)
+    <span class="kw">async def</span> <span class="fn">metrics</span>():
+        <span class="kw">return</span> <span class="type">Response</span>(
+            content=<span class="fn">generate_latest</span>(),
+            media_type=CONTENT_TYPE_LATEST,
+        )</div>
+      </details>
+
+      <details class="code-example">
+        <summary>📄 tests/test_api.py — Integration tests with pytest</summary>
+        <div class="code-block"><span class="cm"># tests/test_api.py — Integration tests</span>
+<span class="kw">import</span> <span class="type">pytest</span>
+<span class="kw">from</span> <span class="type">fastapi.testclient</span> <span class="kw">import</span> TestClient
+<span class="kw">from</span> <span class="type">app.main</span> <span class="kw">import</span> app
+
+client = <span class="type">TestClient</span>(app)
+
+
+<span class="kw">def</span> <span class="fn">test_liveness</span>():
+    resp = client.<span class="fn">get</span>(<span class="str">"/api/v1/health/live"</span>)
+    <span class="kw">assert</span> resp.status_code == <span class="num">200</span>
+    <span class="kw">assert</span> resp.<span class="fn">json</span>()[<span class="str">"status"</span>] == <span class="str">"ok"</span>
+
+
+<span class="kw">def</span> <span class="fn">test_readiness</span>():
+    resp = client.<span class="fn">get</span>(<span class="str">"/api/v1/health/ready"</span>)
+    <span class="kw">assert</span> resp.status_code == <span class="num">200</span>
+    data = resp.<span class="fn">json</span>()
+    <span class="kw">assert</span> data[<span class="str">"status"</span>] == <span class="str">"ready"</span>
+    <span class="kw">assert</span> <span class="str">"model"</span> <span class="kw">in</span> data
+
+
+<span class="kw">def</span> <span class="fn">test_predict_single</span>():
+    resp = client.<span class="fn">post</span>(
+        <span class="str">"/api/v1/predict"</span>,
+        json={<span class="str">"texts"</span>: [<span class="str">"This product is amazing!"</span>]},
+    )
+    <span class="kw">assert</span> resp.status_code == <span class="num">200</span>
+    results = resp.<span class="fn">json</span>()
+    <span class="kw">assert</span> <span class="fn">len</span>(results) == <span class="num">1</span>
+    <span class="kw">assert</span> results[<span class="num">0</span>][<span class="str">"label"</span>] <span class="kw">in</span> (<span class="str">"POSITIVE"</span>, <span class="str">"NEGATIVE"</span>)
+    <span class="kw">assert</span> <span class="num">0</span> &lt;= results[<span class="num">0</span>][<span class="str">"score"</span>] &lt;= <span class="num">1</span>
+
+
+<span class="kw">def</span> <span class="fn">test_predict_batch</span>():
+    resp = client.<span class="fn">post</span>(
+        <span class="str">"/api/v1/predict"</span>,
+        json={<span class="str">"texts"</span>: [<span class="str">"Great!"</span>, <span class="str">"Terrible experience."</span>]},
+    )
+    <span class="kw">assert</span> resp.status_code == <span class="num">200</span>
+    <span class="kw">assert</span> <span class="fn">len</span>(resp.<span class="fn">json</span>()) == <span class="num">2</span>
+
+
+<span class="kw">def</span> <span class="fn">test_predict_empty_rejected</span>():
+    resp = client.<span class="fn">post</span>(<span class="str">"/api/v1/predict"</span>, json={<span class="str">"texts"</span>: []})
+    <span class="kw">assert</span> resp.status_code == <span class="num">422</span>
+
+
+<span class="kw">def</span> <span class="fn">test_request_id_header</span>():
+    resp = client.<span class="fn">get</span>(<span class="str">"/api/v1/health/live"</span>)
+    <span class="kw">assert</span> <span class="str">"x-request-id"</span> <span class="kw">in</span> resp.headers</div>
+      </details>
+
+      <details class="code-example">
+        <summary>📄 Dockerfile — Multi-stage GPU-ready build</summary>
+        <div class="code-block"><span class="cm"># Dockerfile — Multi-stage build with optional GPU support</span>
+<span class="kw">FROM</span> python:<span class="num">3.11</span>-slim <span class="kw">AS</span> builder
+<span class="kw">WORKDIR</span> /app
+<span class="kw">COPY</span> requirements.txt .
+<span class="kw">RUN</span> pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+<span class="kw">FROM</span> python:<span class="num">3.11</span>-slim
+<span class="kw">WORKDIR</span> /app
+<span class="kw">COPY</span> --from=builder /install /usr/local
+
+<span class="cm"># Non-root user for security</span>
+<span class="kw">RUN</span> groupadd -r ml &amp;&amp; useradd -r -g ml ml
+<span class="kw">COPY</span> --chown=ml:ml app/ app/
+<span class="kw">USER</span> ml
+
+<span class="kw">EXPOSE</span> <span class="num">8000</span>
+<span class="kw">HEALTHCHECK</span> --interval=30s --timeout=5s --retries=3 \
+  <span class="kw">CMD</span> python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/live')"
+
+<span class="kw">CMD</span> [<span class="str">"uvicorn"</span>, <span class="str">"app.main:app"</span>, <span class="str">"--host"</span>, <span class="str">"0.0.0.0"</span>, <span class="str">"--port"</span>, <span class="str">"8000"</span>]</div>
+      </details>
+
+      <details class="code-example">
+        <summary>📄 k8s/deployment.yaml — Kubernetes deployment with GPU tolerations</summary>
+        <div class="code-block"><span class="cm"># k8s/deployment.yaml — ML inference deployment</span>
+<span class="kw">apiVersion</span>: apps/v1
+<span class="kw">kind</span>: Deployment
+<span class="kw">metadata</span>:
+  <span class="kw">name</span>: sentiment-service
+  <span class="kw">labels</span>:
+    app: sentiment-service
+<span class="kw">spec</span>:
+  <span class="kw">replicas</span>: <span class="num">2</span>
+  <span class="kw">strategy</span>:
+    <span class="kw">type</span>: RollingUpdate
+    <span class="kw">rollingUpdate</span>:
+      <span class="kw">maxSurge</span>: <span class="num">1</span>
+      <span class="kw">maxUnavailable</span>: <span class="num">0</span>
+  <span class="kw">selector</span>:
+    <span class="kw">matchLabels</span>:
+      app: sentiment-service
+  <span class="kw">template</span>:
+    <span class="kw">metadata</span>:
+      <span class="kw">labels</span>:
+        app: sentiment-service
+      <span class="kw">annotations</span>:
+        prometheus.io/scrape: <span class="str">"true"</span>
+        prometheus.io/path: /metrics
+        prometheus.io/port: <span class="str">"8000"</span>
+    <span class="kw">spec</span>:
+      <span class="kw">terminationGracePeriodSeconds</span>: <span class="num">30</span>
+      <span class="kw">containers</span>:
+        - <span class="kw">name</span>: inference
+          <span class="kw">image</span>: registry.example.com/sentiment-service:latest
+          <span class="kw">ports</span>:
+            - <span class="kw">containerPort</span>: <span class="num">8000</span>
+          <span class="kw">envFrom</span>:
+            - <span class="kw">configMapRef</span>:
+                <span class="kw">name</span>: sentiment-config
+          <span class="kw">resources</span>:
+            <span class="kw">requests</span>:
+              <span class="kw">cpu</span>: 500m
+              <span class="kw">memory</span>: 1Gi
+            <span class="kw">limits</span>:
+              <span class="kw">cpu</span>: <span class="num">2</span>
+              <span class="kw">memory</span>: 4Gi
+              nvidia.com/gpu: <span class="num">1</span>     <span class="cm"># Optional GPU</span>
+          <span class="kw">livenessProbe</span>:
+            <span class="kw">httpGet</span>:
+              <span class="kw">path</span>: /api/v1/health/live
+              <span class="kw">port</span>: <span class="num">8000</span>
+            <span class="kw">initialDelaySeconds</span>: <span class="num">15</span>
+            <span class="kw">periodSeconds</span>: <span class="num">10</span>
+          <span class="kw">readinessProbe</span>:
+            <span class="kw">httpGet</span>:
+              <span class="kw">path</span>: /api/v1/health/ready
+              <span class="kw">port</span>: <span class="num">8000</span>
+            <span class="kw">initialDelaySeconds</span>: <span class="num">30</span>
+            <span class="kw">periodSeconds</span>: <span class="num">5</span>
+      <span class="kw">tolerations</span>:
+        - <span class="kw">key</span>: nvidia.com/gpu
+          <span class="kw">operator</span>: Exists
+          <span class="kw">effect</span>: NoSchedule
+---
+<span class="kw">apiVersion</span>: v1
+<span class="kw">kind</span>: Service
+<span class="kw">metadata</span>:
+  <span class="kw">name</span>: sentiment-service
+<span class="kw">spec</span>:
+  <span class="kw">selector</span>:
+    app: sentiment-service
+  <span class="kw">ports</span>:
+    - <span class="kw">port</span>: <span class="num">80</span>
+      <span class="kw">targetPort</span>: <span class="num">8000</span>
+  <span class="kw">type</span>: ClusterIP</div>
+      </details>
+
+      <details class="code-example">
+        <summary>📄 requirements.txt — Pinned dependencies</summary>
+        <div class="code-block"><span class="cm"># requirements.txt — Pinned for reproducibility</span>
+fastapi==<span class="num">0.115.0</span>
+uvicorn[standard]==<span class="num">0.32.0</span>
+pydantic==<span class="num">2.9.0</span>
+pydantic-settings==<span class="num">2.6.0</span>
+torch==<span class="num">2.5.0</span>
+transformers==<span class="num">4.46.0</span>
+prometheus-client==<span class="num">0.21.0</span>
+pytest==<span class="num">8.3.0</span>
+httpx==<span class="num">0.27.0</span></div>
+      </details>
+
+    </div>
+  </div>
+</section>
+
 <!-- FOOTER -->
 <footer class="footer">
   <p>Artificial Intelligence — The Complete Interactive Encyclopedia</p>
