@@ -2049,6 +2049,54 @@ model.<span class="fn">fit</span>(X_train, y_train)
               <li><strong>Classification:</strong> Accuracy, Precision, Recall, F1-Score, AUC-ROC, Confusion Matrix, Log Loss</li>
               <li><strong>Regression:</strong> MSE, RMSE, MAE, R² Score, Adjusted R²</li>
             </ul>
+
+            <details class="code-example"><summary>💻 Data loading, preprocessing & feature engineering pipeline</summary><div class="code-block"><span class="cm"># Step 1 of any ML project: load, clean, engineer, transform</span>
+<span class="kw">import</span> <span class="type">pandas</span> <span class="kw">as</span> pd
+<span class="kw">from</span> <span class="type">sklearn.compose</span> <span class="kw">import</span> ColumnTransformer
+<span class="kw">from</span> <span class="type">sklearn.pipeline</span> <span class="kw">import</span> Pipeline
+<span class="kw">from</span> <span class="type">sklearn.impute</span> <span class="kw">import</span> SimpleImputer
+<span class="kw">from</span> <span class="type">sklearn.preprocessing</span> <span class="kw">import</span> StandardScaler, OneHotEncoder, OrdinalEncoder
+<span class="kw">from</span> <span class="type">sklearn.model_selection</span> <span class="kw">import</span> train_test_split
+
+<span class="cm"># 1. Load data</span>
+df = pd.<span class="fn">read_csv</span>(<span class="str">"house_prices.csv"</span>)
+<span class="fn">print</span>(df.<span class="fn">info</span>())       <span class="cm"># check dtypes, nulls</span>
+<span class="fn">print</span>(df.<span class="fn">describe</span>())   <span class="cm"># statistical summary</span>
+
+<span class="cm"># 2. Separate features and target</span>
+target = <span class="str">"sale_price"</span>
+X = df.<span class="fn">drop</span>(columns=[target])
+y = df[target]
+
+<span class="cm"># 3. Identify column types</span>
+numeric_cols = X.<span class="fn">select_dtypes</span>(include=[<span class="str">"int64"</span>, <span class="str">"float64"</span>]).columns.<span class="fn">tolist</span>()
+categorical_cols = X.<span class="fn">select_dtypes</span>(include=[<span class="str">"object"</span>, <span class="str">"category"</span>]).columns.<span class="fn">tolist</span>()
+
+<span class="cm"># 4. Build preprocessing pipeline</span>
+numeric_transformer = <span class="fn">Pipeline</span>([
+    (<span class="str">"imputer"</span>, <span class="fn">SimpleImputer</span>(strategy=<span class="str">"median"</span>)),   <span class="cm"># fill missing with median</span>
+    (<span class="str">"scaler"</span>, <span class="fn">StandardScaler</span>()),                    <span class="cm"># zero-mean, unit-variance</span>
+])
+
+categorical_transformer = <span class="fn">Pipeline</span>([
+    (<span class="str">"imputer"</span>, <span class="fn">SimpleImputer</span>(strategy=<span class="str">"most_frequent"</span>)),
+    (<span class="str">"encoder"</span>, <span class="fn">OneHotEncoder</span>(handle_unknown=<span class="str">"ignore"</span>, sparse_output=<span class="kw">False</span>)),
+])
+
+preprocessor = <span class="fn">ColumnTransformer</span>([
+    (<span class="str">"num"</span>, numeric_transformer, numeric_cols),
+    (<span class="str">"cat"</span>, categorical_transformer, categorical_cols),
+])
+
+<span class="cm"># 5. Train/Validation/Test split (60/20/20)</span>
+X_train, X_temp, y_train, y_temp = <span class="fn">train_test_split</span>(X, y, test_size=<span class="num">0.4</span>, random_state=<span class="num">42</span>)
+X_val, X_test, y_val, y_test = <span class="fn">train_test_split</span>(X_temp, y_temp, test_size=<span class="num">0.5</span>, random_state=<span class="num">42</span>)
+
+<span class="cm"># 6. Fit-transform training data, transform-only test</span>
+X_train_processed = preprocessor.<span class="fn">fit_transform</span>(X_train)
+X_val_processed = preprocessor.<span class="fn">transform</span>(X_val)     <span class="cm"># no data leakage!</span>
+X_test_processed = preprocessor.<span class="fn">transform</span>(X_test)
+<span class="fn">print</span>(<span class="str">f"Features after preprocessing: <span class="kw">{</span>X_train_processed.shape[1]<span class="kw">}</span>"</span>)</div></details>
             <details class="code-example"><summary>💻 scikit-learn — Train & evaluate a classification pipeline</summary><div class="code-block"><span class="cm"># scikit-learn — Train & evaluate a classification pipeline</span>
 <span class="kw">from</span> <span class="type">sklearn.model_selection</span> <span class="kw">import</span> train_test_split
 <span class="kw">from</span> <span class="type">sklearn.ensemble</span> <span class="kw">import</span> GradientBoostingClassifier
@@ -2201,7 +2249,7 @@ epsilon = <span class="num">1.0</span>  <span class="cm"># exploration rate</spa
           <div class="card"><h3>8. Monitoring</h3><p>Track model performance in production. Detect data drift, concept drift, feature drift. Retrain on schedule or triggered by degradation. A/B testing new models.</p></div>
           <div class="card"><h3>9. MLOps</h3><p>Version data (DVC), version models (MLflow), automate pipelines (Kubeflow, Airflow), experiment tracking, model registry, feature stores. CI/CD for ML.</p></div>
         </div>
-        <!-- ::: Code Generated by Copilot [b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e]. This comment will be removed automatically after the file is saved ::: -->
+
         <details class="code-example" style="margin-top:1rem"><summary>💻 MLflow + Optuna — Experiment tracking & hyperparameter optimization</summary><div class="code-block"><span class="cm"># End-to-end ML pipeline: Optuna HPO + MLflow tracking + model registry</span>
 <span class="kw">import</span> <span class="type">optuna</span>
 <span class="kw">import</span> <span class="type">mlflow</span>
@@ -2653,7 +2701,7 @@ result = <span class="fn">classifier</span>(
     candidate_labels=[<span class="str">"finance"</span>, <span class="str">"politics"</span>, <span class="str">"technology"</span>, <span class="str">"sports"</span>],
 )
 <span class="fn">print</span>(result[<span class="str">"labels"</span>][<span class="num">0</span>], result[<span class="str">"scores"</span>][<span class="num">0</span>])  <span class="cm"># finance 0.96</span></div></details>
-    <!-- ::: Code Generated by Copilot [c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f]. This comment will be removed automatically after the file is saved ::: -->
+
     <details class="code-example"><summary>💻 Fine-tune a pre-trained LLM with LoRA (Parameter-Efficient Fine-Tuning)</summary><div class="code-block"><span class="cm"># Fine-tune Llama/Mistral with LoRA — runs on a single GPU</span>
 <span class="kw">from</span> <span class="type">transformers</span> <span class="kw">import</span> AutoModelForCausalLM, AutoTokenizer, TrainingArguments
 <span class="kw">from</span> <span class="type">peft</span> <span class="kw">import</span> LoraConfig, get_peft_model, TaskType
@@ -2834,7 +2882,7 @@ results = <span class="fn">model</span>(<span class="str">"street_scene.jpg"</sp
 
 <span class="cm"># Fine-tune on custom dataset</span>
 model.<span class="fn">train</span>(data=<span class="str">"my_dataset.yaml"</span>, epochs=<span class="num">100</span>, imgsz=<span class="num">640</span>)</div></details>
-    <!-- ::: Code Generated by Copilot [d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a]. This comment will be removed automatically after the file is saved ::: -->
+
     <details class="code-example"><summary>💻 Vision Transformer (ViT) — Image classification with transfer learning</summary><div class="code-block"><span class="cm"># Fine-tune a Vision Transformer for custom image classification</span>
 <span class="kw">from</span> <span class="type">transformers</span> <span class="kw">import</span> ViTForImageClassification, ViTImageProcessor
 <span class="kw">from</span> <span class="type">transformers</span> <span class="kw">import</span> TrainingArguments, Trainer
@@ -3306,7 +3354,7 @@ result = executor.<span class="fn">invoke</span>({<span class="str">"input"</spa
         </div>
       </div>
     </div>
-    <!-- ::: Code Generated by Copilot [e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a9b]. This comment will be removed automatically after the file is saved ::: -->
+
     <details class="code-example" style="margin-top:2rem"><summary>💻 PyTorch — Rotary Position Embeddings (RoPE) from scratch</summary><div class="code-block"><span class="cm"># RoPE — Used in Llama, Mistral, Qwen. Better length generalization than absolute PE.</span>
 <span class="kw">import</span> <span class="type">torch</span>
 
@@ -3539,7 +3587,7 @@ outputs = model.<span class="fn">generate</span>(**inputs, max_new_tokens=<span 
         </div>
       </div>
     </div>
-    <!-- ::: Code Generated by Copilot [f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b0c]. This comment will be removed automatically after the file is saved ::: -->
+
     <details class="code-example" style="margin-top:2rem"><summary>💻 vLLM — High-throughput LLM serving with PagedAttention</summary><div class="code-block"><span class="cm"># vLLM — 10-24x faster than HuggingFace generate()</span>
 <span class="kw">from</span> <span class="type">vllm</span> <span class="kw">import</span> LLM, SamplingParams
 
@@ -3637,6 +3685,138 @@ outputs = llm.<span class="fn">generate</span>(prompts, params)
     <span class="kw">pods</span>:
       <span class="kw">metric</span>: { <span class="kw">name</span>: gpu_utilization_percent }
       <span class="kw">target</span>: { <span class="kw">type</span>: AverageValue, <span class="kw">averageValue</span>: <span class="str">"80"</span> }</div></details>
+    <!-- ::: Code Generated by Copilot [2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6f]. This comment will be removed automatically after the file is saved ::: -->
+    <details class="code-example"><summary>💻 Dockerfile — Multi-stage build for ML service with CUDA</summary><div class="code-block"><span class="cm"># Dockerfile — Production ML serving image with GPU support</span>
+<span class="kw">FROM</span> nvidia/cuda:12.1.0-runtime-ubuntu22.04 <span class="kw">AS</span> base
+<span class="kw">RUN</span> apt-get update &amp;&amp; apt-get install -y python3.11 python3-pip &amp;&amp; \
+    rm -rf /var/lib/apt/lists/*
+
+<span class="kw">WORKDIR</span> /app
+
+<span class="cm"># Install dependencies first (cached layer)</span>
+<span class="kw">COPY</span> requirements.txt .
+<span class="kw">RUN</span> pip install --no-cache-dir -r requirements.txt
+
+<span class="cm"># Copy application code</span>
+<span class="kw">COPY</span> src/ ./src/
+<span class="kw">COPY</span> models/ ./models/
+
+<span class="cm"># Non-root user for security</span>
+<span class="kw">RUN</span> useradd -m -r mluser
+<span class="kw">USER</span> mluser
+
+<span class="cm"># Health check</span>
+<span class="kw">HEALTHCHECK</span> --interval=30s --timeout=10s --retries=3 \
+  CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+
+<span class="kw">EXPOSE</span> 8000
+<span class="kw">CMD</span> ["uvicorn", "src.serve:app", "--host", "0.0.0.0", "--port", "8000"]</div></details>
+    <details class="code-example"><summary>💻 GitHub Actions — CI/CD pipeline for ML model training & deployment</summary><div class="code-block"><span class="cm"># .github/workflows/ml-pipeline.yml — Train, evaluate, deploy ML model</span>
+<span class="kw">name</span>: ML Pipeline
+<span class="kw">on</span>:
+  <span class="kw">push</span>: { <span class="kw">branches</span>: [main] }
+  <span class="kw">workflow_dispatch</span>:
+    <span class="kw">inputs</span>:
+      <span class="kw">force_retrain</span>: { <span class="kw">type</span>: boolean, <span class="kw">default</span>: false }
+
+<span class="kw">jobs</span>:
+  <span class="kw">train-and-evaluate</span>:
+    <span class="kw">runs-on</span>: ubuntu-latest
+    <span class="kw">steps</span>:
+    - <span class="kw">uses</span>: actions/checkout@v4
+    - <span class="kw">uses</span>: actions/setup-python@v5
+      <span class="kw">with</span>: { <span class="kw">python-version</span>: <span class="str">"3.11"</span> }
+
+    - <span class="kw">name</span>: Install dependencies
+      <span class="kw">run</span>: pip install -r requirements.txt
+
+    - <span class="kw">name</span>: Pull data with DVC
+      <span class="kw">run</span>: dvc pull
+      <span class="kw">env</span>:
+        <span class="kw">AWS_ACCESS_KEY_ID</span>: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        <span class="kw">AWS_SECRET_ACCESS_KEY</span>: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+    - <span class="kw">name</span>: Run pipeline (preprocess → train → evaluate)
+      <span class="kw">run</span>: dvc repro
+
+    - <span class="kw">name</span>: Check model quality gate
+      <span class="kw">run</span>: |
+        python -c "
+        import json
+        metrics = json.load(open('metrics.json'))
+        assert metrics['f1'] > 0.85, f'F1 {metrics[\"f1\"]} below threshold 0.85'
+        assert metrics['accuracy'] > 0.90, f'Accuracy below threshold'
+        print('Quality gate passed!')
+        "
+
+    - <span class="kw">name</span>: Register model in MLflow
+      <span class="kw">if</span>: success()
+      <span class="kw">run</span>: |
+        python -c "
+        import mlflow
+        mlflow.set_tracking_uri('${{ secrets.MLFLOW_URI }}')
+        result = mlflow.register_model(
+            'runs:/${{ env.RUN_ID }}/model',
+            'production-classifier'
+        )
+        "
+
+  <span class="kw">deploy</span>:
+    <span class="kw">needs</span>: train-and-evaluate
+    <span class="kw">runs-on</span>: ubuntu-latest
+    <span class="kw">steps</span>:
+    - <span class="kw">name</span>: Build &amp; push Docker image
+      <span class="kw">run</span>: |
+        docker build -t ${{ secrets.REGISTRY }}/ml-service:${{ github.sha }} .
+        docker push ${{ secrets.REGISTRY }}/ml-service:${{ github.sha }}
+
+    - <span class="kw">name</span>: Deploy to Kubernetes
+      <span class="kw">run</span>: |
+        kubectl set image deployment/ml-service \
+          ml-service=${{ secrets.REGISTRY }}/ml-service:${{ github.sha }}</div></details>
+    <details class="code-example"><summary>💻 Model monitoring — Data drift detection with Evidently</summary><div class="code-block"><span class="cm"># Detect data drift and model degradation in production</span>
+<span class="kw">from</span> <span class="type">evidently</span> <span class="kw">import</span> ColumnMapping
+<span class="kw">from</span> <span class="type">evidently.report</span> <span class="kw">import</span> Report
+<span class="kw">from</span> <span class="type">evidently.metric_preset</span> <span class="kw">import</span> DataDriftPreset, TargetDriftPreset
+<span class="kw">from</span> <span class="type">evidently.metrics</span> <span class="kw">import</span> (
+    DatasetDriftMetric, DataDriftTable, ColumnDriftMetric,
+)
+<span class="kw">import</span> <span class="type">pandas</span> <span class="kw">as</span> pd
+
+<span class="cm"># Reference = training data, Current = production data</span>
+reference_data = pd.<span class="fn">read_csv</span>(<span class="str">"data/training_sample.csv"</span>)
+production_data = pd.<span class="fn">read_csv</span>(<span class="str">"data/production_last_7d.csv"</span>)
+
+column_mapping = <span class="fn">ColumnMapping</span>(
+    target=<span class="str">"prediction"</span>,
+    prediction=<span class="str">"prediction"</span>,
+    numerical_features=[<span class="str">"age"</span>, <span class="str">"income"</span>, <span class="str">"credit_score"</span>],
+    categorical_features=[<span class="str">"region"</span>, <span class="str">"account_type"</span>],
+)
+
+<span class="cm"># Generate drift report</span>
+report = <span class="fn">Report</span>(metrics=[
+    <span class="fn">DatasetDriftMetric</span>(),            <span class="cm"># overall dataset drift (PSI)</span>
+    <span class="fn">DataDriftTable</span>(),                <span class="cm"># per-feature drift table</span>
+    <span class="fn">ColumnDriftMetric</span>(<span class="str">"income"</span>),     <span class="cm"># deep dive on key feature</span>
+])
+report.<span class="fn">run</span>(reference_data=reference_data, current_data=production_data,
+          column_mapping=column_mapping)
+
+<span class="cm"># Extract drift results for alerting</span>
+result = report.<span class="fn">as_dict</span>()
+dataset_drift = result[<span class="str">"metrics"</span>][<span class="num">0</span>][<span class="str">"result"</span>][<span class="str">"dataset_drift"</span>]
+drift_share = result[<span class="str">"metrics"</span>][<span class="num">0</span>][<span class="str">"result"</span>][<span class="str">"share_of_drifted_columns"</span>]
+
+<span class="kw">if</span> dataset_drift:
+    <span class="fn">print</span>(<span class="str">f"⚠️  DATA DRIFT DETECTED — <span class="kw">{</span>drift_share:<span class="num">.0%</span><span class="kw">}</span> features drifted"</span>)
+    <span class="cm"># trigger_retrain_pipeline()</span>
+    <span class="cm"># send_pagerduty_alert("Model drift detected")</span>
+<span class="kw">else</span>:
+    <span class="fn">print</span>(<span class="str">"✅ No significant drift detected"</span>)
+
+<span class="cm"># Save HTML report for review</span>
+report.<span class="fn">save_html</span>(<span class="str">"drift_report.html"</span>)</div></details>
   </div>
 </section>
 
@@ -3690,7 +3870,7 @@ outputs = llm.<span class="fn">generate</span>(prompts, params)
         </ul>
       </div>
     </div>
-    <!-- ::: Code Generated by Copilot [a7b8c9d0-e1f2-4a3b-4c5d-6e7f8a9b0c1d]. This comment will be removed automatically after the file is saved ::: -->
+
     <details class="code-example" style="margin-top:2rem"><summary>💻 Fairlearn — Bias audit & fairness-constrained model training</summary><div class="code-block"><span class="cm"># Detect and mitigate bias in ML models using Fairlearn</span>
 <span class="kw">from</span> <span class="type">fairlearn.metrics</span> <span class="kw">import</span> MetricFrame, demographic_parity_difference
 <span class="kw">from</span> <span class="type">fairlearn.reductions</span> <span class="kw">import</span> ExponentiatedGradient, DemographicParity
@@ -3869,7 +4049,7 @@ PII_PATTERNS = {
         </div>
       </div>
     </div>
-    <!-- ::: Code Generated by Copilot [b8c9d0e1-f2a3-4b4c-5d6e-7f8a9b0c1d2e]. This comment will be removed automatically after the file is saved ::: -->
+
     <details class="code-example" style="margin-top:2rem"><summary>💻 Weights & Biases — Experiment tracking with hyperparameter sweeps</summary><div class="code-block"><span class="cm"># W&amp;B — Track experiments, visualize metrics, compare runs</span>
 <span class="kw">import</span> <span class="type">wandb</span>
 <span class="kw">import</span> <span class="type">torch</span>
