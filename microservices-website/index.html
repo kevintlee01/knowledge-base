@@ -351,8 +351,8 @@ details.code-example .code-block{margin:0;border:none;border-radius:0}
       <a href="#architecture">Architecture</a>
       <a href="#flowdiagram">Flow Diagram</a>
       <a href="#serviceflow">Service Flows</a>
-      <a href="#patterns">Patterns</a>
       <a href="#internals">Internals</a>
+      <a href="#patterns">Patterns</a>
       <a href="#communication">Communication</a>
       <a href="#data">Data</a>
       <a href="#deployment">Deployment</a>
@@ -1765,7 +1765,127 @@ app.<span class="fn">listen</span>(<span class="num">3000</span>);</div></detail
         <h4 style="margin-top:1rem;font-size:.95rem;color:var(--accent)">Eventual Consistency</h4>
         <p style="margin-top:.5rem">Async communication typically means eventual consistency. Data across services is not immediately consistent but converges over time. Design UIs and business processes to accommodate this reality.</p>
       </div>
-    </div>  </div>
+    </div>
+    <div class="cards-grid cols-2">
+      <div class="card">
+        <h3 style="margin-bottom:.8rem;color:var(--primary-glow)">🔵 gRPC — Strongly-Typed Service Communication</h3>
+        <details class="code-example"><summary>💻 gRPC — Proto definition &amp; Node.js server/client</summary><div class="code-block"><span class="cm">// order.proto — Service contract definition</span>
+<span class="kw">syntax</span> = <span class="str">"proto3"</span>;
+<span class="kw">package</span> orders;
+
+<span class="kw">service</span> <span class="type">OrderService</span> {
+  <span class="kw">rpc</span> <span class="fn">CreateOrder</span>(<span class="type">CreateOrderRequest</span>) <span class="kw">returns</span> (<span class="type">Order</span>);
+  <span class="kw">rpc</span> <span class="fn">GetOrder</span>(<span class="type">GetOrderRequest</span>) <span class="kw">returns</span> (<span class="type">Order</span>);
+  <span class="kw">rpc</span> <span class="fn">StreamOrders</span>(<span class="type">StreamRequest</span>) <span class="kw">returns</span> (<span class="kw">stream</span> <span class="type">Order</span>);
+}
+
+<span class="kw">message</span> <span class="type">CreateOrderRequest</span> {
+  <span class="type">string</span> customer_id = <span class="num">1</span>;
+  <span class="kw">repeated</span> <span class="type">LineItem</span> items = <span class="num">2</span>;
+}
+
+<span class="kw">message</span> <span class="type">Order</span> {
+  <span class="type">string</span> id = <span class="num">1</span>;
+  <span class="type">string</span> customer_id = <span class="num">2</span>;
+  <span class="type">double</span> total = <span class="num">3</span>;
+  <span class="type">string</span> status = <span class="num">4</span>;
+}
+
+<span class="cm">// ─── gRPC Server (Node.js) ───</span>
+<span class="kw">const</span> grpc = <span class="fn">require</span>(<span class="str">'@grpc/grpc-js'</span>);
+<span class="kw">const</span> protoLoader = <span class="fn">require</span>(<span class="str">'@grpc/proto-loader'</span>);
+
+<span class="kw">const</span> packageDef = protoLoader.<span class="fn">loadSync</span>(<span class="str">'order.proto'</span>);
+<span class="kw">const</span> proto = grpc.<span class="fn">loadPackageDefinition</span>(packageDef).orders;
+
+<span class="kw">const</span> server = <span class="kw">new</span> grpc.<span class="fn">Server</span>();
+server.<span class="fn">addService</span>(proto.OrderService.service, {
+  <span class="fn">CreateOrder</span>(call, callback) {
+    <span class="kw">const</span> order = {
+      id: <span class="fn">crypto</span>.<span class="fn">randomUUID</span>(),
+      customer_id: call.request.customer_id,
+      total: call.request.items.<span class="fn">reduce</span>((s, i) =&gt; s + i.price * i.qty, <span class="num">0</span>),
+      status: <span class="str">'pending'</span>,
+    };
+    <span class="fn">callback</span>(<span class="kw">null</span>, order);
+  },
+  <span class="fn">GetOrder</span>(call, callback) {
+    <span class="cm">// Look up from DB...</span>
+    <span class="fn">callback</span>(<span class="kw">null</span>, { id: call.request.id, status: <span class="str">'confirmed'</span> });
+  },
+});
+server.<span class="fn">bindAsync</span>(<span class="str">'0.0.0.0:50051'</span>, grpc.ServerCredentials.<span class="fn">createInsecure</span>(), () =&gt; {});
+
+<span class="cm">// ─── gRPC Client ───</span>
+<span class="kw">const</span> client = <span class="kw">new</span> proto.<span class="fn">OrderService</span>(
+  <span class="str">'order-service:50051'</span>, grpc.credentials.<span class="fn">createInsecure</span>()
+);
+client.<span class="fn">CreateOrder</span>({ customer_id: <span class="str">'c1'</span>, items: [{ sku: <span class="str">'A'</span>, qty: <span class="num">2</span>, price: <span class="num">9.99</span> }] },
+  (err, order) =&gt; <span class="fn">console</span>.<span class="fn">log</span>(order)
+);</div></details>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:.8rem;color:var(--accent)">🟢 Event-Driven — Kafka Producer &amp; Consumer</h3>
+        <details class="code-example"><summary>💻 KafkaJS — Produce &amp; consume domain events</summary><div class="code-block"><span class="cm">// KafkaJS — Event-driven async communication</span>
+<span class="kw">const</span> { Kafka } = <span class="fn">require</span>(<span class="str">'kafkajs'</span>);
+
+<span class="kw">const</span> kafka = <span class="kw">new</span> <span class="fn">Kafka</span>({
+  clientId: <span class="str">'order-service'</span>,
+  brokers: [process.env.KAFKA_BROKERS || <span class="str">'kafka:9092'</span>],
+});
+
+<span class="cm">// ─── Producer — Publish domain events ───</span>
+<span class="kw">const</span> producer = kafka.<span class="fn">producer</span>({ idempotent: <span class="kw">true</span> });
+
+<span class="kw">async function</span> <span class="fn">publishEvent</span>(topic, event) {
+  <span class="kw">await</span> producer.<span class="fn">send</span>({
+    topic,
+    messages: [{
+      key: event.aggregateId,
+      value: JSON.<span class="fn">stringify</span>({
+        type: event.type,
+        data: event.data,
+        timestamp: <span class="kw">new</span> Date().<span class="fn">toISOString</span>(),
+        correlationId: event.correlationId,
+      }),
+      headers: { <span class="str">'event-type'</span>: event.type },
+    }],
+  });
+}
+
+<span class="cm">// Usage: publish after order created</span>
+<span class="kw">await</span> <span class="fn">publishEvent</span>(<span class="str">'orders.events'</span>, {
+  type: <span class="str">'OrderCreated'</span>,
+  aggregateId: order.id,
+  data: { customerId, items, total },
+});
+
+<span class="cm">// ─── Consumer — Process events in another service ───</span>
+<span class="kw">const</span> consumer = kafka.<span class="fn">consumer</span>({ groupId: <span class="str">'inventory-service'</span> });
+
+<span class="kw">async function</span> <span class="fn">startConsumer</span>() {
+  <span class="kw">await</span> consumer.<span class="fn">connect</span>();
+  <span class="kw">await</span> consumer.<span class="fn">subscribe</span>({ topic: <span class="str">'orders.events'</span>, fromBeginning: <span class="kw">false</span> });
+
+  <span class="kw">await</span> consumer.<span class="fn">run</span>({
+    <span class="kw">async</span> <span class="fn">eachMessage</span>({ topic, partition, message }) {
+      <span class="kw">const</span> event = JSON.<span class="fn">parse</span>(message.value.<span class="fn">toString</span>());
+      <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`Received <span class="kw">${</span>event.type<span class="kw">}</span> on <span class="kw">${</span>topic<span class="kw">}</span>/<span class="kw">${</span>partition<span class="kw">}</span>`</span>);
+
+      <span class="kw">switch</span> (event.type) {
+        <span class="kw">case</span> <span class="str">'OrderCreated'</span>:
+          <span class="kw">await</span> <span class="fn">reserveInventory</span>(event.data);
+          <span class="kw">break</span>;
+        <span class="kw">case</span> <span class="str">'OrderCancelled'</span>:
+          <span class="kw">await</span> <span class="fn">releaseInventory</span>(event.data);
+          <span class="kw">break</span>;
+      }
+    },
+  });
+}</div></details>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- ==================== DATA MANAGEMENT ==================== -->
@@ -3089,10 +3209,10 @@ app.<span class="fn">use</span>(<span class="str">'/'</span>, <span class="fn">c
 <!-- ============================================================
      CHAPTER 10 — PRODUCTION-READY REFERENCE IMPLEMENTATION
      ============================================================ -->
-<section class="chapter" id="ch10">
-  <div class="container">
+<section class="section" id="ch10">
+  <div class="container reveal">
     <div class="section-header">
-      <div class="section-label">Chapter 10</div>
+      <div class="section-label">Chapter 13</div>
       <h2>Production-Ready Reference Implementation</h2>
       <p>A complete, deployable microservice with health checks, graceful shutdown, structured logging, circuit breakers, Docker, and Kubernetes manifests.</p>
     </div>
@@ -3638,7 +3758,7 @@ docker compose up --build
 <span class="cm"># PostgreSQL on :5432, RabbitMQ Management UI on :15672</span>
 
 <span class="cm"># Run database migrations</span>
-docker compose exec app npm run migrate
+docker compose exec order-service npm run migrate
 
 <span class="cm"># Test the API</span>
 curl -X POST http://localhost:3000/api/orders \
@@ -3646,7 +3766,7 @@ curl -X POST http://localhost:3000/api/orders \
   -d <span class="str">'{"customerId":"cust-1","items":[{"sku":"WIDGET-1","qty":2,"price":19.99}]}'</span>
 
 <span class="cm"># Health check</span>
-curl http://localhost:3000/healthz
+curl http://localhost:3000/health/live
 
 <span class="cm"># Stop everything</span>
 docker compose down</div>
@@ -3659,7 +3779,11 @@ docker compose up postgres rabbitmq -d
 npm install
 
 <span class="cm"># Set environment variables (or create a .env file)</span>
-export DATABASE_URL=postgres://orders:orders@localhost:5432/orders
+export DB_HOST=localhost
+export DB_PORT=5432
+export DB_NAME=orders
+export DB_USER=app
+export DB_PASSWORD=secret
 export AMQP_URL=amqp://guest:guest@localhost:5672
 export PAYMENT_SERVICE_URL=http://localhost:4000
 export PORT=3000
@@ -3677,8 +3801,11 @@ docker push your-registry/order-service:latest
 
 <span class="cm"># Create namespace and secrets</span>
 kubectl create namespace orders
-kubectl create secret generic order-secrets -n orders \
-  --from-literal=DATABASE_URL=postgres://orders:orders@postgres:5432/orders \
+kubectl create secret generic order-service-secrets -n orders \
+  --from-literal=DB_HOST=postgres \
+  --from-literal=DB_NAME=orders \
+  --from-literal=DB_USER=app \
+  --from-literal=DB_PASSWORD=secret \
   --from-literal=AMQP_URL=amqp://guest:guest@rabbitmq:5672
 
 <span class="cm"># Deploy</span>
@@ -4050,7 +4177,7 @@ if(defaultArchitectureMode){
 
 /* ============ NAV ACTIVE ============ */
 window.addEventListener('scroll',()=>{
-  const sections=document.querySelectorAll('.section');
+  const sections=document.querySelectorAll('.section, .chapter');
   const navLinks=document.querySelectorAll('.nav-links a');
   let current='';
   sections.forEach(s=>{if(window.scrollY>=s.offsetTop-200)current=s.id});

@@ -377,10 +377,10 @@ details.code-example .code-block{margin:0;border:none;border-radius:0}
       <a href="#mlpipeline">ML Pipeline</a>
       <a href="#ml">Machine Learning</a>
       <a href="#dl">Deep Learning</a>
-      <a href="#mathdeep">Math Deep Dive</a>
       <a href="#nlp">NLP</a>
       <a href="#cv">Computer Vision</a>
       <a href="#genai">Generative AI</a>
+      <a href="#mathdeep">Math Deep Dive</a>
       <a href="#dnn-interactive">DNN Diagram</a>
       <a href="#llm-pipeline">LLM Pipeline</a>
       <a href="#infra">Infrastructure</a>
@@ -4335,6 +4335,57 @@ fair_dpd = <span class="fn">demographic_parity_difference</span>(
         </ul>
       </div>
     </div>
+    <details class="code-example" style="margin-top:1.5rem"><summary>💻 Fairlearn — Bias Audit &amp; Mitigation for ML Models</summary><div class="code-block"><span class="cm"># Fairlearn — Measure and mitigate bias in ML classifiers</span>
+<span class="kw">from</span> <span class="type">fairlearn.metrics</span> <span class="kw">import</span> MetricFrame, selection_rate, false_positive_rate
+<span class="kw">from</span> <span class="type">fairlearn.reductions</span> <span class="kw">import</span> ExponentiatedGradient, DemographicParity
+<span class="kw">from</span> <span class="type">sklearn.linear_model</span> <span class="kw">import</span> LogisticRegression
+<span class="kw">from</span> <span class="type">sklearn.metrics</span> <span class="kw">import</span> accuracy_score
+<span class="kw">import</span> <span class="type">pandas</span> <span class="kw">as</span> pd
+
+<span class="cm"># Assume X_test, y_test, y_pred from a trained model</span>
+<span class="cm"># sensitive_features = gender, race, age group, etc.</span>
+sensitive = X_test[<span class="str">"gender"</span>]
+
+<span class="cm"># ─── Step 1: Measure bias across groups ───</span>
+metric_frame = <span class="fn">MetricFrame</span>(
+    metrics={
+        <span class="str">"accuracy"</span>: accuracy_score,
+        <span class="str">"selection_rate"</span>: selection_rate,
+        <span class="str">"false_positive_rate"</span>: false_positive_rate,
+    },
+    y_true=y_test,
+    y_pred=y_pred,
+    sensitive_features=sensitive,
+)
+
+<span class="fn">print</span>(metric_frame.<span class="fn">by_group</span>)
+<span class="cm"># Shows accuracy, selection rate, FPR broken down by gender</span>
+<span class="cm">#           accuracy  selection_rate  false_positive_rate</span>
+<span class="cm"># female      0.82         0.30              0.15</span>
+<span class="cm"># male        0.91         0.52              0.08</span>
+<span class="cm"># → Disparate selection rate and accuracy gap detected</span>
+
+<span class="fn">print</span>(<span class="str">"Difference:"</span>, metric_frame.<span class="fn">difference</span>())
+<span class="fn">print</span>(<span class="str">"Ratio:"</span>, metric_frame.<span class="fn">ratio</span>())
+
+<span class="cm"># ─── Step 2: Mitigate bias with constrained optimization ───</span>
+mitigator = <span class="fn">ExponentiatedGradient</span>(
+    estimator=<span class="fn">LogisticRegression</span>(),
+    constraints=<span class="fn">DemographicParity</span>(),  <span class="cm"># Enforces equal selection rates</span>
+)
+mitigator.<span class="fn">fit</span>(X_train, y_train, sensitive_features=train_sensitive)
+y_pred_fair = mitigator.<span class="fn">predict</span>(X_test)
+
+<span class="cm"># Re-measure after mitigation</span>
+fair_frame = <span class="fn">MetricFrame</span>(
+    metrics={<span class="str">"accuracy"</span>: accuracy_score, <span class="str">"selection_rate"</span>: selection_rate},
+    y_true=y_test,
+    y_pred=y_pred_fair,
+    sensitive_features=sensitive,
+)
+<span class="fn">print</span>(<span class="str">"After mitigation:"</span>)
+<span class="fn">print</span>(fair_frame.<span class="fn">by_group</span>)
+<span class="cm"># Selection rates now much closer across groups</span></div></details>
   </div>
 </section>
 
@@ -4530,8 +4581,8 @@ demo.<span class="fn">launch</span>(share=<span class="kw">True</span>)  <span c
 <!-- ============================================================
      CHAPTER — PRODUCTION-READY AI SERVICE (LLM + RAG + ML)
      ============================================================ -->
-<section class="chapter" id="ch-production">
-  <div class="container">
+<section class="section" id="ch-production">
+  <div class="container reveal">
     <div class="section-header">
       <div class="section-label">Production Reference</div>
       <h2>Production-Ready AI Service — LLM + RAG + ML</h2>
@@ -5480,44 +5531,41 @@ mkdir ai-knowledge-assistant &amp;&amp; cd ai-knowledge-assistant
 cp .env.example .env
 <span class="cm"># Edit .env and set OPENAI_API_KEY=sk-... (required for /chat endpoint)</span>
 
-<span class="cm"># Start all services (app + ChromaDB)</span>
+<span class="cm"># Start the service</span>
 docker compose up --build
 
 <span class="cm"># The API is now available at http://localhost:8000</span>
 <span class="cm"># API docs at http://localhost:8000/docs (FastAPI Swagger UI)</span>
-<span class="cm"># ChromaDB on :8100</span>
+<span class="cm"># ChromaDB runs embedded (data persisted in Docker volume)</span>
 
 <span class="cm"># Test the endpoints</span>
 <span class="cm"># Chat (LLM)</span>
-curl -X POST http://localhost:8000/chat/ \
+curl -X POST http://localhost:8000/api/v1/chat \
   -H <span class="str">"Content-Type: application/json"</span> \
-  -d <span class="str">'{"message":"Explain RAG in 2 sentences","max_tokens":200}'</span>
+  -d <span class="str">'{"messages":[{"role":"user","content":"Explain RAG in 2 sentences"}],"max_tokens":200}'</span>
 
 <span class="cm"># Classify (ML)</span>
-curl -X POST http://localhost:8000/classify/ \
+curl -X POST http://localhost:8000/api/v1/classify \
   -H <span class="str">"Content-Type: application/json"</span> \
-  -d <span class="str">'{"text":"This product is amazing, I love it!"}'</span>
+  -d <span class="str">'{"texts":["This product is amazing, I love it!"]}'</span>
 
 <span class="cm"># Ingest a document for RAG</span>
-curl -X POST http://localhost:8000/rag/ingest \
+curl -X POST http://localhost:8000/api/v1/rag/ingest \
   -F <span class="str">"file=@my_document.txt"</span>
 
 <span class="cm"># Query RAG</span>
-curl -X POST http://localhost:8000/rag/query \
+curl -X POST http://localhost:8000/api/v1/rag/query \
   -H <span class="str">"Content-Type: application/json"</span> \
   -d <span class="str">'{"question":"What does the document say about X?","top_k":3}'</span>
 
 <span class="cm"># Health check</span>
-curl http://localhost:8000/health/
+curl http://localhost:8000/health/live
 
 <span class="cm"># Stop everything</span>
 docker compose down</div>
 
         <h4 style="margin-bottom:.6rem;color:var(--primary-glow)">Option 2 — Local Development</h4>
-        <div class="code-block" style="margin-bottom:1.2rem"><span class="cm"># Start ChromaDB only</span>
-docker compose up chromadb -d
-
-<span class="cm"># Create and activate virtual environment</span>
+        <div class="code-block" style="margin-bottom:1.2rem"><span class="cm"># Create and activate virtual environment</span>
 python3 -m venv venv
 source venv/bin/activate
 
@@ -5529,31 +5577,39 @@ cp .env.example .env
 <span class="cm"># Edit .env: set OPENAI_API_KEY=sk-...</span>
 
 <span class="cm"># Start the development server (auto-reload on changes)</span>
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-<span class="cm"># Note: First request to /classify or /rag will download models</span>
-<span class="cm"># (~250MB for classifier, ~80MB for embeddings). Cached after first run.</span></div>
+<span class="cm"># Note: First request to /api/v1/classify or /api/v1/rag will download models</span>
+<span class="cm"># (~250MB for classifier, ~80MB for embeddings). Cached after first run.</span>
+<span class="cm"># ChromaDB will store data locally in ./data/chroma (no separate server needed).</span></div>
 
         <h4 style="margin-bottom:.6rem;color:var(--primary-glow)">Option 3 — Kubernetes</h4>
         <div class="code-block"><span class="cm"># Build and push Docker image</span>
-docker build -t your-registry/ai-assistant:latest .
-docker push your-registry/ai-assistant:latest
+docker build -t your-registry/ai-knowledge-service:latest .
+docker push your-registry/ai-knowledge-service:latest
 
 <span class="cm"># Create namespace and secrets</span>
 kubectl create namespace ai
-kubectl create secret generic ai-secrets -n ai \
-  --from-literal=OPENAI_API_KEY=sk-... \
-  --from-literal=CHROMA_HOST=chromadb.ai.svc.cluster.local
+kubectl create secret generic ai-service-secrets -n ai \
+  --from-literal=OPENAI_API_KEY=sk-...
+
+<span class="cm"># Create ConfigMap for non-sensitive config</span>
+kubectl create configmap ai-service-config -n ai \
+  --from-literal=LLM_MODEL=gpt-4o-mini \
+  --from-literal=EMBEDDING_MODEL=all-MiniLM-L6-v2 \
+  --from-literal=CLASSIFIER_MODEL=distilbert-base-uncased-finetuned-sst-2-english \
+  --from-literal=CHROMA_PERSIST_DIR=/app/data/chroma \
+  --from-literal=LOG_LEVEL=info
 
 <span class="cm"># Deploy</span>
 kubectl apply -f k8s/deployment.yaml -n ai
 
 <span class="cm"># Verify</span>
 kubectl get pods -n ai
-kubectl logs -f deployment/ai-assistant -n ai
+kubectl logs -f deployment/ai-knowledge-service -n ai
 
 <span class="cm"># Port-forward for local testing</span>
-kubectl port-forward svc/ai-assistant -n ai 8000:80</div>
+kubectl port-forward svc/ai-knowledge-service -n ai 8000:80</div>
       </div>
 
     </div>
@@ -5653,7 +5709,7 @@ document.querySelectorAll('details.code-example').forEach(d=>{
 
 /* ============ NAV ACTIVE ============ */
 window.addEventListener('scroll',()=>{
-  const sections=document.querySelectorAll('.section');
+  const sections=document.querySelectorAll('.section, .chapter');
   const navLinks=document.querySelectorAll('.nav-links a');
   let current='';
   sections.forEach(s=>{if(window.scrollY>=s.offsetTop-200)current=s.id});
