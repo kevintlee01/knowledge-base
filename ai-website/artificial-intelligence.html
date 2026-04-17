@@ -21,7 +21,7 @@
   --radius:16px;--radius-sm:10px;
   --transition:.35s cubic-bezier(.4,0,.2,1);
 }
-html{scroll-behavior:smooth;font-size:16px}
+html{scroll-behavior:smooth;font-size:16px;scroll-padding-top:4.5rem}
 body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;overflow-x:hidden}
 a{color:var(--accent);text-decoration:none;transition:color var(--transition)}
 a:hover{color:var(--primary-glow)}
@@ -181,6 +181,7 @@ h1,h2,h3,h4{color:var(--text-bright);line-height:1.3}
 .glow-badge.pink{background:rgba(244,114,182,.12);color:var(--accent2)}
 .glow-badge.gold{background:rgba(251,191,36,.12);color:var(--accent3)}
 .glow-badge.green{background:rgba(52,211,153,.12);color:var(--accent4)}
+.glow-badge.red{background:rgba(248,113,113,.12);color:#fca5a5}
 
 /* ============== INTERACTIVE NEURAL NET DIAGRAM ============== */
 .nn-diagram{display:flex;justify-content:center;align-items:center;padding:2rem;gap:0;position:relative}
@@ -344,6 +345,16 @@ details.code-example .code-block{margin:0;border:none;border-radius:0}
 /* Animated pulse on SVG nodes */
 @keyframes nodePulse{0%,100%{filter:drop-shadow(0 0 6px rgba(139,92,246,.3))}50%{filter:drop-shadow(0 0 16px rgba(139,92,246,.5))}}
 .svg-node-glow{animation:nodePulse 3s ease-in-out infinite}
+
+/* Clickable SVG diagram nodes */
+.svg-diagram-wrap a{cursor:pointer}
+.svg-diagram-wrap a:hover rect,.svg-diagram-wrap a:hover circle{filter:brightness(1.4) drop-shadow(0 0 8px rgba(139,92,246,.5));transition:filter .2s ease}
+.svg-diagram-wrap a text{pointer-events:none}
+
+/* Back-to-overview link */
+.diagram-back-link{text-align:center;margin-top:1.2rem}
+.diagram-back-link a{color:var(--primary);font-size:.85rem;font-weight:600;text-decoration:none;opacity:.7;transition:opacity .2s}
+.diagram-back-link a:hover{opacity:1;text-decoration:underline}
 
 /* Diagram section spacing */
 .diagram-block{margin-top:4rem}
@@ -819,9 +830,9 @@ model.<span class="fn">fit</span>(X_train, y_train)
     </div>
 
     <!-- ====== DIAGRAM 1: MASTER AI TAXONOMY (SVG Network) ====== -->
-    <div class="diagram-block reveal">
+    <div id="diagram-overview" class="diagram-block reveal">
       <div class="diagram-block-header">
-        <div class="diagram-block-label glow-badge purple">Diagram 1 of 6</div>
+        <div class="diagram-block-label glow-badge purple">Diagram 1 of 8</div>
         <h3>The AI Landscape — Complete Taxonomy</h3>
         <p>How every field of AI connects. The master map showing all major disciplines and their relationships.</p>
       </div>
@@ -873,6 +884,7 @@ model.<span class="fn">fit</span>(X_train, y_train)
           <!-- === TOP ROW FIELDS === -->
 
           <!-- Machine Learning -->
+          <a href="#diagram-ml">
           <g>
             <rect x="100" y="80" width="180" height="58" rx="12" fill="url(#grad-purple)" stroke="#8b5cf6" stroke-width="1.5"/>
             <text x="190" y="105" text-anchor="middle" fill="#a78bfa" font-size="13" font-weight="700">📈 Machine Learning</text>
@@ -888,8 +900,10 @@ model.<span class="fn">fit</span>(X_train, y_train)
             <line x1="195" y1="38" x2="190" y2="80" stroke="#8b5cf6" stroke-width=".8" opacity=".3"/>
             <line x1="275" y1="38" x2="230" y2="80" stroke="#8b5cf6" stroke-width=".8" opacity=".3"/>
           </g>
+          </a>
 
           <!-- Deep Learning -->
+          <a href="#diagram-dl">
           <g>
             <rect x="340" y="80" width="180" height="58" rx="12" fill="url(#grad-cyan)" stroke="#06b6d4" stroke-width="1.5"/>
             <text x="430" y="105" text-anchor="middle" fill="#22d3ee" font-size="13" font-weight="700">🧠 Deep Learning</text>
@@ -901,8 +915,10 @@ model.<span class="fn">fit</span>(X_train, y_train)
             <rect x="474" y="148" width="48" height="24" rx="5" fill="rgba(6,182,212,.08)" stroke="#06b6d4" stroke-width=".7" opacity=".6"/>
             <text x="498" y="164" text-anchor="middle" fill="#22d3ee" font-size="7.5" font-weight="600">VAEs</text>
           </g>
+          </a>
 
           <!-- NLP -->
+          <a href="#diagram-nlp">
           <g>
             <rect x="580" y="80" width="180" height="58" rx="12" fill="url(#grad-pink)" stroke="#f472b6" stroke-width="1.5"/>
             <text x="670" y="105" text-anchor="middle" fill="#f9a8d4" font-size="13" font-weight="700">💬 Natural Language</text>
@@ -914,8 +930,10 @@ model.<span class="fn">fit</span>(X_train, y_train)
             <rect x="699" y="148" width="55" height="24" rx="5" fill="rgba(244,114,182,.08)" stroke="#f472b6" stroke-width=".7" opacity=".6"/>
             <text x="726" y="164" text-anchor="middle" fill="#f9a8d4" font-size="7.5" font-weight="600">T5</text>
           </g>
+          </a>
 
           <!-- Computer Vision -->
+          <a href="#diagram-cv">
           <g>
             <rect x="800" y="80" width="180" height="58" rx="12" fill="url(#grad-gold)" stroke="#fbbf24" stroke-width="1.5"/>
             <text x="890" y="105" text-anchor="middle" fill="#fcd34d" font-size="13" font-weight="700">👁️ Computer Vision</text>
@@ -927,6 +945,7 @@ model.<span class="fn">fit</span>(X_train, y_train)
             <rect x="929" y="148" width="48" height="24" rx="5" fill="rgba(251,191,36,.08)" stroke="#fbbf24" stroke-width=".7" opacity=".6"/>
             <text x="953" y="164" text-anchor="middle" fill="#fcd34d" font-size="7.5" font-weight="600">SAM</text>
           </g>
+          </a>
 
           <!-- Standalone top-right: Expert Systems / Knowledge -->
           <g>
@@ -947,6 +966,7 @@ model.<span class="fn">fit</span>(X_train, y_train)
           <!-- === BOTTOM ROW FIELDS === -->
 
           <!-- Generative AI -->
+          <a href="#diagram-genai">
           <g>
             <rect x="60" y="545" width="200" height="58" rx="12" fill="url(#grad-pink)" stroke="#f472b6" stroke-width="1.5"/>
             <text x="160" y="570" text-anchor="middle" fill="#f9a8d4" font-size="13" font-weight="700">✨ Generative AI</text>
@@ -958,8 +978,10 @@ model.<span class="fn">fit</span>(X_train, y_train)
             <rect x="204" y="613" width="55" height="24" rx="5" fill="rgba(244,114,182,.08)" stroke="#f472b6" stroke-width=".7" opacity=".6"/>
             <text x="231" y="629" text-anchor="middle" fill="#f9a8d4" font-size="7.5" font-weight="600">Sora</text>
           </g>
+          </a>
 
           <!-- Reinforcement Learning -->
+          <a href="#diagram-ml">
           <g>
             <rect x="310" y="545" width="200" height="58" rx="12" fill="url(#grad-gold)" stroke="#fbbf24" stroke-width="1.5"/>
             <text x="410" y="570" text-anchor="middle" fill="#fcd34d" font-size="13" font-weight="700">🎯 Reinforcement Learning</text>
@@ -971,8 +993,10 @@ model.<span class="fn">fit</span>(X_train, y_train)
             <rect x="464" y="613" width="50" height="24" rx="5" fill="rgba(251,191,36,.08)" stroke="#fbbf24" stroke-width=".7" opacity=".6"/>
             <text x="489" y="629" text-anchor="middle" fill="#fcd34d" font-size="7.5" font-weight="600">MARL</text>
           </g>
+          </a>
 
           <!-- Robotics -->
+          <a href="#diagram-robotics">
           <g>
             <rect x="560" y="545" width="200" height="58" rx="12" fill="url(#grad-green)" stroke="#34d399" stroke-width="1.5"/>
             <text x="660" y="570" text-anchor="middle" fill="#6ee7b7" font-size="13" font-weight="700">🤖 Robotics & Embodied AI</text>
@@ -984,8 +1008,10 @@ model.<span class="fn">fit</span>(X_train, y_train)
             <rect x="704" y="613" width="55" height="24" rx="5" fill="rgba(52,211,153,.08)" stroke="#34d399" stroke-width=".7" opacity=".6"/>
             <text x="731" y="629" text-anchor="middle" fill="#6ee7b7" font-size="7.5" font-weight="600">HRI</text>
           </g>
+          </a>
 
           <!-- AI Safety & Ethics -->
+          <a href="#diagram-safety">
           <g>
             <rect x="810" y="545" width="200" height="58" rx="12" fill="url(#grad-red)" stroke="#f87171" stroke-width="1.5"/>
             <text x="910" y="570" text-anchor="middle" fill="#fca5a5" font-size="13" font-weight="700">🛡️ AI Safety & Ethics</text>
@@ -997,6 +1023,7 @@ model.<span class="fn">fit</span>(X_train, y_train)
             <rect x="949" y="613" width="60" height="24" rx="5" fill="rgba(239,68,68,.08)" stroke="#f87171" stroke-width=".7" opacity=".6"/>
             <text x="979" y="629" text-anchor="middle" fill="#fca5a5" font-size="7.5" font-weight="600">Bias</text>
           </g>
+          </a>
 
           <!-- Orbit rings around center -->
           <circle cx="550" cy="350" r="120" fill="none" stroke="#8b5cf6" stroke-width=".5" opacity=".1" stroke-dasharray="5 5">
@@ -1007,7 +1034,7 @@ model.<span class="fn">fit</span>(X_train, y_train)
           </circle>
 
           <!-- Center description -->
-          <text x="550" y="410" text-anchor="middle" fill="#94a3b8" font-size="8.5" font-style="italic">The science of intelligent machines</text>
+          <text x="550" y="425" text-anchor="middle" fill="#94a3b8" font-size="8" font-style="italic">The science of intelligent machines</text>
 
           <!-- Animated dots on connections -->
           <circle r="3" fill="#8b5cf6" opacity=".6">
@@ -1039,11 +1066,12 @@ model.<span class="fn">fit</span>(X_train, y_train)
     </div>
 
     <!-- ====== DIAGRAM 2: MACHINE LEARNING LANDSCAPE ====== -->
-    <div class="diagram-block reveal">
+    <div id="diagram-ml" class="diagram-block reveal">
       <div class="diagram-block-header">
-        <div class="diagram-block-label glow-badge purple">Diagram 2 of 6</div>
+        <div class="diagram-block-label glow-badge purple">Diagram 2 of 8</div>
         <h3>Machine Learning — Complete Algorithm Map</h3>
         <p>Every major ML paradigm, algorithm, and technique — from classical statistical methods to modern gradient boosting.</p>
+        <div class="diagram-back-link"><a href="#diagram-overview">◀ Back to AI Landscape</a></div>
       </div>
       <div class="field-map">
         <div class="field-hub">
@@ -1226,11 +1254,12 @@ model.<span class="fn">fit</span>(X_train, y_train)
     </div>
 
     <!-- ====== DIAGRAM 3: DEEP LEARNING ARCHITECTURES ====== -->
-    <div class="diagram-block reveal">
+    <div id="diagram-dl" class="diagram-block reveal">
       <div class="diagram-block-header">
-        <div class="diagram-block-label glow-badge cyan">Diagram 3 of 6</div>
+        <div class="diagram-block-label glow-badge cyan">Diagram 3 of 8</div>
         <h3>Deep Learning — Architecture Map</h3>
         <p>Every major neural network family, their landmark models, and how they evolved to power modern AI.</p>
+        <div class="diagram-back-link"><a href="#diagram-overview">◀ Back to AI Landscape</a></div>
       </div>
       <div class="field-map">
         <div class="field-hub">
@@ -1442,11 +1471,12 @@ model.<span class="fn">fit</span>(X_train, y_train)
     </div>
 
     <!-- ====== DIAGRAM 4: NLP & LANGUAGE MODELS ====== -->
-    <div class="diagram-block reveal">
+    <div id="diagram-nlp" class="diagram-block reveal">
       <div class="diagram-block-header">
-        <div class="diagram-block-label glow-badge pink">Diagram 4 of 6</div>
+        <div class="diagram-block-label glow-badge pink">Diagram 4 of 8</div>
         <h3>Natural Language Processing — The Complete Stack</h3>
         <p>From raw text to intelligent language understanding and generation — every layer of the NLP pipeline.</p>
+        <div class="diagram-back-link"><a href="#diagram-overview">◀ Back to AI Landscape</a></div>
       </div>
       <div class="field-map">
         <div class="field-hub">
@@ -1615,11 +1645,12 @@ model.<span class="fn">fit</span>(X_train, y_train)
     </div>
 
     <!-- ====== DIAGRAM 5: GENERATIVE AI + COMPUTER VISION ====== -->
-    <div class="diagram-block reveal">
+    <div id="diagram-genai" class="diagram-block reveal">
       <div class="diagram-block-header">
-        <div class="diagram-block-label glow-badge green">Diagram 5 of 6</div>
+        <div class="diagram-block-label glow-badge green">Diagram 5 of 8</div>
         <h3>Generative AI — The Complete Ecosystem</h3>
         <p>Every modality of AI-generated content — text, images, audio, video, code, and 3D — with their key models and techniques.</p>
+        <div class="diagram-back-link"><a href="#diagram-overview">◀ Back to AI Landscape</a></div>
       </div>
       <div class="field-map">
         <div class="field-hub">
@@ -1805,15 +1836,15 @@ model.<span class="fn">fit</span>(X_train, y_train)
       </div>
     </div>
 
-    <!-- ====== DIAGRAM 6: COMPUTER VISION + ROBOTICS + SAFETY ====== -->
-    <div class="diagram-block reveal">
+    <!-- ====== DIAGRAM 6: COMPUTER VISION ====== -->
+    <div id="diagram-cv" class="diagram-block reveal">
       <div class="diagram-block-header">
-        <div class="diagram-block-label glow-badge gold">Diagram 6 of 6</div>
-        <h3>Computer Vision, Robotics & AI Safety</h3>
-        <p>Visual perception, embodied intelligence, knowledge systems, and the critical field of AI safety and alignment.</p>
+        <div class="diagram-block-label glow-badge gold">Diagram 6 of 8</div>
+        <h3>Computer Vision — Visual Perception Map</h3>
+        <p>Every major task, model, and technique in visual AI — from image classification to 3D scene understanding.</p>
+        <div class="diagram-back-link"><a href="#diagram-overview">◀ Back to AI Landscape</a></div>
       </div>
 
-      <!-- Computer Vision -->
       <div class="field-map">
         <div class="field-hub">
           <div class="field-hub-node">👁️ Computer Vision</div>
@@ -1867,8 +1898,18 @@ model.<span class="fn">fit</span>(X_train, y_train)
         </div>
       </div>
 
-      <!-- Robotics & Embodied AI -->
-      <div class="field-map" style="margin-top:1.5rem">
+    </div>
+
+    <!-- ====== DIAGRAM 7: ROBOTICS & EMBODIED AI ====== -->
+    <div id="diagram-robotics" class="diagram-block reveal">
+      <div class="diagram-block-header">
+        <div class="diagram-block-label glow-badge green">Diagram 7 of 8</div>
+        <h3>Robotics & Embodied AI — Physical Intelligence</h3>
+        <p>Physical agents that perceive, plan, and act in the real world — plus the knowledge systems that power reasoning.</p>
+        <div class="diagram-back-link"><a href="#diagram-overview">◀ Back to AI Landscape</a></div>
+      </div>
+
+      <div class="field-map">
         <div class="field-hub">
           <div class="field-hub-node">🤖 Robotics & Embodied AI</div>
           <div class="field-hub-sub">Physical agents that perceive, plan, and act in the real world</div>
@@ -1918,7 +1959,6 @@ model.<span class="fn">fit</span>(X_train, y_train)
         </div>
       </div>
 
-      <!-- Knowledge & Reasoning -->
       <div class="field-map" style="margin-top:1.5rem">
         <div class="field-hub">
           <div class="field-hub-node">📖 Knowledge & Reasoning</div>
@@ -1970,8 +2010,18 @@ model.<span class="fn">fit</span>(X_train, y_train)
         </div>
       </div>
 
-      <!-- AI Safety & Ethics -->
-      <div class="field-map" style="margin-top:1.5rem">
+    </div>
+
+    <!-- ====== DIAGRAM 8: AI SAFETY, ETHICS & GOVERNANCE ====== -->
+    <div id="diagram-safety" class="diagram-block reveal">
+      <div class="diagram-block-header">
+        <div class="diagram-block-label glow-badge red">Diagram 8 of 8</div>
+        <h3>AI Safety, Ethics & Governance</h3>
+        <p>Ensuring AI systems are safe, fair, transparent, and aligned with human values.</p>
+        <div class="diagram-back-link"><a href="#diagram-overview">◀ Back to AI Landscape</a></div>
+      </div>
+
+      <div class="field-map">
         <div class="field-hub">
           <div class="field-hub-node">🛡️ AI Safety, Ethics & Governance</div>
           <div class="field-hub-sub">Ensuring AI systems are safe, fair, transparent, and aligned with human values</div>
@@ -5671,6 +5721,21 @@ const observer=new IntersectionObserver(entries=>{
   entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')})
 },{threshold:.1});
 document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+
+/* ============ DIAGRAM ANCHOR SCROLL FIX ============ */
+document.querySelectorAll('a[href^="#diagram-"]').forEach(link=>{
+  link.addEventListener('click',function(e){
+    e.preventDefault();
+    const target=document.querySelector(this.getAttribute('href'));
+    if(!target)return;
+    target.classList.add('visible');
+    const nav=document.querySelector('.nav');
+    const navH=nav?nav.offsetHeight:56;
+    let top=0,el=target;
+    while(el){top+=el.offsetTop;el=el.offsetParent}
+    window.scrollTo({top:top-navH-8,behavior:'smooth'});
+  });
+});
 
 /* ============ COUNTER ANIMATION ============ */
 const statObserver=new IntersectionObserver(entries=>{
