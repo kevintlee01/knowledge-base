@@ -490,16 +490,16 @@ app.<span class="fn">use</span>(<span class="str">'/api/health'</span>,  <span c
     <span class="str">"lint"</span>: <span class="str">"eslint src/"</span>
   },
   <span class="str">"dependencies"</span>: {
-    <span class="str">"express"</span>: <span class="str">"^4.19"</span>,       <span class="cm">// HTTP framework</span>
-    <span class="str">"@prisma/client"</span>: <span class="str">"^5"</span>,   <span class="cm">// ORM / query builder</span>
-    <span class="str">"kafkajs"</span>: <span class="str">"^2.2"</span>,        <span class="cm">// Kafka producer + consumer</span>
+    <span class="str">"express"</span>: <span class="str">"^5.1"</span>,       <span class="cm">// HTTP framework</span>
+    <span class="str">"@prisma/client"</span>: <span class="str">"^6"</span>,   <span class="cm">// ORM / query builder</span>
+    <span class="str">"@confluentinc/kafka-javascript"</span>: <span class="str">"^1.0"</span>,  <span class="cm">// Kafka producer + consumer</span>
     <span class="str">"ioredis"</span>: <span class="str">"^5"</span>,          <span class="cm">// Redis client / cache</span>
     <span class="str">"jsonwebtoken"</span>: <span class="str">"^9"</span>,     <span class="cm">// JWT verification</span>
     <span class="str">"pino"</span>: <span class="str">"^9"</span>,             <span class="cm">// Structured JSON logger</span>
     <span class="str">"helmet"</span>: <span class="str">"^7"</span>,           <span class="cm">// Security headers</span>
     <span class="str">"cors"</span>: <span class="str">"^2"</span>,             <span class="cm">// CORS middleware</span>
     <span class="str">"@godaddy/terminus"</span>: <span class="str">"^4"</span>, <span class="cm">// Graceful shutdown</span>
-    <span class="str">"@opentelemetry/sdk-node"</span>: <span class="str">"^0.52"</span>
+    <span class="str">"@opentelemetry/sdk-node"</span>: <span class="str">"^0.200"</span>
   }
 }</div></details>
   </div>
@@ -1068,7 +1068,7 @@ app.<span class="fn">use</span>(<span class="str">'/api/health'</span>,  <span c
 │       │   └── grpc/             <span class="cm">// gRPC server (@grpc/grpc-js)</span>
 │       └── outbound/
 │           ├── prisma/           <span class="cm">// Repository impl with Prisma ORM</span>
-│           ├── kafkajs/          <span class="cm">// Event publisher impl (KafkaJS)</span>
+│           ├── kafka/            <span class="cm">// Event publisher impl (confluent-kafka-js)</span>
 │           └── grpc-clients/     <span class="cm">// Payment, Inventory gRPC clients</span>
 ├── prisma/
 │   └── schema.prisma            <span class="cm">// Prisma schema + migrations</span>
@@ -1670,8 +1670,8 @@ app.<span class="fn">get</span>(<span class="str">'/api/orders/:id'</span>, <spa
 
 app.<span class="fn">listen</span>(<span class="num">3000</span>);</div></details>
       
-        <details class="code-example"><summary>💻 Node.js — KafkaJS producer & consumer</summary><div class="code-block"><span class="cm">// lib/kafka.ts — KafkaJS setup for event-driven communication</span>
-<span class="kw">const</span> { Kafka } = <span class="fn">require</span>(<span class="str">'kafkajs'</span>);
+        <details class="code-example"><summary>💻 Node.js — Kafka producer & consumer (confluent-kafka-javascript)</summary><div class="code-block"><span class="cm">// lib/kafka.ts — Confluent Kafka setup for event-driven communication</span>
+<span class="kw">const</span> { Kafka } = <span class="fn">require</span>(<span class="str">'@confluentinc/kafka-javascript'</span>).<span class="fn">KafkaJS</span>;
 
 <span class="kw">const</span> kafka = <span class="kw">new</span> <span class="fn">Kafka</span>({
   clientId: <span class="str">'order-service'</span>,
@@ -1831,8 +1831,8 @@ client.<span class="fn">CreateOrder</span>({ customer_id: <span class="str">'c1'
       </div>
       <div class="card">
         <h3 style="margin-bottom:.8rem;color:var(--accent)">🟢 Event-Driven — Kafka Producer &amp; Consumer</h3>
-        <details class="code-example"><summary>💻 KafkaJS — Produce &amp; consume domain events</summary><div class="code-block"><span class="cm">// KafkaJS — Event-driven async communication</span>
-<span class="kw">const</span> { Kafka } = <span class="fn">require</span>(<span class="str">'kafkajs'</span>);
+        <details class="code-example"><summary>💻 Kafka — Produce &amp; consume domain events (confluent-kafka-js)</summary><div class="code-block"><span class="cm">// confluent-kafka-javascript — Event-driven async communication</span>
+<span class="kw">const</span> { Kafka } = <span class="fn">require</span>(<span class="str">'@confluentinc/kafka-javascript'</span>).<span class="fn">KafkaJS</span>;
 
 <span class="kw">const</span> kafka = <span class="kw">new</span> <span class="fn">Kafka</span>({
   clientId: <span class="str">'order-service'</span>,
@@ -2006,7 +2006,7 @@ OrderShipped { id: 123, tracking: "1Z999..." }</div></details>
           <p style="margin-top:.8rem">CQRS allows independent scaling (often reads >> writes), different data models optimized for their purpose, and pairs naturally with Event Sourcing.</p>
         
           <details class="code-example"><summary>💻 CQRS read model — Event-driven projection for query optimization</summary><div class="code-block"><span class="cm">// projections/order-summary.projection.ts — Build denormalized read model from events</span>
-<span class="kw">import</span> { Kafka } <span class="kw">from</span> <span class="str">'kafkajs'</span>;
+<span class="kw">const</span> { Kafka } = <span class="fn">require</span>(<span class="str">'@confluentinc/kafka-javascript'</span>).<span class="fn">KafkaJS</span>;
 <span class="kw">import</span> { PrismaClient } <span class="kw">from</span> <span class="str">'@prisma/client'</span>;
 
 <span class="kw">const</span> prisma = <span class="kw">new</span> <span class="fn">PrismaClient</span>();
@@ -2248,7 +2248,6 @@ app.<span class="fn">get</span>(<span class="str">'/api/orders/summary'</span>, 
 <span class="kw">CMD</span> ["node", "dist/index.js"]</div></details>
       
           <details class="code-example"><summary>💻 docker-compose.yml — Local multi-service development stack</summary><div class="code-block"><span class="cm"># docker-compose.yml — Run the entire microservices stack locally</span>
-<span class="kw">version</span>: <span class="str">"3.9"</span>
 
 <span class="kw">services</span>:
   <span class="cm"># ─── Application Services ───</span>
@@ -2286,7 +2285,7 @@ app.<span class="fn">get</span>(<span class="str">'/api/orders/summary'</span>, 
 
   <span class="cm"># ─── Infrastructure ───</span>
   <span class="kw">postgres</span>:
-    <span class="kw">image</span>: <span class="str">postgres:16-alpine</span>
+    <span class="kw">image</span>: <span class="str">postgres:17-alpine</span>
     <span class="kw">environment</span>:
       POSTGRES_PASSWORD: <span class="str">secret</span>
     <span class="kw">volumes</span>:
@@ -2304,7 +2303,7 @@ app.<span class="fn">get</span>(<span class="str">'/api/orders/summary'</span>, 
     <span class="kw">command</span>: <span class="str">redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru</span>
 
   <span class="kw">kafka</span>:
-    <span class="kw">image</span>: <span class="str">confluentinc/cp-kafka:7.6.0</span>
+    <span class="kw">image</span>: <span class="str">confluentinc/cp-kafka:7.9.0</span>
     <span class="kw">environment</span>:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: <span class="str">broker,controller</span>
@@ -2366,7 +2365,7 @@ app.<span class="fn">get</span>(<span class="str">'/api/orders/summary'</span>, 
     <span class="kw">spec:</span>
       <span class="kw">containers:</span>
       - <span class="kw">name:</span> order-service
-        <span class="kw">image:</span> ghcr.io/myorg/order-service:latest
+        <span class="kw">image:</span> ghcr.io/myorg/order-service:v1.2.3
         <span class="kw">ports:</span>
         - <span class="kw">containerPort:</span> 3000
         <span class="kw">env:</span>
@@ -2455,7 +2454,7 @@ app.<span class="fn">get</span>(<span class="str">'/api/orders/summary'</span>, 
       - <span class="kw">uses:</span> actions/checkout@v4
       - <span class="kw">uses:</span> actions/setup-node@v4
         <span class="kw">with:</span>
-          <span class="kw">node-version:</span> 20
+          <span class="kw">node-version:</span> 22
       - <span class="kw">name:</span> Install &amp; test
         <span class="kw">run:</span> npm ci &amp;&amp; npm test -- --coverage
       - <span class="kw">name:</span> Build &amp; push Docker image
@@ -2685,7 +2684,7 @@ sdk.<span class="fn">start</span>();
         </ul>
       
           <details class="code-example"><summary>💻 Istio — Enforce mTLS across all services</summary><div class="code-block"><span class="cm"># Istio — Enforce mTLS across all services</span>
-<span class="kw">apiVersion:</span> security.istio.io/v1beta1
+<span class="kw">apiVersion:</span> security.istio.io/v1
 <span class="kw">kind:</span> PeerAuthentication
 <span class="kw">metadata:</span>
   <span class="kw">name:</span> default
@@ -2694,7 +2693,7 @@ sdk.<span class="fn">start</span>();
   <span class="kw">mtls:</span>
     <span class="kw">mode:</span> STRICT   <span class="cm"># All traffic must be mTLS</span>
 ---
-<span class="kw">apiVersion:</span> security.istio.io/v1beta1
+<span class="kw">apiVersion:</span> security.istio.io/v1
 <span class="kw">kind:</span> AuthorizationPolicy
 <span class="kw">metadata:</span>
   <span class="kw">name:</span> order-service-policy
@@ -2879,7 +2878,7 @@ app.<span class="fn">use</span>(<span class="str">'/'</span>, <span class="fn">c
 
   <span class="fn">beforeAll</span>(<span class="kw">async</span> () => {
     <span class="cm">// Spin up real PostgreSQL in Docker</span>
-    container = <span class="kw">await new</span> <span class="fn">PostgreSqlContainer</span>(<span class="str">'postgres:16-alpine'</span>)
+    container = <span class="kw">await new</span> <span class="fn">PostgreSqlContainer</span>(<span class="str">'postgres:17-alpine'</span>)
       .<span class="fn">withDatabase</span>(<span class="str">'orders_test'</span>)
       .<span class="fn">start</span>();
     svc = <span class="kw">new</span> <span class="fn">OrderService</span>(container.<span class="fn">getConnectionUri</span>());
@@ -3575,13 +3574,13 @@ module.exports = { logger };</div>
       <details class="code-example">
         <summary>📄 Dockerfile — Multi-stage production build</summary>
         <div class="code-block"><span class="cm"># Dockerfile — Multi-stage build for minimal production image</span>
-<span class="kw">FROM</span> node:<span class="num">20</span>-alpine <span class="kw">AS</span> builder
+<span class="kw">FROM</span> node:<span class="num">22</span>-alpine <span class="kw">AS</span> builder
 <span class="kw">WORKDIR</span> /app
 <span class="kw">COPY</span> package*.json ./
 <span class="kw">RUN</span> npm ci --omit=dev
 <span class="kw">COPY</span> src/ src/
 
-<span class="kw">FROM</span> node:<span class="num">20</span>-alpine
+<span class="kw">FROM</span> node:<span class="num">22</span>-alpine
 <span class="kw">RUN</span> apk add --no-cache dumb-init
 <span class="kw">WORKDIR</span> /app
 <span class="kw">COPY</span> --from=builder /app .
@@ -3601,7 +3600,6 @@ module.exports = { logger };</div>
       <details class="code-example">
         <summary>📄 docker-compose.yml — Local development stack</summary>
         <div class="code-block"><span class="cm"># docker-compose.yml — Full local dev environment</span>
-<span class="kw">version</span>: <span class="str">'3.9'</span>
 <span class="kw">services</span>:
   <span class="type">order-service</span>:
     <span class="kw">build</span>: .
@@ -3624,7 +3622,7 @@ module.exports = { logger };</div>
     <span class="kw">restart</span>: unless-stopped
 
   <span class="type">postgres</span>:
-    <span class="kw">image</span>: postgres:16-alpine
+    <span class="kw">image</span>: postgres:17-alpine
     <span class="kw">environment</span>:
       POSTGRES_DB: orders
       POSTGRES_USER: app
@@ -3677,7 +3675,7 @@ module.exports = { logger };</div>
       <span class="kw">terminationGracePeriodSeconds</span>: <span class="num">15</span>
       <span class="kw">containers</span>:
         - <span class="kw">name</span>: order-service
-          <span class="kw">image</span>: registry.example.com/order-service:latest
+          <span class="kw">image</span>: registry.example.com/order-service:v1.0.0
           <span class="kw">ports</span>:
             - <span class="kw">containerPort</span>: <span class="num">3000</span>
           <span class="kw">envFrom</span>:
@@ -3732,7 +3730,7 @@ module.exports = { logger };</div>
   <span class="str">"dependencies"</span>: {
     <span class="str">"amqplib"</span>: <span class="str">"^0.10.0"</span>,
     <span class="str">"cors"</span>: <span class="str">"^2.8.5"</span>,
-    <span class="str">"express"</span>: <span class="str">"^4.21.0"</span>,
+    <span class="str">"express"</span>: <span class="str">"^5.1.0"</span>,
     <span class="str">"helmet"</span>: <span class="str">"^7.1.0"</span>,
     <span class="str">"opossum"</span>: <span class="str">"^8.1.0"</span>,
     <span class="str">"pg"</span>: <span class="str">"^8.13.0"</span>,

@@ -521,11 +521,11 @@ trainer = <span class="fn">SFTTrainer</span>(
 trainer.<span class="fn">train</span>()
 model.<span class="fn">save_pretrained</span>(<span class="str">"./lora-adapter"</span>)  <span class="cm"># Save only the small adapter (~50 MB)</span></div></details>
       
-          <details class="code-example"><summary>💻 Ultralytics YOLOv8 — Object Detection + Segmentation</summary><div class="code-block"><span class="cm"># Ultralytics YOLOv8 — Object Detection + Segmentation</span>
+          <details class="code-example"><summary>💻 Ultralytics YOLO11 — Object Detection + Segmentation</summary><div class="code-block"><span class="cm"># Ultralytics YOLO11 — Object Detection + Segmentation</span>
 <span class="kw">from</span> <span class="type">ultralytics</span> <span class="kw">import</span> YOLO
 
-<span class="cm"># Load pre-trained YOLOv8 model (nano, small, medium, large, xlarge)</span>
-model = <span class="fn">YOLO</span>(<span class="str">"yolov8m.pt"</span>)  <span class="cm"># medium variant</span>
+<span class="cm"># Load pre-trained YOLO11 model (nano, small, medium, large, xlarge)</span>
+model = <span class="fn">YOLO</span>(<span class="str">"yolo11m.pt"</span>)  <span class="cm"># medium variant</span>
 
 <span class="cm"># Run inference on image</span>
 results = <span class="fn">model</span>(<span class="str">"street_scene.jpg"</span>, conf=<span class="num">0.5</span>)
@@ -1314,7 +1314,7 @@ model.<span class="fn">fit</span>(X_train, y_train)
               <h5>Decoder-Only (Generation)</h5>
               <div class="field-tags">
                 <span class="field-tag purple">GPT-2 / GPT-3 / GPT-4</span>
-                <span class="field-tag purple">Llama / Llama 3</span>
+                <span class="field-tag purple">Llama / Llama 4</span>
                 <span class="field-tag purple">Mistral / Mixtral</span>
                 <span class="field-tag purple">Claude</span>
                 <span class="field-tag purple">Gemini</span>
@@ -1599,9 +1599,9 @@ model.<span class="fn">fit</span>(X_train, y_train)
               <h5>Major Models</h5>
               <div class="field-tags">
                 <span class="field-tag pink">GPT-4 / GPT-4o (OpenAI)</span>
-                <span class="field-tag pink">Claude 3.5 (Anthropic)</span>
-                <span class="field-tag pink">Gemini (Google)</span>
-                <span class="field-tag pink">Llama 3 (Meta)</span>
+                <span class="field-tag pink">Claude 4 (Anthropic)</span>
+                <span class="field-tag pink">Gemini 2.5 (Google)</span>
+                <span class="field-tag pink">Llama 4 (Meta)</span>
                 <span class="field-tag pink">Mistral / Mixtral</span>
                 <span class="field-tag pink">Command R+ (Cohere)</span>
                 <span class="field-tag pink">Qwen (Alibaba)</span>
@@ -1636,9 +1636,9 @@ model.<span class="fn">fit</span>(X_train, y_train)
               <h5>Models</h5>
               <div class="field-tags">
                 <span class="field-tag purple">GPT-4 / GPT-4o</span>
-                <span class="field-tag purple">Claude 3.5 Sonnet</span>
-                <span class="field-tag purple">Gemini 1.5 Pro</span>
-                <span class="field-tag purple">Llama 3 70B/405B</span>
+                <span class="field-tag purple">Claude 4 Sonnet</span>
+                <span class="field-tag purple">Gemini 2.5 Pro</span>
+                <span class="field-tag purple">Llama 4 Maverick</span>
                 <span class="field-tag purple">Mistral Large</span>
                 <span class="field-tag purple">Command R+</span>
               </div>
@@ -1748,7 +1748,6 @@ model.<span class="fn">fit</span>(X_train, y_train)
                 <span class="field-tag green">CodeLlama</span>
                 <span class="field-tag green">StarCoder 2</span>
                 <span class="field-tag green">DeepSeek Coder</span>
-                <span class="field-tag green">Codex</span>
               </div>
             </div>
             <div class="field-group">
@@ -3378,12 +3377,12 @@ criterion = nn.<span class="fn">CrossEntropyLoss</span>()
     <span class="fn">print</span>(<span class="str">f"Epoch <span class="kw">{</span>epoch+1<span class="kw">}</span> — Loss: <span class="kw">{</span>total_loss/len(train_loader):.4f<span class="kw">}</span>"</span>)</div></details>
       </div>
       <div class="card">
-        <h3 style="margin-bottom:.8rem;color:var(--accent)">🎯 Object Detection — YOLOv8</h3>
-        <details class="code-example"><summary>💻 Ultralytics YOLOv8 — Train, validate &amp; run inference</summary><div class="code-block"><span class="cm"># YOLOv8 — Object detection with Ultralytics</span>
+        <h3 style="margin-bottom:.8rem;color:var(--accent)">🎯 Object Detection — YOLO11</h3>
+        <details class="code-example"><summary>💻 Ultralytics YOLO11 — Train, validate &amp; run inference</summary><div class="code-block"><span class="cm"># YOLO11 — Object detection with Ultralytics</span>
 <span class="kw">from</span> <span class="type">ultralytics</span> <span class="kw">import</span> YOLO
 
 <span class="cm"># ─── Inference with pre-trained model ───</span>
-model = <span class="fn">YOLO</span>(<span class="str">"yolov8n.pt"</span>)  <span class="cm"># nano model (fastest)</span>
+model = <span class="fn">YOLO</span>(<span class="str">"yolo11n.pt"</span>)  <span class="cm"># nano model (fastest)</span>
 results = model.<span class="fn">predict</span>(<span class="str">"street.jpg"</span>, conf=<span class="num">0.25</span>)
 
 <span class="kw">for</span> result <span class="kw">in</span> results:
@@ -3400,7 +3399,7 @@ results[<span class="num">0</span>].<span class="fn">save</span>(<span class="st
 
 <span class="cm"># ─── Train on custom dataset ───</span>
 <span class="cm"># data.yaml defines: train/val paths, class names</span>
-model = <span class="fn">YOLO</span>(<span class="str">"yolov8s.pt"</span>)  <span class="cm"># small model (good balance)</span>
+model = <span class="fn">YOLO</span>(<span class="str">"yolo11s.pt"</span>)  <span class="cm"># small model (good balance)</span>
 model.<span class="fn">train</span>(
     data=<span class="str">"data.yaml"</span>,
     epochs=<span class="num">100</span>,
@@ -3515,7 +3514,7 @@ x = torch.<span class="fn">randn</span>(<span class="num">1</span>, <span class=
               <li><strong>Top-p (Nucleus) Sampling:</strong> Consider tokens whose cumulative probability ≤ p. Dynamic vocabulary size.</li>
               <li><strong>Beam Search:</strong> Maintain multiple hypotheses and select the best. Used more in translation than open-ended generation.</li>
               <li><strong>Repetition Penalty:</strong> Reduce probability of recently generated tokens.</li>
-              <li><strong>Context Window:</strong> Maximum tokens the model can process. GPT-4: 128K tokens. Claude: 200K tokens.</li>
+              <li><strong>Context Window:</strong> Maximum tokens the model can process. GPT-4.1: 1M tokens. Claude: 200K tokens. Gemini 2.5: 1M tokens.</li>
             </ul>
           </div>
           <div class="card">
@@ -3547,7 +3546,7 @@ response = client.chat.completions.<span class="fn">create</span>(
 <span class="kw">from</span> <span class="type">openai</span> <span class="kw">import</span> OpenAI
 
 client = <span class="fn">OpenAI</span>()
-chroma = chromadb.<span class="fn">Client</span>()
+chroma = chromadb.<span class="fn">PersistentClient</span>(path=<span class="str">"./chroma_data"</span>)
 collection = chroma.<span class="fn">get_or_create_collection</span>(<span class="str">"docs"</span>)
 
 <span class="cm"># 1. Index documents (one-time)</span>
@@ -3854,7 +3853,7 @@ q_r, k_r = <span class="fn">apply_rope</span>(q, k, cos[:seq_len], sin[:seq_len]
 
     <span class="cm"># Load model</span>
     model = AutoModelForCausalLM.<span class="fn">from_pretrained</span>(
-        <span class="str">"meta-llama/Llama-3-8B"</span>, torch_dtype=torch.bfloat16,
+        <span class="str">"meta-llama/Llama-3.1-8B"</span>, torch_dtype=torch.bfloat16,
     )
 
     <span class="cm"># Wrap with FSDP — shard params across GPUs</span>
@@ -4028,6 +4027,8 @@ q_r, k_r = <span class="fn">apply_rope</span>(q, k, cos[:seq_len], sin[:seq_len]
         <h3>🖥️ GPU Architecture & Selection</h3>
         <div class="tech-detail">
           <strong>H100 SXM:</strong> 80GB HBM3 (3.35 TB/s), 989 TFLOPS FP16, NVLink 4.0 (900 GB/s)<br>
+          <strong>H200:</strong> 141GB HBM3e (4.8 TB/s), successor to H100 for large-model inference<br>
+          <strong>B200 (Blackwell):</strong> 192GB HBM3e, 2nd-gen Transformer Engine, NVLink 5.0<br>
           <strong>A100 80GB:</strong> 312 TFLOPS FP16, 2 TB/s HBM2e<br>
           <strong>L40S:</strong> 48GB, good for inference (no NVLink)<br>
           <strong>A10G:</strong> 24GB, cheap on AWS g5<br><br>
@@ -4069,7 +4070,7 @@ q_r, k_r = <span class="fn">apply_rope</span>(q, k, cos[:seq_len], sin[:seq_len]
         <span class="kw">image</span>: <span class="str">vllm/vllm-openai:latest</span>
         <span class="kw">args</span>:
         - <span class="str">"--model"</span>
-        - <span class="str">"meta-llama/Llama-3-8B-Instruct"</span>
+        - <span class="str">"meta-llama/Llama-3.1-8B-Instruct"</span>
         - <span class="str">"--tensor-parallel-size"</span>
         - <span class="str">"2"</span>
         - <span class="str">"--max-model-len"</span>
@@ -4145,7 +4146,7 @@ q_r, k_r = <span class="fn">apply_rope</span>(q, k, cos[:seq_len], sin[:seq_len]
 
 <span class="cm"># Load model with PagedAttention (dynamic KV-cache allocation)</span>
 llm = <span class="fn">LLM</span>(
-    model=<span class="str">"meta-llama/Llama-3-8B-Instruct"</span>,
+    model=<span class="str">"meta-llama/Llama-3.1-8B-Instruct"</span>,
     tensor_parallel_size=<span class="num">2</span>,          <span class="cm"># split across 2 GPUs</span>
     gpu_memory_utilization=<span class="num">0.90</span>,
     max_model_len=<span class="num">8192</span>,
@@ -4173,7 +4174,7 @@ outputs = llm.<span class="fn">generate</span>(prompts, params)
     <span class="fn">print</span>(<span class="str">f"Output: <span class="kw">{</span>output.outputs[0].text[:100]<span class="kw">}</span>"</span>)
     <span class="fn">print</span>(<span class="str">f"Tokens/sec: <span class="kw">{</span>len(output.outputs[0].token_ids) / output.metrics.finished_time:<span class="num">.1f</span><span class="kw">}</span>\n"</span>)
 
-<span class="cm"># Production: vllm serve meta-llama/Llama-3-8B-Instruct \</span>
+<span class="cm"># Production: vllm serve meta-llama/Llama-3.1-8B-Instruct \</span>
 <span class="cm">#   --tensor-parallel-size 2 --port 8000 --api-key $API_KEY</span></div></details>
       </div>
       <div class="card">
@@ -4441,7 +4442,7 @@ fair_frame = <span class="fn">MetricFrame</span>(
         <div class="cards-grid cols-3">
           <div class="card">
             <h3>NVIDIA GPUs</h3>
-            <p>H100, A100, L40S. CUDA for GPU programming. cuDNN for optimized neural network primitives. Foundation of all modern AI training.</p>
+            <p>H100, H200, B200, A100, L40S. CUDA for GPU programming. cuDNN for optimized neural network primitives. Foundation of all modern AI training.</p>
           </div>
           <div class="card">
             <h3>Cloud AI</h3>
@@ -5335,12 +5336,12 @@ client = <span class="type">TestClient</span>(app)
       <details class="code-example">
         <summary>📄 Dockerfile — Multi-stage GPU-ready build</summary>
         <div class="code-block"><span class="cm"># Dockerfile — Multi-stage build for AI service</span>
-<span class="kw">FROM</span> python:<span class="num">3.11</span>-slim <span class="kw">AS</span> builder
+<span class="kw">FROM</span> python:<span class="num">3.12</span>-slim <span class="kw">AS</span> builder
 <span class="kw">WORKDIR</span> /app
 <span class="kw">COPY</span> requirements.txt .
 <span class="kw">RUN</span> pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-<span class="kw">FROM</span> python:<span class="num">3.11</span>-slim
+<span class="kw">FROM</span> python:<span class="num">3.12</span>-slim
 <span class="kw">WORKDIR</span> /app
 <span class="kw">COPY</span> --from=builder /install /usr/local
 
@@ -5360,7 +5361,6 @@ client = <span class="type">TestClient</span>(app)
       <details class="code-example">
         <summary>📄 docker-compose.yml — Local development stack</summary>
         <div class="code-block"><span class="cm"># docker-compose.yml — Full local dev environment</span>
-<span class="kw">version</span>: <span class="str">'3.9'</span>
 <span class="kw">services</span>:
   <span class="type">ai-service</span>:
     <span class="kw">build</span>: .
@@ -5412,7 +5412,7 @@ client = <span class="type">TestClient</span>(app)
       <span class="kw">terminationGracePeriodSeconds</span>: <span class="num">30</span>
       <span class="kw">containers</span>:
         - <span class="kw">name</span>: ai-service
-          <span class="kw">image</span>: registry.example.com/ai-knowledge-service:latest
+          <span class="kw">image</span>: registry.example.com/ai-knowledge-service:v1.0.0
           <span class="kw">ports</span>:
             - <span class="kw">containerPort</span>: <span class="num">8000</span>
           <span class="kw">envFrom</span>:
@@ -5482,11 +5482,11 @@ fastapi==<span class="num">0.115.0</span>
 uvicorn[standard]==<span class="num">0.32.0</span>
 pydantic==<span class="num">2.9.0</span>
 pydantic-settings==<span class="num">2.6.0</span>
-openai==<span class="num">1.52.0</span>
-chromadb==<span class="num">0.5.15</span>
-sentence-transformers==<span class="num">3.3.0</span>
-torch==<span class="num">2.5.0</span>
-transformers==<span class="num">4.46.0</span>
+openai==<span class="num">1.82.0</span>
+chromadb==<span class="num">0.6.3</span>
+sentence-transformers==<span class="num">4.1.0</span>
+torch==<span class="num">2.7.0</span>
+transformers==<span class="num">4.52.0</span>
 prometheus-client==<span class="num">0.21.0</span>
 python-multipart==<span class="num">0.0.12</span>
 pytest==<span class="num">8.3.0</span>
