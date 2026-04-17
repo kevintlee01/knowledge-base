@@ -27,9 +27,10 @@ a:hover{color:var(--primary-glow)}
 h1,h2,h3,h4{color:var(--text-bright);line-height:1.3}
 
 /* ============== SCROLLBAR ============== */
-::-webkit-scrollbar{width:8px}
-::-webkit-scrollbar-track{background:var(--bg)}
-::-webkit-scrollbar-thumb{background:var(--primary);border-radius:4px}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(148,163,184,.25);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:rgba(148,163,184,.4)}
 
 /* ============== GRAPH CANVAS ============== */
 #graphCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
