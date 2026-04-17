@@ -387,6 +387,7 @@ details.code-example .code-block{margin:0;border:none;border-radius:0}
       <a href="#ethics">Ethics</a>
       <a href="#tools">Tools</a>
       <a href="#applications">Applications</a>
+      <a href="#ch-production">Production</a>
     </div>
   </div>
 </nav>
@@ -3013,6 +3014,44 @@ criterion = nn.<span class="fn">BCELoss</span>()
           <li><strong>Contextual Embeddings:</strong> BERT, GPT produce different embeddings for same word in different contexts. "Bank" in "river bank" vs "bank account".</li>
           <li><strong>Positional Embeddings:</strong> Encode token position. Learned (GPT) or sinusoidal (original Transformer). RoPE (Rotary Position Embedding) for relative positions.</li>
         </ul>
+        <details class="code-example"><summary>💻 Tokenization &amp; Embeddings — BPE, Word2Vec, and Contextual Embeddings</summary><div class="code-block"><span class="cm"># Tokenization — Subword (BPE) with HuggingFace tokenizers</span>
+<span class="kw">from</span> <span class="type">transformers</span> <span class="kw">import</span> AutoTokenizer
+
+tokenizer = AutoTokenizer.<span class="fn">from_pretrained</span>(<span class="str">"gpt2"</span>)
+text = <span class="str">"Tokenization splits text into subword pieces."</span>
+tokens = tokenizer.<span class="fn">tokenize</span>(text)
+ids    = tokenizer.<span class="fn">encode</span>(text)
+<span class="fn">print</span>(<span class="str">"Tokens:"</span>, tokens)   <span class="cm"># ['Token', 'ization', ' splits', ...]</span>
+<span class="fn">print</span>(<span class="str">"IDs:"</span>,    ids)      <span class="cm"># [30642, 1634, 29348, ...]</span>
+
+<span class="cm"># Decode back to text</span>
+<span class="fn">print</span>(tokenizer.<span class="fn">decode</span>(ids))  <span class="cm"># "Tokenization splits text into subword pieces."</span>
+
+<span class="cm"># ─── Word Embeddings with Gensim (Word2Vec) ───</span>
+<span class="kw">from</span> <span class="type">gensim.models</span> <span class="kw">import</span> Word2Vec
+
+sentences = [[<span class="str">"king"</span>, <span class="str">"queen"</span>, <span class="str">"throne"</span>], [<span class="str">"man"</span>, <span class="str">"woman"</span>, <span class="str">"child"</span>]]
+model = <span class="fn">Word2Vec</span>(sentences, vector_size=<span class="num">100</span>, window=<span class="num">5</span>, min_count=<span class="num">1</span>)
+vector = model.wv[<span class="str">"king"</span>]          <span class="cm"># 100-dim dense vector</span>
+similar = model.wv.<span class="fn">most_similar</span>(<span class="str">"king"</span>)  <span class="cm"># Find similar words</span>
+
+<span class="cm"># ─── Contextual Embeddings with BERT ───</span>
+<span class="kw">from</span> <span class="type">transformers</span> <span class="kw">import</span> AutoModel, AutoTokenizer
+<span class="kw">import</span> <span class="type">torch</span>
+
+model_name = <span class="str">"bert-base-uncased"</span>
+tokenizer = AutoTokenizer.<span class="fn">from_pretrained</span>(model_name)
+model = AutoModel.<span class="fn">from_pretrained</span>(model_name)
+
+inputs = tokenizer(<span class="str">"The bank by the river"</span>, return_tensors=<span class="str">"pt"</span>)
+<span class="kw">with</span> torch.<span class="fn">no_grad</span>():
+    outputs = <span class="fn">model</span>(**inputs)
+
+<span class="cm"># outputs.last_hidden_state shape: (1, seq_len, 768)</span>
+<span class="cm"># Each token gets a DIFFERENT embedding depending on context</span>
+<span class="cm"># "bank" in "river bank" ≠ "bank" in "bank account"</span>
+embeddings = outputs.last_hidden_state
+<span class="fn">print</span>(<span class="str">f"Sequence length: <span class="kw">{</span>embeddings.shape[1]<span class="kw">}</span>, Hidden dim: <span class="kw">{</span>embeddings.shape[2]<span class="kw">}</span>"</span>)</div></details>
       </div>
       <div class="card" style="border-left:3px solid var(--accent)">
         <h3>📝 Core NLP Tasks</h3>
@@ -3026,6 +3065,78 @@ criterion = nn.<span class="fn">BCELoss</span>()
           <li><strong>Relation Extraction:</strong> Identify relationships between entities in text.</li>
           <li><strong>Coreference Resolution:</strong> Identify which expressions refer to the same entity.</li>
         </ul>
+        <details class="code-example"><summary>💻 spaCy — NER, POS Tagging &amp; Dependency Parsing Pipeline</summary><div class="code-block"><span class="cm"># spaCy — Complete NLP pipeline: tokenization, NER, POS, dependencies</span>
+<span class="kw">import</span> <span class="type">spacy</span>
+
+<span class="cm"># Load transformer-based model for best accuracy</span>
+nlp = spacy.<span class="fn">load</span>(<span class="str">"en_core_web_trf"</span>)  <span class="cm"># or "en_core_web_sm" for speed</span>
+doc = <span class="fn">nlp</span>(<span class="str">"Apple Inc. reported $94.8 billion in revenue last quarter in Cupertino."</span>)
+
+<span class="cm"># Named Entity Recognition</span>
+<span class="kw">for</span> ent <span class="kw">in</span> doc.ents:
+    <span class="fn">print</span>(<span class="str">f"<span class="kw">{</span>ent.text:&lt;25<span class="kw">}</span> <span class="kw">{</span>ent.label_:&lt;10<span class="kw">}</span> <span class="kw">{</span>spacy.<span class="fn">explain</span>(ent.label_)<span class="kw">}</span>"</span>)
+<span class="cm"># Apple Inc.               ORG        Companies, agencies, institutions</span>
+<span class="cm"># $94.8 billion            MONEY      Monetary values</span>
+<span class="cm"># last quarter             DATE       Absolute or relative dates</span>
+<span class="cm"># Cupertino                GPE        Countries, cities, states</span>
+
+<span class="cm"># Part-of-Speech tagging</span>
+<span class="kw">for</span> token <span class="kw">in</span> doc:
+    <span class="fn">print</span>(<span class="str">f"<span class="kw">{</span>token.text:&lt;15<span class="kw">}</span> <span class="kw">{</span>token.pos_:&lt;8<span class="kw">}</span> <span class="kw">{</span>token.dep_:&lt;12<span class="kw">}</span> head=<span class="kw">{</span>token.head.text<span class="kw">}</span>"</span>)
+
+<span class="cm"># Sentence segmentation</span>
+<span class="kw">for</span> sent <span class="kw">in</span> doc.sents:
+    <span class="fn">print</span>(sent.text)</div></details>
+        <details class="code-example"><summary>💻 HuggingFace — Text Classification &amp; Sentiment Analysis</summary><div class="code-block"><span class="cm"># HuggingFace Transformers — Fine-tune BERT for text classification</span>
+<span class="kw">from</span> <span class="type">transformers</span> <span class="kw">import</span> AutoModelForSequenceClassification, AutoTokenizer
+<span class="kw">from</span> <span class="type">transformers</span> <span class="kw">import</span> TrainingArguments, Trainer
+<span class="kw">from</span> <span class="type">datasets</span> <span class="kw">import</span> load_dataset
+<span class="kw">import</span> <span class="type">numpy</span> <span class="kw">as</span> np
+
+<span class="cm"># Load dataset and tokenizer</span>
+dataset = <span class="fn">load_dataset</span>(<span class="str">"imdb"</span>)
+tokenizer = AutoTokenizer.<span class="fn">from_pretrained</span>(<span class="str">"distilbert-base-uncased"</span>)
+
+<span class="kw">def</span> <span class="fn">tokenize</span>(batch):
+    <span class="kw">return</span> <span class="fn">tokenizer</span>(batch[<span class="str">"text"</span>], padding=<span class="str">"max_length"</span>, truncation=<span class="kw">True</span>, max_length=<span class="num">512</span>)
+
+tokenized = dataset.<span class="fn">map</span>(tokenize, batched=<span class="kw">True</span>)
+
+<span class="cm"># Load pre-trained model with classification head</span>
+model = AutoModelForSequenceClassification.<span class="fn">from_pretrained</span>(
+    <span class="str">"distilbert-base-uncased"</span>, num_labels=<span class="num">2</span>
+)
+
+<span class="cm"># Training configuration</span>
+args = <span class="fn">TrainingArguments</span>(
+    output_dir=<span class="str">"./results"</span>,
+    num_train_epochs=<span class="num">3</span>,
+    per_device_train_batch_size=<span class="num">16</span>,
+    per_device_eval_batch_size=<span class="num">64</span>,
+    learning_rate=<span class="num">2e-5</span>,
+    weight_decay=<span class="num">0.01</span>,
+    eval_strategy=<span class="str">"epoch"</span>,
+    save_strategy=<span class="str">"epoch"</span>,
+    load_best_model_at_end=<span class="kw">True</span>,
+)
+
+<span class="cm"># Metrics</span>
+<span class="kw">def</span> <span class="fn">compute_metrics</span>(eval_pred):
+    logits, labels = eval_pred
+    preds = np.<span class="fn">argmax</span>(logits, axis=-<span class="num">1</span>)
+    accuracy = (preds == labels).<span class="fn">mean</span>()
+    <span class="kw">return</span> {<span class="str">"accuracy"</span>: accuracy}
+
+<span class="cm"># Train</span>
+trainer = <span class="fn">Trainer</span>(model=model, args=args, train_dataset=tokenized[<span class="str">"train"</span>],
+                  eval_dataset=tokenized[<span class="str">"test"</span>], compute_metrics=compute_metrics)
+trainer.<span class="fn">train</span>()
+
+<span class="cm"># Quick inference with pipeline</span>
+<span class="kw">from</span> <span class="type">transformers</span> <span class="kw">import</span> pipeline
+classifier = <span class="fn">pipeline</span>(<span class="str">"sentiment-analysis"</span>, model=model, tokenizer=tokenizer)
+<span class="fn">print</span>(<span class="fn">classifier</span>(<span class="str">"This movie was absolutely fantastic!"</span>))
+<span class="cm"># [{'label': 'POSITIVE', 'score': 0.9998}]</span></div></details>
       </div>
     </div>
 
@@ -3064,7 +3175,67 @@ criterion = nn.<span class="fn">BCELoss</span>()
           </ul>
         </div>
       </div>
-    </div>  </div>
+    </div>
+    <details class="code-example"><summary>💻 LLM Fine-Tuning with LoRA (PEFT) — Parameter-Efficient Adaptation</summary><div class="code-block"><span class="cm"># LoRA Fine-Tuning — Adapt an LLM with &lt;1% trainable parameters</span>
+<span class="kw">from</span> <span class="type">transformers</span> <span class="kw">import</span> AutoModelForCausalLM, AutoTokenizer, TrainingArguments
+<span class="kw">from</span> <span class="type">peft</span> <span class="kw">import</span> LoraConfig, get_peft_model, TaskType
+<span class="kw">from</span> <span class="type">trl</span> <span class="kw">import</span> SFTTrainer
+<span class="kw">from</span> <span class="type">datasets</span> <span class="kw">import</span> load_dataset
+
+<span class="cm"># Load base model (4-bit quantized for consumer GPUs)</span>
+<span class="kw">from</span> <span class="type">transformers</span> <span class="kw">import</span> BitsAndBytesConfig
+bnb_config = <span class="fn">BitsAndBytesConfig</span>(
+    load_in_4bit=<span class="kw">True</span>,
+    bnb_4bit_quant_type=<span class="str">"nf4"</span>,
+    bnb_4bit_compute_dtype=<span class="str">"float16"</span>,
+)
+model = AutoModelForCausalLM.<span class="fn">from_pretrained</span>(
+    <span class="str">"meta-llama/Llama-3.1-8B"</span>, quantization_config=bnb_config, device_map=<span class="str">"auto"</span>
+)
+tokenizer = AutoTokenizer.<span class="fn">from_pretrained</span>(<span class="str">"meta-llama/Llama-3.1-8B"</span>)
+
+<span class="cm"># Configure LoRA — only train small rank-decomposed matrices</span>
+lora_config = <span class="fn">LoraConfig</span>(
+    r=<span class="num">16</span>,                    <span class="cm"># Rank of update matrices</span>
+    lora_alpha=<span class="num">32</span>,            <span class="cm"># Scaling factor</span>
+    target_modules=[<span class="str">"q_proj"</span>, <span class="str">"v_proj"</span>, <span class="str">"k_proj"</span>, <span class="str">"o_proj"</span>],
+    lora_dropout=<span class="num">0.05</span>,
+    bias=<span class="str">"none"</span>,
+    task_type=TaskType.CAUSAL_LM,
+)
+model = <span class="fn">get_peft_model</span>(model, lora_config)
+model.<span class="fn">print_trainable_parameters</span>()
+<span class="cm"># "trainable params: 6,553,600 || all params: 8,030,261,248 || trainable%: 0.0816"</span>
+
+<span class="cm"># Prepare instruction-tuning dataset</span>
+dataset = <span class="fn">load_dataset</span>(<span class="str">"json"</span>, data_files=<span class="str">"train_data.jsonl"</span>)
+
+<span class="cm"># Train with SFTTrainer (Supervised Fine-Tuning)</span>
+trainer = <span class="fn">SFTTrainer</span>(
+    model=model,
+    train_dataset=dataset[<span class="str">"train"</span>],
+    args=<span class="fn">TrainingArguments</span>(
+        output_dir=<span class="str">"./lora-llama"</span>,
+        num_train_epochs=<span class="num">3</span>,
+        per_device_train_batch_size=<span class="num">4</span>,
+        gradient_accumulation_steps=<span class="num">4</span>,
+        learning_rate=<span class="num">2e-4</span>,
+        fp16=<span class="kw">True</span>,
+        logging_steps=<span class="num">10</span>,
+    ),
+    max_seq_length=<span class="num">1024</span>,
+)
+trainer.<span class="fn">train</span>()
+
+<span class="cm"># Save adapter weights only (~25MB vs 16GB full model)</span>
+model.<span class="fn">save_pretrained</span>(<span class="str">"./lora-llama-adapter"</span>)
+
+<span class="cm"># Inference: merge adapter with base model</span>
+<span class="kw">from</span> <span class="type">peft</span> <span class="kw">import</span> PeftModel
+base = AutoModelForCausalLM.<span class="fn">from_pretrained</span>(<span class="str">"meta-llama/Llama-3.1-8B"</span>, device_map=<span class="str">"auto"</span>)
+model = PeftModel.<span class="fn">from_pretrained</span>(base, <span class="str">"./lora-llama-adapter"</span>)
+merged = model.<span class="fn">merge_and_unload</span>()  <span class="cm"># Optional: bake adapter into weights</span></div></details>
+  </div>
 </section>
 
 <!-- ==================== COMPUTER VISION ==================== -->
@@ -3148,7 +3319,168 @@ criterion = nn.<span class="fn">BCELoss</span>()
           <li><strong>SLAM:</strong> Simultaneous Localization and Mapping for autonomous navigation</li>
         </ul>
       </div>
-    </div>  </div>
+    </div>
+    <div class="cards-grid cols-2" style="margin-top:2rem">
+      <div class="card">
+        <h3 style="margin-bottom:.8rem;color:var(--primary-glow)">🏷️ Image Classification — Transfer Learning</h3>
+        <details class="code-example"><summary>💻 PyTorch — Fine-tune a pre-trained ResNet for custom classification</summary><div class="code-block"><span class="cm"># PyTorch — Transfer learning with pre-trained ResNet</span>
+<span class="kw">import</span> <span class="type">torch</span>
+<span class="kw">import</span> <span class="type">torch.nn</span> <span class="kw">as</span> nn
+<span class="kw">from</span> <span class="type">torchvision</span> <span class="kw">import</span> models, transforms, datasets
+<span class="kw">from</span> <span class="type">torch.utils.data</span> <span class="kw">import</span> DataLoader
+
+<span class="cm"># Data augmentation &amp; normalization</span>
+transform_train = transforms.<span class="fn">Compose</span>([
+    transforms.<span class="fn">RandomResizedCrop</span>(<span class="num">224</span>),
+    transforms.<span class="fn">RandomHorizontalFlip</span>(),
+    transforms.<span class="fn">ColorJitter</span>(brightness=<span class="num">0.2</span>, contrast=<span class="num">0.2</span>),
+    transforms.<span class="fn">ToTensor</span>(),
+    transforms.<span class="fn">Normalize</span>([<span class="num">0.485</span>, <span class="num">0.456</span>, <span class="num">0.406</span>], [<span class="num">0.229</span>, <span class="num">0.224</span>, <span class="num">0.225</span>]),
+])
+
+<span class="cm"># Load dataset (ImageFolder expects class_name/image.jpg structure)</span>
+train_data = datasets.<span class="fn">ImageFolder</span>(<span class="str">"data/train"</span>, transform=transform_train)
+train_loader = <span class="fn">DataLoader</span>(train_data, batch_size=<span class="num">32</span>, shuffle=<span class="kw">True</span>, num_workers=<span class="num">4</span>)
+
+<span class="cm"># Load pre-trained ResNet50 and replace classifier head</span>
+model = models.<span class="fn">resnet50</span>(weights=models.ResNet50_Weights.IMAGENET1K_V2)
+<span class="kw">for</span> param <span class="kw">in</span> model.<span class="fn">parameters</span>():
+    param.requires_grad = <span class="kw">False</span>  <span class="cm"># Freeze backbone</span>
+
+num_classes = <span class="fn">len</span>(train_data.classes)
+model.fc = nn.<span class="fn">Sequential</span>(
+    nn.<span class="fn">Dropout</span>(<span class="num">0.3</span>),
+    nn.<span class="fn">Linear</span>(model.fc.in_features, num_classes),
+)
+
+<span class="cm"># Training loop</span>
+device = torch.<span class="fn">device</span>(<span class="str">"cuda"</span> <span class="kw">if</span> torch.cuda.<span class="fn">is_available</span>() <span class="kw">else</span> <span class="str">"cpu"</span>)
+model.<span class="fn">to</span>(device)
+optimizer = torch.optim.<span class="fn">AdamW</span>(model.fc.<span class="fn">parameters</span>(), lr=<span class="num">1e-3</span>)
+criterion = nn.<span class="fn">CrossEntropyLoss</span>()
+
+<span class="kw">for</span> epoch <span class="kw">in</span> <span class="fn">range</span>(<span class="num">10</span>):
+    model.<span class="fn">train</span>()
+    total_loss = <span class="num">0</span>
+    <span class="kw">for</span> images, labels <span class="kw">in</span> train_loader:
+        images, labels = images.<span class="fn">to</span>(device), labels.<span class="fn">to</span>(device)
+        outputs = <span class="fn">model</span>(images)
+        loss = <span class="fn">criterion</span>(outputs, labels)
+        optimizer.<span class="fn">zero_grad</span>()
+        loss.<span class="fn">backward</span>()
+        optimizer.<span class="fn">step</span>()
+        total_loss += loss.<span class="fn">item</span>()
+    <span class="fn">print</span>(<span class="str">f"Epoch <span class="kw">{</span>epoch+1<span class="kw">}</span> — Loss: <span class="kw">{</span>total_loss/len(train_loader):.4f<span class="kw">}</span>"</span>)</div></details>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:.8rem;color:var(--accent)">🎯 Object Detection — YOLOv8</h3>
+        <details class="code-example"><summary>💻 Ultralytics YOLOv8 — Train, validate &amp; run inference</summary><div class="code-block"><span class="cm"># YOLOv8 — Object detection with Ultralytics</span>
+<span class="kw">from</span> <span class="type">ultralytics</span> <span class="kw">import</span> YOLO
+
+<span class="cm"># ─── Inference with pre-trained model ───</span>
+model = <span class="fn">YOLO</span>(<span class="str">"yolov8n.pt"</span>)  <span class="cm"># nano model (fastest)</span>
+results = model.<span class="fn">predict</span>(<span class="str">"street.jpg"</span>, conf=<span class="num">0.25</span>)
+
+<span class="kw">for</span> result <span class="kw">in</span> results:
+    <span class="kw">for</span> box <span class="kw">in</span> result.boxes:
+        cls  = result.names[<span class="fn">int</span>(box.cls)]
+        conf = <span class="fn">float</span>(box.conf)
+        x1, y1, x2, y2 = box.xyxy[<span class="num">0</span>].<span class="fn">tolist</span>()
+        <span class="fn">print</span>(<span class="str">f"<span class="kw">{</span>cls<span class="kw">}</span> (<span class="kw">{</span>conf:.2f<span class="kw">}</span>): [<span class="kw">{</span>x1:.0f<span class="kw">}</span>,<span class="kw">{</span>y1:.0f<span class="kw">}</span>,<span class="kw">{</span>x2:.0f<span class="kw">}</span>,<span class="kw">{</span>y2:.0f<span class="kw">}</span>]"</span>)
+<span class="cm"># person (0.92): [120,45,340,510]</span>
+<span class="cm"># car (0.87): [400,200,680,420]</span>
+
+<span class="cm"># Save annotated image</span>
+results[<span class="num">0</span>].<span class="fn">save</span>(<span class="str">"output.jpg"</span>)
+
+<span class="cm"># ─── Train on custom dataset ───</span>
+<span class="cm"># data.yaml defines: train/val paths, class names</span>
+model = <span class="fn">YOLO</span>(<span class="str">"yolov8s.pt"</span>)  <span class="cm"># small model (good balance)</span>
+model.<span class="fn">train</span>(
+    data=<span class="str">"data.yaml"</span>,
+    epochs=<span class="num">100</span>,
+    imgsz=<span class="num">640</span>,
+    batch=<span class="num">16</span>,
+    device=<span class="str">"0"</span>,          <span class="cm"># GPU index</span>
+    patience=<span class="num">20</span>,          <span class="cm"># Early stopping</span>
+    augment=<span class="kw">True</span>,
+)
+
+<span class="cm"># Validate</span>
+metrics = model.<span class="fn">val</span>()
+<span class="fn">print</span>(<span class="str">f"mAP@50: <span class="kw">{</span>metrics.box.map50:.3f<span class="kw">}</span>"</span>)
+<span class="fn">print</span>(<span class="str">f"mAP@50-95: <span class="kw">{</span>metrics.box.map:.3f<span class="kw">}</span>"</span>)
+
+<span class="cm"># Export to ONNX for deployment</span>
+model.<span class="fn">export</span>(format=<span class="str">"onnx"</span>, imgsz=<span class="num">640</span>, dynamic=<span class="kw">True</span>)</div></details>
+      </div>
+    </div>
+    <details class="code-example" style="margin-top:1.5rem"><summary>💻 Semantic Segmentation — U-Net with PyTorch</summary><div class="code-block"><span class="cm"># U-Net — Semantic segmentation architecture</span>
+<span class="kw">import</span> <span class="type">torch</span>
+<span class="kw">import</span> <span class="type">torch.nn</span> <span class="kw">as</span> nn
+
+<span class="kw">class</span> <span class="type">DoubleConv</span>(nn.Module):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, in_ch, out_ch):
+        <span class="fn">super</span>().<span class="fn">__init__</span>()
+        self.conv = nn.<span class="fn">Sequential</span>(
+            nn.<span class="fn">Conv2d</span>(in_ch, out_ch, <span class="num">3</span>, padding=<span class="num">1</span>),
+            nn.<span class="fn">BatchNorm2d</span>(out_ch),
+            nn.<span class="fn">ReLU</span>(inplace=<span class="kw">True</span>),
+            nn.<span class="fn">Conv2d</span>(out_ch, out_ch, <span class="num">3</span>, padding=<span class="num">1</span>),
+            nn.<span class="fn">BatchNorm2d</span>(out_ch),
+            nn.<span class="fn">ReLU</span>(inplace=<span class="kw">True</span>),
+        )
+    <span class="kw">def</span> <span class="fn">forward</span>(self, x):
+        <span class="kw">return</span> self.<span class="fn">conv</span>(x)
+
+<span class="kw">class</span> <span class="type">UNet</span>(nn.Module):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, in_channels=<span class="num">3</span>, num_classes=<span class="num">21</span>):
+        <span class="fn">super</span>().<span class="fn">__init__</span>()
+        <span class="cm"># Encoder (contracting path)</span>
+        self.enc1 = <span class="fn">DoubleConv</span>(in_channels, <span class="num">64</span>)
+        self.enc2 = <span class="fn">DoubleConv</span>(<span class="num">64</span>, <span class="num">128</span>)
+        self.enc3 = <span class="fn">DoubleConv</span>(<span class="num">128</span>, <span class="num">256</span>)
+        self.enc4 = <span class="fn">DoubleConv</span>(<span class="num">256</span>, <span class="num">512</span>)
+        self.pool = nn.<span class="fn">MaxPool2d</span>(<span class="num">2</span>)
+
+        <span class="cm"># Bottleneck</span>
+        self.bottleneck = <span class="fn">DoubleConv</span>(<span class="num">512</span>, <span class="num">1024</span>)
+
+        <span class="cm"># Decoder (expanding path)</span>
+        self.up4 = nn.<span class="fn">ConvTranspose2d</span>(<span class="num">1024</span>, <span class="num">512</span>, <span class="num">2</span>, stride=<span class="num">2</span>)
+        self.dec4 = <span class="fn">DoubleConv</span>(<span class="num">1024</span>, <span class="num">512</span>)
+        self.up3 = nn.<span class="fn">ConvTranspose2d</span>(<span class="num">512</span>, <span class="num">256</span>, <span class="num">2</span>, stride=<span class="num">2</span>)
+        self.dec3 = <span class="fn">DoubleConv</span>(<span class="num">512</span>, <span class="num">256</span>)
+        self.up2 = nn.<span class="fn">ConvTranspose2d</span>(<span class="num">256</span>, <span class="num">128</span>, <span class="num">2</span>, stride=<span class="num">2</span>)
+        self.dec2 = <span class="fn">DoubleConv</span>(<span class="num">256</span>, <span class="num">128</span>)
+        self.up1 = nn.<span class="fn">ConvTranspose2d</span>(<span class="num">128</span>, <span class="num">64</span>, <span class="num">2</span>, stride=<span class="num">2</span>)
+        self.dec1 = <span class="fn">DoubleConv</span>(<span class="num">128</span>, <span class="num">64</span>)
+
+        self.out_conv = nn.<span class="fn">Conv2d</span>(<span class="num">64</span>, num_classes, <span class="num">1</span>)
+
+    <span class="kw">def</span> <span class="fn">forward</span>(self, x):
+        <span class="cm"># Encoder + skip connections</span>
+        e1 = self.<span class="fn">enc1</span>(x)
+        e2 = self.<span class="fn">enc2</span>(self.<span class="fn">pool</span>(e1))
+        e3 = self.<span class="fn">enc3</span>(self.<span class="fn">pool</span>(e2))
+        e4 = self.<span class="fn">enc4</span>(self.<span class="fn">pool</span>(e3))
+
+        <span class="cm"># Bottleneck</span>
+        b = self.<span class="fn">bottleneck</span>(self.<span class="fn">pool</span>(e4))
+
+        <span class="cm"># Decoder + skip connections (concatenate encoder features)</span>
+        d4 = self.<span class="fn">dec4</span>(torch.<span class="fn">cat</span>([self.<span class="fn">up4</span>(b), e4], dim=<span class="num">1</span>))
+        d3 = self.<span class="fn">dec3</span>(torch.<span class="fn">cat</span>([self.<span class="fn">up3</span>(d4), e3], dim=<span class="num">1</span>))
+        d2 = self.<span class="fn">dec2</span>(torch.<span class="fn">cat</span>([self.<span class="fn">up2</span>(d3), e2], dim=<span class="num">1</span>))
+        d1 = self.<span class="fn">dec1</span>(torch.<span class="fn">cat</span>([self.<span class="fn">up1</span>(d2), e1], dim=<span class="num">1</span>))
+
+        <span class="kw">return</span> self.<span class="fn">out_conv</span>(d1)  <span class="cm"># (B, num_classes, H, W)</span>
+
+<span class="cm"># Usage</span>
+model = <span class="fn">UNet</span>(in_channels=<span class="num">3</span>, num_classes=<span class="num">21</span>)
+x = torch.<span class="fn">randn</span>(<span class="num">1</span>, <span class="num">3</span>, <span class="num">256</span>, <span class="num">256</span>)
+<span class="fn">print</span>(<span class="fn">model</span>(x).shape)  <span class="cm"># torch.Size([1, 21, 256, 256])</span></div></details>
+  </div>
 </section>
 
 <!-- ==================== GENERATIVE AI ==================== -->
@@ -5128,6 +5460,101 @@ CLASSIFIER_MODEL=distilbert-base-uncased-finetuned-sst-2-english
 LOG_LEVEL=INFO
 CORS_ORIGINS=["*"]</div>
       </details>
+
+      <!-- How to Run -->
+      <div class="card" style="border-top:3px solid var(--accent);margin-top:2rem">
+        <h3 style="margin-bottom:1rem">🚀 How to Run This Service</h3>
+
+        <h4 style="margin-bottom:.6rem;color:var(--primary-glow)">Prerequisites</h4>
+        <ul style="margin-bottom:1.2rem">
+          <li><strong>Docker &amp; Docker Compose</strong> (v2+) installed</li>
+          <li><strong>Python 3.11+</strong> (only needed for local development without Docker)</li>
+          <li><strong>OpenAI API key</strong> (for LLM chat features; RAG embedding and ML classification run locally)</li>
+        </ul>
+
+        <h4 style="margin-bottom:.6rem;color:var(--primary-glow)">Option 1 — Docker Compose (recommended)</h4>
+        <div class="code-block" style="margin-bottom:1.2rem"><span class="cm"># Clone / copy all files into a project directory</span>
+mkdir ai-knowledge-assistant &amp;&amp; cd ai-knowledge-assistant
+
+<span class="cm"># Create the file structure shown above, then create your .env:</span>
+cp .env.example .env
+<span class="cm"># Edit .env and set OPENAI_API_KEY=sk-... (required for /chat endpoint)</span>
+
+<span class="cm"># Start all services (app + ChromaDB)</span>
+docker compose up --build
+
+<span class="cm"># The API is now available at http://localhost:8000</span>
+<span class="cm"># API docs at http://localhost:8000/docs (FastAPI Swagger UI)</span>
+<span class="cm"># ChromaDB on :8100</span>
+
+<span class="cm"># Test the endpoints</span>
+<span class="cm"># Chat (LLM)</span>
+curl -X POST http://localhost:8000/chat/ \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -d <span class="str">'{"message":"Explain RAG in 2 sentences","max_tokens":200}'</span>
+
+<span class="cm"># Classify (ML)</span>
+curl -X POST http://localhost:8000/classify/ \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -d <span class="str">'{"text":"This product is amazing, I love it!"}'</span>
+
+<span class="cm"># Ingest a document for RAG</span>
+curl -X POST http://localhost:8000/rag/ingest \
+  -F <span class="str">"file=@my_document.txt"</span>
+
+<span class="cm"># Query RAG</span>
+curl -X POST http://localhost:8000/rag/query \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -d <span class="str">'{"question":"What does the document say about X?","top_k":3}'</span>
+
+<span class="cm"># Health check</span>
+curl http://localhost:8000/health/
+
+<span class="cm"># Stop everything</span>
+docker compose down</div>
+
+        <h4 style="margin-bottom:.6rem;color:var(--primary-glow)">Option 2 — Local Development</h4>
+        <div class="code-block" style="margin-bottom:1.2rem"><span class="cm"># Start ChromaDB only</span>
+docker compose up chromadb -d
+
+<span class="cm"># Create and activate virtual environment</span>
+python3 -m venv venv
+source venv/bin/activate
+
+<span class="cm"># Install dependencies</span>
+pip install -r requirements.txt
+
+<span class="cm"># Set environment variables</span>
+cp .env.example .env
+<span class="cm"># Edit .env: set OPENAI_API_KEY=sk-...</span>
+
+<span class="cm"># Start the development server (auto-reload on changes)</span>
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
+<span class="cm"># Note: First request to /classify or /rag will download models</span>
+<span class="cm"># (~250MB for classifier, ~80MB for embeddings). Cached after first run.</span></div>
+
+        <h4 style="margin-bottom:.6rem;color:var(--primary-glow)">Option 3 — Kubernetes</h4>
+        <div class="code-block"><span class="cm"># Build and push Docker image</span>
+docker build -t your-registry/ai-assistant:latest .
+docker push your-registry/ai-assistant:latest
+
+<span class="cm"># Create namespace and secrets</span>
+kubectl create namespace ai
+kubectl create secret generic ai-secrets -n ai \
+  --from-literal=OPENAI_API_KEY=sk-... \
+  --from-literal=CHROMA_HOST=chromadb.ai.svc.cluster.local
+
+<span class="cm"># Deploy</span>
+kubectl apply -f k8s/deployment.yaml -n ai
+
+<span class="cm"># Verify</span>
+kubectl get pods -n ai
+kubectl logs -f deployment/ai-assistant -n ai
+
+<span class="cm"># Port-forward for local testing</span>
+kubectl port-forward svc/ai-assistant -n ai 8000:80</div>
+      </div>
 
     </div>
   </div>

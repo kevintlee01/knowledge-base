@@ -361,6 +361,7 @@ details.code-example .code-block{margin:0;border:none;border-radius:0}
       <a href="#comparison">Comparison</a>
       <a href="#testing">Testing</a>
       <a href="#techstack">Tech Stack</a>
+      <a href="#ch10">Production</a>
     </div>
   </div>
 </nav>
@@ -3615,6 +3616,78 @@ module.exports = { logger };</div>
   }
 }</div>
       </details>
+
+      <!-- How to Run -->
+      <div class="card" style="border-top:3px solid var(--accent);margin-top:2rem">
+        <h3 style="margin-bottom:1rem">🚀 How to Run This Service</h3>
+
+        <h4 style="margin-bottom:.6rem;color:var(--primary-glow)">Prerequisites</h4>
+        <ul style="margin-bottom:1.2rem">
+          <li><strong>Docker &amp; Docker Compose</strong> (v2+) installed</li>
+          <li><strong>Node.js 20+</strong> (only needed for local development without Docker)</li>
+        </ul>
+
+        <h4 style="margin-bottom:.6rem;color:var(--primary-glow)">Option 1 — Docker Compose (recommended)</h4>
+        <div class="code-block" style="margin-bottom:1.2rem"><span class="cm"># Clone / copy all files into a project directory</span>
+mkdir order-service &amp;&amp; cd order-service
+
+<span class="cm"># Create the file structure shown above, then:</span>
+docker compose up --build
+
+<span class="cm"># The API is now available at http://localhost:3000</span>
+<span class="cm"># PostgreSQL on :5432, RabbitMQ Management UI on :15672</span>
+
+<span class="cm"># Run database migrations</span>
+docker compose exec app npm run migrate
+
+<span class="cm"># Test the API</span>
+curl -X POST http://localhost:3000/api/orders \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -d <span class="str">'{"customerId":"cust-1","items":[{"sku":"WIDGET-1","qty":2,"price":19.99}]}'</span>
+
+<span class="cm"># Health check</span>
+curl http://localhost:3000/healthz
+
+<span class="cm"># Stop everything</span>
+docker compose down</div>
+
+        <h4 style="margin-bottom:.6rem;color:var(--primary-glow)">Option 2 — Local Development</h4>
+        <div class="code-block" style="margin-bottom:1.2rem"><span class="cm"># Start dependencies only</span>
+docker compose up postgres rabbitmq -d
+
+<span class="cm"># Install Node.js dependencies</span>
+npm install
+
+<span class="cm"># Set environment variables (or create a .env file)</span>
+export DATABASE_URL=postgres://orders:orders@localhost:5432/orders
+export AMQP_URL=amqp://guest:guest@localhost:5672
+export PAYMENT_SERVICE_URL=http://localhost:4000
+export PORT=3000
+
+<span class="cm"># Run database migrations</span>
+npm run migrate
+
+<span class="cm"># Start in dev mode (auto-restart on file changes)</span>
+npm run dev</div>
+
+        <h4 style="margin-bottom:.6rem;color:var(--primary-glow)">Option 3 — Kubernetes</h4>
+        <div class="code-block"><span class="cm"># Build and push Docker image</span>
+docker build -t your-registry/order-service:latest .
+docker push your-registry/order-service:latest
+
+<span class="cm"># Create namespace and secrets</span>
+kubectl create namespace orders
+kubectl create secret generic order-secrets -n orders \
+  --from-literal=DATABASE_URL=postgres://orders:orders@postgres:5432/orders \
+  --from-literal=AMQP_URL=amqp://guest:guest@rabbitmq:5672
+
+<span class="cm"># Deploy</span>
+kubectl apply -f k8s/deployment.yaml -n orders
+
+<span class="cm"># Verify</span>
+kubectl get pods -n orders
+kubectl logs -f deployment/order-service -n orders</div>
+      </div>
 
     </div>
   </div>
