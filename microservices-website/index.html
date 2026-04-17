@@ -3208,11 +3208,10 @@ module.exports = app;</div>
       </details>
 
       <details class="code-example">
-        <summary>📄 src/routes/orders.js — Order CRUD with validation &amp; event publishing</summary>
+        <summary>📄 src/routes/orders.js — Order CRUD with validation &amp; transactional outbox</summary>
         <div class="code-block"><span class="cm">// src/routes/orders.js — Order endpoints</span>
 <span class="kw">const</span> router = <span class="fn">require</span>(<span class="str">'express'</span>).<span class="fn">Router</span>();
 <span class="kw">const</span> { pool } = <span class="fn">require</span>(<span class="str">'../lib/db'</span>);
-<span class="kw">const</span> { publish } = <span class="fn">require</span>(<span class="str">'../lib/broker'</span>);
 <span class="kw">const</span> { callPaymentService } = <span class="fn">require</span>(<span class="str">'../lib/payment-client'</span>);
 <span class="kw">const</span> { logger } = <span class="fn">require</span>(<span class="str">'../lib/logger'</span>);
 

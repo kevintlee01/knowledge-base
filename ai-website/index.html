@@ -4196,34 +4196,35 @@ demo.<span class="fn">launch</span>(share=<span class="kw">True</span>)  <span c
 </section>
 
 <!-- ============================================================
-     CHAPTER — PRODUCTION-READY ML INFERENCE SERVICE
+     CHAPTER — PRODUCTION-READY AI SERVICE (LLM + RAG + ML)
      ============================================================ -->
 <section class="chapter" id="ch-production">
   <div class="container">
     <div class="section-header">
       <div class="section-label">Production Reference</div>
-      <h2>Production-Ready ML Inference Service</h2>
-      <p>A complete, deployable inference API with FastAPI, model versioning, preprocessing pipeline, health checks, Docker, and Kubernetes manifests.</p>
+      <h2>Production-Ready AI Service — LLM + RAG + ML</h2>
+      <p>A complete, deployable AI platform combining LLM chat completions, Retrieval-Augmented Generation with a vector store, and ML classification — all behind a single FastAPI service.</p>
     </div>
 
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;margin-bottom:2rem">
-      <h3 style="color:var(--accent);margin-bottom:1rem">🧠 Sentiment Analysis Service — Full Project Structure</h3>
-      <p style="color:var(--text-dim);font-size:.92rem;margin-bottom:1.5rem">A production-grade sentiment analysis microservice built with Python, FastAPI, and Hugging Face Transformers. Includes model registry loading, input validation, structured logging, Prometheus metrics, Docker containerization, and Kubernetes deployment.</p>
+      <h3 style="color:var(--accent);margin-bottom:1rem">🧠 AI Knowledge Assistant — Full Project Structure</h3>
+      <p style="color:var(--text-dim);font-size:.92rem;margin-bottom:1.5rem">A production-grade AI service with three capabilities: (1) <strong>LLM</strong> — chat completions via OpenAI-compatible API with streaming, (2) <strong>RAG</strong> — document ingestion, chunking, embedding, vector search, and grounded generation, (3) <strong>ML</strong> — text classification with a local fine-tuned model. Includes health checks, Prometheus metrics, structured logging, Docker, and Kubernetes manifests.</p>
 
       <details class="code-example">
-        <summary>📄 app/main.py — FastAPI application entry point</summary>
-        <div class="code-block"><span class="cm"># app/main.py — FastAPI inference service</span>
+        <summary>📄 app/main.py — FastAPI application with lifespan startup</summary>
+        <div class="code-block"><span class="cm"># app/main.py — AI Knowledge Assistant API</span>
 <span class="kw">import</span> <span class="type">logging</span>
 <span class="kw">import</span> <span class="type">uuid</span>
 <span class="kw">from</span> <span class="type">contextlib</span> <span class="kw">import</span> asynccontextmanager
 
 <span class="kw">from</span> <span class="type">fastapi</span> <span class="kw">import</span> FastAPI, Request
 <span class="kw">from</span> <span class="type">fastapi.middleware.cors</span> <span class="kw">import</span> CORSMiddleware
-<span class="kw">from</span> <span class="type">fastapi.responses</span> <span class="kw">import</span> JSONResponse
 
 <span class="kw">from</span> <span class="type">app.config</span> <span class="kw">import</span> settings
-<span class="kw">from</span> <span class="type">app.model</span> <span class="kw">import</span> ModelRegistry
-<span class="kw">from</span> <span class="type">app.routes</span> <span class="kw">import</span> router
+<span class="kw">from</span> <span class="type">app.services.llm</span> <span class="kw">import</span> LLMClient
+<span class="kw">from</span> <span class="type">app.services.vectorstore</span> <span class="kw">import</span> VectorStore
+<span class="kw">from</span> <span class="type">app.services.classifier</span> <span class="kw">import</span> TextClassifier
+<span class="kw">from</span> <span class="type">app.routes</span> <span class="kw">import</span> chat, rag, classify, health
 <span class="kw">from</span> <span class="type">app.metrics</span> <span class="kw">import</span> setup_metrics
 
 logger = logging.<span class="fn">getLogger</span>(__name__)
@@ -4231,27 +4232,45 @@ logger = logging.<span class="fn">getLogger</span>(__name__)
 
 <span class="fn">@asynccontextmanager</span>
 <span class="kw">async def</span> <span class="fn">lifespan</span>(app: FastAPI):
-    <span class="cm"># Startup: load model into memory</span>
-    logger.<span class="fn">info</span>(<span class="str">"Loading model: %s"</span>, settings.MODEL_NAME)
-    app.state.registry = <span class="type">ModelRegistry</span>()
-    app.state.registry.<span class="fn">load</span>(settings.MODEL_NAME, settings.MODEL_REVISION)
-    logger.<span class="fn">info</span>(<span class="str">"Model loaded — ready to serve"</span>)
+    <span class="cm"># Startup — initialize all AI services</span>
+    logger.<span class="fn">info</span>(<span class="str">"Initializing LLM client: %s"</span>, settings.LLM_MODEL)
+    app.state.llm = <span class="type">LLMClient</span>(
+        api_key=settings.OPENAI_API_KEY,
+        model=settings.LLM_MODEL,
+        base_url=settings.LLM_BASE_URL,
+    )
+
+    logger.<span class="fn">info</span>(<span class="str">"Loading embedding model: %s"</span>, settings.EMBEDDING_MODEL)
+    app.state.vectorstore = <span class="type">VectorStore</span>(
+        embedding_model=settings.EMBEDDING_MODEL,
+        collection=settings.CHROMA_COLLECTION,
+        persist_dir=settings.CHROMA_PERSIST_DIR,
+    )
+    <span class="kw">await</span> app.state.vectorstore.<span class="fn">initialize</span>()
+
+    logger.<span class="fn">info</span>(<span class="str">"Loading classifier: %s"</span>, settings.CLASSIFIER_MODEL)
+    app.state.classifier = <span class="type">TextClassifier</span>(
+        model_name=settings.CLASSIFIER_MODEL,
+    )
+    app.state.classifier.<span class="fn">load</span>()
+
+    logger.<span class="fn">info</span>(<span class="str">"All AI services ready"</span>)
     <span class="kw">yield</span>
-    <span class="cm"># Shutdown: release resources</span>
-    app.state.registry.<span class="fn">unload</span>()
-    logger.<span class="fn">info</span>(<span class="str">"Model unloaded — shutting down"</span>)
+
+    <span class="cm"># Shutdown — release resources</span>
+    app.state.classifier.<span class="fn">unload</span>()
+    logger.<span class="fn">info</span>(<span class="str">"Shutdown complete"</span>)
 
 
 app = <span class="type">FastAPI</span>(
-    title=<span class="str">"Sentiment Analysis API"</span>,
+    title=<span class="str">"AI Knowledge Assistant"</span>,
     version=settings.APP_VERSION,
     lifespan=lifespan,
 )
-
 app.<span class="fn">add_middleware</span>(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
-    allow_methods=[<span class="str">"POST"</span>, <span class="str">"GET"</span>],
+    allow_methods=[<span class="str">"*"</span>],
     allow_headers=[<span class="str">"*"</span>],
 )
 <span class="fn">setup_metrics</span>(app)
@@ -4259,66 +4278,220 @@ app.<span class="fn">add_middleware</span>(
 
 <span class="fn">@app.middleware</span>(<span class="str">"http"</span>)
 <span class="kw">async def</span> <span class="fn">request_id_middleware</span>(request: Request, call_next):
-    request_id = request.headers.<span class="fn">get</span>(<span class="str">"x-request-id"</span>, <span class="fn">str</span>(uuid.<span class="fn">uuid4</span>()))
+    request_id = request.headers.<span class="fn">get</span>(
+        <span class="str">"x-request-id"</span>, <span class="fn">str</span>(uuid.<span class="fn">uuid4</span>())
+    )
     response = <span class="kw">await</span> <span class="fn">call_next</span>(request)
     response.headers[<span class="str">"x-request-id"</span>] = request_id
     <span class="kw">return</span> response
 
 
-app.<span class="fn">include_router</span>(router, prefix=<span class="str">"/api/v1"</span>)</div>
+<span class="cm"># Mount route modules</span>
+app.<span class="fn">include_router</span>(chat.router, prefix=<span class="str">"/api/v1"</span>, tags=[<span class="str">"LLM"</span>])
+app.<span class="fn">include_router</span>(rag.router, prefix=<span class="str">"/api/v1"</span>, tags=[<span class="str">"RAG"</span>])
+app.<span class="fn">include_router</span>(classify.router, prefix=<span class="str">"/api/v1"</span>, tags=[<span class="str">"ML"</span>])
+app.<span class="fn">include_router</span>(health.router, tags=[<span class="str">"Health"</span>])</div>
       </details>
 
       <details class="code-example">
-        <summary>📄 app/routes.py — Prediction &amp; health endpoints</summary>
-        <div class="code-block"><span class="cm"># app/routes.py — Prediction + health endpoints</span>
+        <summary>📄 app/routes/chat.py — LLM chat completions with streaming</summary>
+        <div class="code-block"><span class="cm"># app/routes/chat.py — LLM chat completions endpoint</span>
 <span class="kw">import</span> <span class="type">time</span>
 <span class="kw">import</span> <span class="type">logging</span>
-<span class="kw">from</span> <span class="type">typing</span> <span class="kw">import</span> <span class="type">List</span>
+<span class="kw">from</span> <span class="type">typing</span> <span class="kw">import</span> <span class="type">List, Optional</span>
 
-<span class="kw">from</span> <span class="type">fastapi</span> <span class="kw">import</span> APIRouter, Request, HTTPException
-<span class="kw">from</span> <span class="type">pydantic</span> <span class="kw">import</span> BaseModel, Field, field_validator
-<span class="kw">from</span> <span class="type">app.metrics</span> <span class="kw">import</span> PREDICTION_LATENCY, PREDICTION_COUNT
+<span class="kw">from</span> <span class="type">fastapi</span> <span class="kw">import</span> APIRouter, Request
+<span class="kw">from</span> <span class="type">fastapi.responses</span> <span class="kw">import</span> StreamingResponse
+<span class="kw">from</span> <span class="type">pydantic</span> <span class="kw">import</span> BaseModel, Field
+<span class="kw">from</span> <span class="type">app.metrics</span> <span class="kw">import</span> LLM_LATENCY, LLM_TOKENS
 
 logger = logging.<span class="fn">getLogger</span>(__name__)
 router = <span class="type">APIRouter</span>()
 
 
-<span class="kw">class</span> <span class="type">PredictionRequest</span>(BaseModel):
+<span class="kw">class</span> <span class="type">Message</span>(BaseModel):
+    role: <span class="type">str</span> = <span class="fn">Field</span>(..., pattern=<span class="str">r"^(system|user|assistant)$"</span>)
+    content: <span class="type">str</span> = <span class="fn">Field</span>(..., min_length=<span class="num">1</span>, max_length=<span class="num">32000</span>)
+
+
+<span class="kw">class</span> <span class="type">ChatRequest</span>(BaseModel):
+    messages: <span class="type">List</span>[<span class="type">Message</span>] = <span class="fn">Field</span>(..., min_length=<span class="num">1</span>, max_length=<span class="num">50</span>)
+    temperature: <span class="type">float</span> = <span class="fn">Field</span>(default=<span class="num">0.7</span>, ge=<span class="num">0</span>, le=<span class="num">2</span>)
+    max_tokens: <span class="type">int</span> = <span class="fn">Field</span>(default=<span class="num">1024</span>, ge=<span class="num">1</span>, le=<span class="num">4096</span>)
+    stream: <span class="type">bool</span> = <span class="kw">False</span>
+
+
+<span class="fn">@router.post</span>(<span class="str">"/chat"</span>)
+<span class="kw">async def</span> <span class="fn">chat_completions</span>(request: Request, body: <span class="type">ChatRequest</span>):
+    llm = request.app.state.llm
+    messages = [{<span class="str">"role"</span>: m.role, <span class="str">"content"</span>: m.content} <span class="kw">for</span> m <span class="kw">in</span> body.messages]
+
+    <span class="kw">if</span> body.stream:
+        <span class="kw">return</span> <span class="type">StreamingResponse</span>(
+            llm.<span class="fn">stream_chat</span>(messages, body.temperature, body.max_tokens),
+            media_type=<span class="str">"text/event-stream"</span>,
+        )
+
+    start = time.<span class="fn">perf_counter</span>()
+    result = <span class="kw">await</span> llm.<span class="fn">chat</span>(messages, body.temperature, body.max_tokens)
+    latency = time.<span class="fn">perf_counter</span>() - start
+
+    LLM_LATENCY.<span class="fn">observe</span>(latency)
+    LLM_TOKENS.<span class="fn">inc</span>(result[<span class="str">"usage"</span>][<span class="str">"total_tokens"</span>])
+    logger.<span class="fn">info</span>(<span class="str">"Chat completed in %.3fs, %d tokens"</span>, latency, result[<span class="str">"usage"</span>][<span class="str">"total_tokens"</span>])
+
+    <span class="kw">return</span> result</div>
+      </details>
+
+      <details class="code-example">
+        <summary>📄 app/routes/rag.py — RAG: document ingestion + grounded Q&amp;A</summary>
+        <div class="code-block"><span class="cm"># app/routes/rag.py — Retrieval-Augmented Generation endpoints</span>
+<span class="kw">import</span> <span class="type">time</span>
+<span class="kw">import</span> <span class="type">logging</span>
+<span class="kw">from</span> <span class="type">typing</span> <span class="kw">import</span> <span class="type">List, Optional</span>
+
+<span class="kw">from</span> <span class="type">fastapi</span> <span class="kw">import</span> APIRouter, Request, UploadFile, File, HTTPException
+<span class="kw">from</span> <span class="type">pydantic</span> <span class="kw">import</span> BaseModel, Field
+<span class="kw">from</span> <span class="type">app.services.chunker</span> <span class="kw">import</span> chunk_text
+<span class="kw">from</span> <span class="type">app.metrics</span> <span class="kw">import</span> RAG_LATENCY, RAG_QUERIES
+
+logger = logging.<span class="fn">getLogger</span>(__name__)
+router = <span class="type">APIRouter</span>()
+
+RAG_SYSTEM_PROMPT = <span class="str">"""You are a helpful assistant. Answer the user's question
+using ONLY the provided context. If the context does not contain
+enough information, say so. Cite the source document when possible.
+
+Context:
+{context}"""</span>
+
+
+<span class="kw">class</span> <span class="type">QueryRequest</span>(BaseModel):
+    question: <span class="type">str</span> = <span class="fn">Field</span>(..., min_length=<span class="num">3</span>, max_length=<span class="num">2000</span>)
+    top_k: <span class="type">int</span> = <span class="fn">Field</span>(default=<span class="num">5</span>, ge=<span class="num">1</span>, le=<span class="num">20</span>)
+    temperature: <span class="type">float</span> = <span class="fn">Field</span>(default=<span class="num">0.3</span>, ge=<span class="num">0</span>, le=<span class="num">2</span>)
+
+
+<span class="fn">@router.post</span>(<span class="str">"/rag/ingest"</span>)
+<span class="kw">async def</span> <span class="fn">ingest_document</span>(
+    request: Request,
+    file: UploadFile = <span class="fn">File</span>(...),
+):
+    <span class="cm"># Validate file type</span>
+    allowed = {<span class="str">"text/plain"</span>, <span class="str">"text/markdown"</span>, <span class="str">"application/pdf"</span>}
+    <span class="kw">if</span> file.content_type <span class="kw">not in</span> allowed:
+        <span class="kw">raise</span> <span class="type">HTTPException</span>(
+            status_code=<span class="num">415</span>,
+            detail=<span class="str">f"Unsupported type: {file.content_type}. Use txt, md, or pdf."</span>,
+        )
+
+    content = (<span class="kw">await</span> file.<span class="fn">read</span>()).<span class="fn">decode</span>(<span class="str">"utf-8"</span>, errors=<span class="str">"replace"</span>)
+    <span class="kw">if</span> <span class="fn">len</span>(content) &gt; <span class="num">500_000</span>:
+        <span class="kw">raise</span> <span class="type">HTTPException</span>(status_code=<span class="num">413</span>, detail=<span class="str">"File too large (500KB max)"</span>)
+
+    <span class="cm"># Chunk and embed</span>
+    chunks = <span class="fn">chunk_text</span>(content, chunk_size=<span class="num">512</span>, overlap=<span class="num">64</span>)
+    vs = request.app.state.vectorstore
+    doc_id = <span class="kw">await</span> vs.<span class="fn">add_document</span>(
+        chunks=chunks,
+        metadata={<span class="str">"filename"</span>: file.filename},
+    )
+
+    logger.<span class="fn">info</span>(<span class="str">"Ingested %s → %d chunks"</span>, file.filename, <span class="fn">len</span>(chunks))
+    <span class="kw">return</span> {
+        <span class="str">"doc_id"</span>: doc_id, <span class="str">"filename"</span>: file.filename,
+        <span class="str">"chunks"</span>: <span class="fn">len</span>(chunks), <span class="str">"status"</span>: <span class="str">"ingested"</span>,
+    }
+
+
+<span class="fn">@router.post</span>(<span class="str">"/rag/query"</span>)
+<span class="kw">async def</span> <span class="fn">rag_query</span>(request: Request, body: <span class="type">QueryRequest</span>):
+    start = time.<span class="fn">perf_counter</span>()
+    vs = request.app.state.vectorstore
+    llm = request.app.state.llm
+
+    <span class="cm"># 1. Retrieve relevant chunks from vector store</span>
+    results = <span class="kw">await</span> vs.<span class="fn">search</span>(body.question, top_k=body.top_k)
+    <span class="kw">if not</span> results:
+        <span class="kw">return</span> {<span class="str">"answer"</span>: <span class="str">"No relevant documents found."</span>, <span class="str">"sources"</span>: []}
+
+    <span class="cm"># 2. Build grounded prompt with retrieved context</span>
+    context = <span class="str">"\n\n---\n\n"</span>.<span class="fn">join</span>(
+        <span class="str">f"[Source: {r['metadata'].get('filename', 'unknown')}]\n{r['text']}"</span>
+        <span class="kw">for</span> r <span class="kw">in</span> results
+    )
+    messages = [
+        {<span class="str">"role"</span>: <span class="str">"system"</span>, <span class="str">"content"</span>: RAG_SYSTEM_PROMPT.<span class="fn">format</span>(context=context)},
+        {<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: body.question},
+    ]
+
+    <span class="cm"># 3. Generate answer grounded in retrieved context</span>
+    response = <span class="kw">await</span> llm.<span class="fn">chat</span>(messages, body.temperature, max_tokens=<span class="num">1024</span>)
+
+    latency = time.<span class="fn">perf_counter</span>() - start
+    RAG_LATENCY.<span class="fn">observe</span>(latency)
+    RAG_QUERIES.<span class="fn">inc</span>()
+
+    <span class="kw">return</span> {
+        <span class="str">"answer"</span>: response[<span class="str">"content"</span>],
+        <span class="str">"sources"</span>: [
+            {<span class="str">"text"</span>: r[<span class="str">"text"</span>][:200], <span class="str">"score"</span>: r[<span class="str">"score"</span>], <span class="str">"metadata"</span>: r[<span class="str">"metadata"</span>]}
+            <span class="kw">for</span> r <span class="kw">in</span> results
+        ],
+        <span class="str">"latency_ms"</span>: <span class="fn">round</span>(latency * <span class="num">1000</span>, <span class="num">1</span>),
+    }</div>
+      </details>
+
+      <details class="code-example">
+        <summary>📄 app/routes/classify.py — ML text classification endpoint</summary>
+        <div class="code-block"><span class="cm"># app/routes/classify.py — ML classification with local model</span>
+<span class="kw">import</span> <span class="type">time</span>
+<span class="kw">import</span> <span class="type">logging</span>
+<span class="kw">from</span> <span class="type">typing</span> <span class="kw">import</span> <span class="type">List</span>
+
+<span class="kw">from</span> <span class="type">fastapi</span> <span class="kw">import</span> APIRouter, Request
+<span class="kw">from</span> <span class="type">pydantic</span> <span class="kw">import</span> BaseModel, Field, field_validator
+<span class="kw">from</span> <span class="type">app.metrics</span> <span class="kw">import</span> CLASSIFY_LATENCY, CLASSIFY_COUNT
+
+logger = logging.<span class="fn">getLogger</span>(__name__)
+router = <span class="type">APIRouter</span>()
+
+
+<span class="kw">class</span> <span class="type">ClassifyRequest</span>(BaseModel):
     texts: <span class="type">List</span>[<span class="type">str</span>] = <span class="fn">Field</span>(..., min_length=<span class="num">1</span>, max_length=<span class="num">32</span>)
 
     <span class="fn">@field_validator</span>(<span class="str">"texts"</span>)
     <span class="fn">@classmethod</span>
     <span class="kw">def</span> <span class="fn">validate_texts</span>(cls, v):
         <span class="kw">for</span> t <span class="kw">in</span> v:
-            <span class="kw">if</span> <span class="kw">not</span> t.<span class="fn">strip</span>():
+            <span class="kw">if not</span> t.<span class="fn">strip</span>():
                 <span class="kw">raise</span> <span class="type">ValueError</span>(<span class="str">"Empty strings not allowed"</span>)
             <span class="kw">if</span> <span class="fn">len</span>(t) &gt; <span class="num">5000</span>:
                 <span class="kw">raise</span> <span class="type">ValueError</span>(<span class="str">"Text exceeds 5000 char limit"</span>)
         <span class="kw">return</span> v
 
 
-<span class="kw">class</span> <span class="type">SentimentResult</span>(BaseModel):
-    text: <span class="type">str</span>
-    label: <span class="type">str</span>
-    score: <span class="type">float</span>
-
-
-<span class="fn">@router.post</span>(<span class="str">"/predict"</span>, response_model=<span class="type">List</span>[<span class="type">SentimentResult</span>])
-<span class="kw">async def</span> <span class="fn">predict</span>(request: Request, body: <span class="type">PredictionRequest</span>):
+<span class="fn">@router.post</span>(<span class="str">"/classify"</span>)
+<span class="kw">async def</span> <span class="fn">classify_text</span>(request: Request, body: <span class="type">ClassifyRequest</span>):
     start = time.<span class="fn">perf_counter</span>()
-    registry = request.app.state.registry
+    classifier = request.app.state.classifier
 
-    results = registry.<span class="fn">predict</span>(body.texts)
+    results = classifier.<span class="fn">predict</span>(body.texts)
 
     latency = time.<span class="fn">perf_counter</span>() - start
-    PREDICTION_LATENCY.<span class="fn">observe</span>(latency)
-    PREDICTION_COUNT.<span class="fn">inc</span>(<span class="fn">len</span>(body.texts))
+    CLASSIFY_LATENCY.<span class="fn">observe</span>(latency)
+    CLASSIFY_COUNT.<span class="fn">inc</span>(<span class="fn">len</span>(body.texts))
+    logger.<span class="fn">info</span>(<span class="str">"Classified %d texts in %.3fs"</span>, <span class="fn">len</span>(body.texts), latency)
 
-    logger.<span class="fn">info</span>(
-        <span class="str">"Predicted %d texts in %.3fs"</span>,
-        <span class="fn">len</span>(body.texts), latency
-    )
-    <span class="kw">return</span> results
+    <span class="kw">return</span> results</div>
+      </details>
+
+      <details class="code-example">
+        <summary>📄 app/routes/health.py — Health &amp; readiness probes</summary>
+        <div class="code-block"><span class="cm"># app/routes/health.py — Kubernetes health probes</span>
+<span class="kw">from</span> <span class="type">fastapi</span> <span class="kw">import</span> APIRouter, Request, HTTPException
+
+router = <span class="type">APIRouter</span>()
 
 
 <span class="fn">@router.get</span>(<span class="str">"/health/live"</span>)
@@ -4328,103 +4501,305 @@ router = <span class="type">APIRouter</span>()
 
 <span class="fn">@router.get</span>(<span class="str">"/health/ready"</span>)
 <span class="kw">async def</span> <span class="fn">readiness</span>(request: Request):
-    registry = request.app.state.registry
-    <span class="kw">if not</span> registry.is_loaded:
-        <span class="kw">raise</span> <span class="type">HTTPException</span>(status_code=<span class="num">503</span>, detail=<span class="str">"Model not loaded"</span>)
-    <span class="kw">return</span> {
-        <span class="str">"status"</span>: <span class="str">"ready"</span>,
-        <span class="str">"model"</span>: registry.model_name,
-        <span class="str">"revision"</span>: registry.revision,
-    }</div>
+    checks = {}
+    checks[<span class="str">"llm"</span>] = request.app.state.llm <span class="kw">is not None</span>
+    checks[<span class="str">"vectorstore"</span>] = request.app.state.vectorstore.is_ready
+    checks[<span class="str">"classifier"</span>] = request.app.state.classifier.is_loaded
+
+    all_ready = <span class="fn">all</span>(checks.<span class="fn">values</span>())
+    <span class="kw">if not</span> all_ready:
+        <span class="kw">raise</span> <span class="type">HTTPException</span>(status_code=<span class="num">503</span>, detail=checks)
+    <span class="kw">return</span> {<span class="str">"status"</span>: <span class="str">"ready"</span>, <span class="str">"services"</span>: checks}</div>
       </details>
 
       <details class="code-example">
-        <summary>📄 app/model.py — Model registry with preprocessing pipeline</summary>
-        <div class="code-block"><span class="cm"># app/model.py — Model loading, preprocessing, inference</span>
+        <summary>📄 app/services/llm.py — OpenAI-compatible LLM client</summary>
+        <div class="code-block"><span class="cm"># app/services/llm.py — LLM client (OpenAI-compatible)</span>
 <span class="kw">import</span> <span class="type">logging</span>
-<span class="kw">from</span> <span class="type">typing</span> <span class="kw">import</span> <span class="type">List, Dict</span>
+<span class="kw">from</span> <span class="type">typing</span> <span class="kw">import</span> <span class="type">List, Dict, AsyncGenerator, Optional</span>
 
-<span class="kw">import</span> <span class="type">torch</span>
-<span class="kw">from</span> <span class="type">transformers</span> <span class="kw">import</span> (
-    AutoTokenizer,
-    AutoModelForSequenceClassification,
-    pipeline,
-)
+<span class="kw">from</span> <span class="type">openai</span> <span class="kw">import</span> AsyncOpenAI
 
 logger = logging.<span class="fn">getLogger</span>(__name__)
 
 
-<span class="kw">class</span> <span class="type">ModelRegistry</span>:
-    <span class="kw">def</span> <span class="fn">__init__</span>(self):
+<span class="kw">class</span> <span class="type">LLMClient</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(
+        self,
+        api_key: <span class="type">str</span>,
+        model: <span class="type">str</span>,
+        base_url: <span class="type">Optional</span>[<span class="type">str</span>] = <span class="kw">None</span>,
+    ):
+        self.model = model
+        self.client = <span class="type">AsyncOpenAI</span>(
+            api_key=api_key,
+            base_url=base_url,
+        )
+
+    <span class="kw">async def</span> <span class="fn">chat</span>(
+        self,
+        messages: <span class="type">List</span>[<span class="type">Dict</span>],
+        temperature: <span class="type">float</span> = <span class="num">0.7</span>,
+        max_tokens: <span class="type">int</span> = <span class="num">1024</span>,
+    ) -&gt; <span class="type">Dict</span>:
+        response = <span class="kw">await</span> self.client.chat.completions.<span class="fn">create</span>(
+            model=self.model,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        choice = response.choices[<span class="num">0</span>]
+        <span class="kw">return</span> {
+            <span class="str">"content"</span>: choice.message.content,
+            <span class="str">"finish_reason"</span>: choice.finish_reason,
+            <span class="str">"usage"</span>: {
+                <span class="str">"prompt_tokens"</span>: response.usage.prompt_tokens,
+                <span class="str">"completion_tokens"</span>: response.usage.completion_tokens,
+                <span class="str">"total_tokens"</span>: response.usage.total_tokens,
+            },
+        }
+
+    <span class="kw">async def</span> <span class="fn">stream_chat</span>(
+        self,
+        messages: <span class="type">List</span>[<span class="type">Dict</span>],
+        temperature: <span class="type">float</span> = <span class="num">0.7</span>,
+        max_tokens: <span class="type">int</span> = <span class="num">1024</span>,
+    ) -&gt; <span class="type">AsyncGenerator</span>[<span class="type">str</span>, <span class="kw">None</span>]:
+        stream = <span class="kw">await</span> self.client.chat.completions.<span class="fn">create</span>(
+            model=self.model,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            stream=<span class="kw">True</span>,
+        )
+        <span class="kw">async for</span> chunk <span class="kw">in</span> stream:
+            delta = chunk.choices[<span class="num">0</span>].delta
+            <span class="kw">if</span> delta.content:
+                <span class="kw">yield</span> <span class="str">f"data: {delta.content}\n\n"</span>
+        <span class="kw">yield</span> <span class="str">"data: [DONE]\n\n"</span></div>
+      </details>
+
+      <details class="code-example">
+        <summary>📄 app/services/vectorstore.py — ChromaDB vector store with embeddings</summary>
+        <div class="code-block"><span class="cm"># app/services/vectorstore.py — Vector store for RAG retrieval</span>
+<span class="kw">import</span> <span class="type">uuid</span>
+<span class="kw">import</span> <span class="type">logging</span>
+<span class="kw">from</span> <span class="type">typing</span> <span class="kw">import</span> <span class="type">List, Dict, Optional</span>
+
+<span class="kw">import</span> <span class="type">chromadb</span>
+<span class="kw">from</span> <span class="type">chromadb.config</span> <span class="kw">import</span> Settings <span class="kw">as</span> ChromaSettings
+<span class="kw">from</span> <span class="type">sentence_transformers</span> <span class="kw">import</span> SentenceTransformer
+
+logger = logging.<span class="fn">getLogger</span>(__name__)
+
+
+<span class="kw">class</span> <span class="type">VectorStore</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(
+        self,
+        embedding_model: <span class="type">str</span>,
+        collection: <span class="type">str</span>,
+        persist_dir: <span class="type">str</span>,
+    ):
+        self.embedding_model_name = embedding_model
+        self.collection_name = collection
+        self.persist_dir = persist_dir
+        self.encoder: <span class="type">Optional</span>[<span class="type">SentenceTransformer</span>] = <span class="kw">None</span>
+        self.collection_handle = <span class="kw">None</span>
+        self._ready = <span class="kw">False</span>
+
+    <span class="fn">@property</span>
+    <span class="kw">def</span> <span class="fn">is_ready</span>(self) -&gt; <span class="type">bool</span>:
+        <span class="kw">return</span> self._ready
+
+    <span class="kw">async def</span> <span class="fn">initialize</span>(self):
+        <span class="cm"># Load the sentence-transformer embedding model</span>
+        self.encoder = <span class="type">SentenceTransformer</span>(self.embedding_model_name)
+
+        <span class="cm"># Connect to ChromaDB (persistent local storage)</span>
+        client = chromadb.<span class="type">PersistentClient</span>(
+            path=self.persist_dir,
+            settings=<span class="type">ChromaSettings</span>(anonymized_telemetry=<span class="kw">False</span>),
+        )
+        self.collection_handle = client.<span class="fn">get_or_create_collection</span>(
+            name=self.collection_name,
+            metadata={<span class="str">"hnsw:space"</span>: <span class="str">"cosine"</span>},
+        )
+        self._ready = <span class="kw">True</span>
+        logger.<span class="fn">info</span>(
+            <span class="str">"VectorStore ready — model=%s, collection=%s, docs=%d"</span>,
+            self.embedding_model_name,
+            self.collection_name,
+            self.collection_handle.<span class="fn">count</span>(),
+        )
+
+    <span class="kw">async def</span> <span class="fn">add_document</span>(
+        self, chunks: <span class="type">List</span>[<span class="type">str</span>], metadata: <span class="type">Dict</span>
+    ) -&gt; <span class="type">str</span>:
+        doc_id = <span class="fn">str</span>(uuid.<span class="fn">uuid4</span>())
+        embeddings = self.encoder.<span class="fn">encode</span>(chunks).<span class="fn">tolist</span>()
+        ids = [<span class="str">f"{doc_id}_{i}"</span> <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(chunks))]
+        metadatas = [{**metadata, <span class="str">"doc_id"</span>: doc_id, <span class="str">"chunk_idx"</span>: i} <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(chunks))]
+
+        self.collection_handle.<span class="fn">add</span>(
+            ids=ids,
+            embeddings=embeddings,
+            documents=chunks,
+            metadatas=metadatas,
+        )
+        <span class="kw">return</span> doc_id
+
+    <span class="kw">async def</span> <span class="fn">search</span>(
+        self, query: <span class="type">str</span>, top_k: <span class="type">int</span> = <span class="num">5</span>
+    ) -&gt; <span class="type">List</span>[<span class="type">Dict</span>]:
+        query_embedding = self.encoder.<span class="fn">encode</span>([query]).<span class="fn">tolist</span>()
+        results = self.collection_handle.<span class="fn">query</span>(
+            query_embeddings=query_embedding,
+            n_results=top_k,
+            include=[<span class="str">"documents"</span>, <span class="str">"metadatas"</span>, <span class="str">"distances"</span>],
+        )
+
+        <span class="kw">if not</span> results[<span class="str">"documents"</span>][<span class="num">0</span>]:
+            <span class="kw">return</span> []
+
+        <span class="kw">return</span> [
+            {
+                <span class="str">"text"</span>: doc,
+                <span class="str">"metadata"</span>: meta,
+                <span class="str">"score"</span>: <span class="fn">round</span>(<span class="num">1</span> - dist, <span class="num">4</span>),  <span class="cm"># cosine similarity</span>
+            }
+            <span class="kw">for</span> doc, meta, dist <span class="kw">in</span> <span class="fn">zip</span>(
+                results[<span class="str">"documents"</span>][<span class="num">0</span>],
+                results[<span class="str">"metadatas"</span>][<span class="num">0</span>],
+                results[<span class="str">"distances"</span>][<span class="num">0</span>],
+            )
+        ]</div>
+      </details>
+
+      <details class="code-example">
+        <summary>📄 app/services/classifier.py — Local ML text classifier</summary>
+        <div class="code-block"><span class="cm"># app/services/classifier.py — HuggingFace pipeline classifier</span>
+<span class="kw">import</span> <span class="type">logging</span>
+<span class="kw">from</span> <span class="type">typing</span> <span class="kw">import</span> <span class="type">List, Dict</span>
+
+<span class="kw">import</span> <span class="type">torch</span>
+<span class="kw">from</span> <span class="type">transformers</span> <span class="kw">import</span> pipeline
+
+logger = logging.<span class="fn">getLogger</span>(__name__)
+
+
+<span class="kw">class</span> <span class="type">TextClassifier</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, model_name: <span class="type">str</span>):
+        self.model_name = model_name
         self.pipe = <span class="kw">None</span>
-        self.model_name = <span class="kw">None</span>
-        self.revision = <span class="kw">None</span>
 
     <span class="fn">@property</span>
     <span class="kw">def</span> <span class="fn">is_loaded</span>(self) -&gt; <span class="type">bool</span>:
         <span class="kw">return</span> self.pipe <span class="kw">is not None</span>
 
-    <span class="kw">def</span> <span class="fn">load</span>(self, model_name: <span class="type">str</span>, revision: <span class="type">str</span> = <span class="str">"main"</span>):
+    <span class="kw">def</span> <span class="fn">load</span>(self):
         device = <span class="str">"cuda"</span> <span class="kw">if</span> torch.cuda.<span class="fn">is_available</span>() <span class="kw">else</span> <span class="str">"cpu"</span>
-        logger.<span class="fn">info</span>(<span class="str">"Loading %s (rev=%s) on %s"</span>, model_name, revision, device)
-
-        tokenizer = AutoTokenizer.<span class="fn">from_pretrained</span>(
-            model_name, revision=revision
-        )
-        model = AutoModelForSequenceClassification.<span class="fn">from_pretrained</span>(
-            model_name, revision=revision
-        )
-
+        logger.<span class="fn">info</span>(<span class="str">"Loading classifier %s on %s"</span>, self.model_name, device)
         self.pipe = <span class="fn">pipeline</span>(
-            <span class="str">"sentiment-analysis"</span>,
-            model=model,
-            tokenizer=tokenizer,
+            <span class="str">"text-classification"</span>,
+            model=self.model_name,
             device=device,
             batch_size=<span class="num">16</span>,
             truncation=<span class="kw">True</span>,
             max_length=<span class="num">512</span>,
         )
-        self.model_name = model_name
-        self.revision = revision
 
     <span class="kw">def</span> <span class="fn">predict</span>(self, texts: <span class="type">List</span>[<span class="type">str</span>]) -&gt; <span class="type">List</span>[<span class="type">Dict</span>]:
         <span class="kw">if not</span> self.is_loaded:
-            <span class="kw">raise</span> <span class="type">RuntimeError</span>(<span class="str">"Model not loaded"</span>)
-
-        <span class="cm"># Preprocess: strip whitespace, normalize unicode</span>
+            <span class="kw">raise</span> <span class="type">RuntimeError</span>(<span class="str">"Classifier not loaded"</span>)
         cleaned = [t.<span class="fn">strip</span>() <span class="kw">for</span> t <span class="kw">in</span> texts]
-        raw_results = self.<span class="fn">pipe</span>(cleaned)
-
+        raw = self.<span class="fn">pipe</span>(cleaned)
         <span class="kw">return</span> [
-            {
-                <span class="str">"text"</span>: text,
-                <span class="str">"label"</span>: result[<span class="str">"label"</span>],
-                <span class="str">"score"</span>: <span class="fn">round</span>(result[<span class="str">"score"</span>], <span class="num">4</span>),
-            }
-            <span class="kw">for</span> text, result <span class="kw">in</span> <span class="fn">zip</span>(texts, raw_results)
+            {<span class="str">"text"</span>: text, <span class="str">"label"</span>: r[<span class="str">"label"</span>], <span class="str">"score"</span>: <span class="fn">round</span>(r[<span class="str">"score"</span>], <span class="num">4</span>)}
+            <span class="kw">for</span> text, r <span class="kw">in</span> <span class="fn">zip</span>(texts, raw)
         ]
 
     <span class="kw">def</span> <span class="fn">unload</span>(self):
         self.pipe = <span class="kw">None</span>
         <span class="kw">if</span> torch.cuda.<span class="fn">is_available</span>():
             torch.cuda.<span class="fn">empty_cache</span>()
-        logger.<span class="fn">info</span>(<span class="str">"Model unloaded, GPU cache cleared"</span>)</div>
+        logger.<span class="fn">info</span>(<span class="str">"Classifier unloaded"</span>)</div>
       </details>
 
       <details class="code-example">
-        <summary>📄 app/config.py — Settings with environment variable loading</summary>
-        <div class="code-block"><span class="cm"># app/config.py — Centralized configuration</span>
-<span class="kw">from</span> <span class="type">pydantic_settings</span> <span class="kw">import</span> BaseSettings
+        <summary>📄 app/services/chunker.py — Text chunking for RAG ingestion</summary>
+        <div class="code-block"><span class="cm"># app/services/chunker.py — Recursive text splitter for documents</span>
 <span class="kw">from</span> <span class="type">typing</span> <span class="kw">import</span> <span class="type">List</span>
+
+
+<span class="kw">def</span> <span class="fn">chunk_text</span>(
+    text: <span class="type">str</span>,
+    chunk_size: <span class="type">int</span> = <span class="num">512</span>,
+    overlap: <span class="type">int</span> = <span class="num">64</span>,
+) -&gt; <span class="type">List</span>[<span class="type">str</span>]:
+    <span class="cm">"""Split text into overlapping chunks by paragraph boundaries.
+
+    Tries to split on double newlines (paragraphs) first.
+    Falls back to sentence boundaries, then hard character split.
+    """</span>
+    <span class="kw">if</span> <span class="fn">len</span>(text) &lt;= chunk_size:
+        <span class="kw">return</span> [text.<span class="fn">strip</span>()] <span class="kw">if</span> text.<span class="fn">strip</span>() <span class="kw">else</span> []
+
+    separators = [<span class="str">"\n\n"</span>, <span class="str">"\n"</span>, <span class="str">". "</span>, <span class="str">" "</span>]
+    chunks: <span class="type">List</span>[<span class="type">str</span>] = []
+    start = <span class="num">0</span>
+
+    <span class="kw">while</span> start &lt; <span class="fn">len</span>(text):
+        end = start + chunk_size
+
+        <span class="kw">if</span> end &gt;= <span class="fn">len</span>(text):
+            chunk = text[start:].<span class="fn">strip</span>()
+            <span class="kw">if</span> chunk:
+                chunks.<span class="fn">append</span>(chunk)
+            <span class="kw">break</span>
+
+        <span class="cm"># Find best split point</span>
+        split_pos = end
+        <span class="kw">for</span> sep <span class="kw">in</span> separators:
+            pos = text.<span class="fn">rfind</span>(sep, start, end)
+            <span class="kw">if</span> pos &gt; start:
+                split_pos = pos + <span class="fn">len</span>(sep)
+                <span class="kw">break</span>
+
+        chunk = text[start:split_pos].<span class="fn">strip</span>()
+        <span class="kw">if</span> chunk:
+            chunks.<span class="fn">append</span>(chunk)
+
+        start = split_pos - overlap
+
+    <span class="kw">return</span> chunks</div>
+      </details>
+
+      <details class="code-example">
+        <summary>📄 app/config.py — Centralized configuration</summary>
+        <div class="code-block"><span class="cm"># app/config.py — Settings loaded from environment</span>
+<span class="kw">from</span> <span class="type">pydantic_settings</span> <span class="kw">import</span> BaseSettings
+<span class="kw">from</span> <span class="type">typing</span> <span class="kw">import</span> <span class="type">List, Optional</span>
 
 
 <span class="kw">class</span> <span class="type">Settings</span>(BaseSettings):
     APP_VERSION: <span class="type">str</span> = <span class="str">"1.0.0"</span>
-    MODEL_NAME: <span class="type">str</span> = <span class="str">"distilbert-base-uncased-finetuned-sst-2-english"</span>
-    MODEL_REVISION: <span class="type">str</span> = <span class="str">"main"</span>
+
+    <span class="cm"># LLM settings</span>
+    OPENAI_API_KEY: <span class="type">str</span> = <span class="str">""</span>  <span class="cm"># Required — set via env or .env file</span>
+    LLM_MODEL: <span class="type">str</span> = <span class="str">"gpt-4o-mini"</span>
+    LLM_BASE_URL: <span class="type">Optional</span>[<span class="type">str</span>] = <span class="kw">None</span>  <span class="cm"># Override for self-hosted models</span>
+
+    <span class="cm"># RAG / Embedding settings</span>
+    EMBEDDING_MODEL: <span class="type">str</span> = <span class="str">"all-MiniLM-L6-v2"</span>
+    CHROMA_COLLECTION: <span class="type">str</span> = <span class="str">"knowledge_base"</span>
+    CHROMA_PERSIST_DIR: <span class="type">str</span> = <span class="str">"./data/chroma"</span>
+
+    <span class="cm"># ML Classifier settings</span>
+    CLASSIFIER_MODEL: <span class="type">str</span> = <span class="str">"distilbert-base-uncased-finetuned-sst-2-english"</span>
+
+    <span class="cm"># General</span>
     LOG_LEVEL: <span class="type">str</span> = <span class="str">"INFO"</span>
     CORS_ORIGINS: <span class="type">List</span>[<span class="type">str</span>] = [<span class="str">"*"</span>]
-    WORKERS: <span class="type">int</span> = <span class="num">1</span>
 
     <span class="kw">class</span> <span class="type">Config</span>:
         env_file = <span class="str">".env"</span>
@@ -4434,21 +4809,44 @@ settings = <span class="type">Settings</span>()</div>
       </details>
 
       <details class="code-example">
-        <summary>📄 app/metrics.py — Prometheus metrics instrumentation</summary>
-        <div class="code-block"><span class="cm"># app/metrics.py — Prometheus metrics for inference monitoring</span>
+        <summary>📄 app/metrics.py — Prometheus metrics for all three services</summary>
+        <div class="code-block"><span class="cm"># app/metrics.py — Prometheus metrics for LLM, RAG, and ML</span>
 <span class="kw">from</span> <span class="type">prometheus_client</span> <span class="kw">import</span> (
     Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 )
 <span class="kw">from</span> <span class="type">fastapi</span> <span class="kw">import</span> FastAPI, Response
 
-PREDICTION_COUNT = <span class="type">Counter</span>(
-    <span class="str">"ml_predictions_total"</span>,
-    <span class="str">"Total number of predictions served"</span>,
+<span class="cm"># LLM metrics</span>
+LLM_LATENCY = <span class="type">Histogram</span>(
+    <span class="str">"llm_chat_duration_seconds"</span>,
+    <span class="str">"LLM chat completion latency"</span>,
+    buckets=[<span class="num">0.1</span>, <span class="num">0.5</span>, <span class="num">1.0</span>, <span class="num">2.5</span>, <span class="num">5.0</span>, <span class="num">10.0</span>],
 )
-PREDICTION_LATENCY = <span class="type">Histogram</span>(
-    <span class="str">"ml_prediction_duration_seconds"</span>,
-    <span class="str">"Inference latency in seconds"</span>,
-    buckets=[<span class="num">0.01</span>, <span class="num">0.05</span>, <span class="num">0.1</span>, <span class="num">0.25</span>, <span class="num">0.5</span>, <span class="num">1.0</span>, <span class="num">2.5</span>],
+LLM_TOKENS = <span class="type">Counter</span>(
+    <span class="str">"llm_tokens_total"</span>,
+    <span class="str">"Total tokens consumed by LLM"</span>,
+)
+
+<span class="cm"># RAG metrics</span>
+RAG_LATENCY = <span class="type">Histogram</span>(
+    <span class="str">"rag_query_duration_seconds"</span>,
+    <span class="str">"RAG query end-to-end latency (retrieval + generation)"</span>,
+    buckets=[<span class="num">0.1</span>, <span class="num">0.5</span>, <span class="num">1.0</span>, <span class="num">2.5</span>, <span class="num">5.0</span>, <span class="num">10.0</span>],
+)
+RAG_QUERIES = <span class="type">Counter</span>(
+    <span class="str">"rag_queries_total"</span>,
+    <span class="str">"Total RAG queries served"</span>,
+)
+
+<span class="cm"># ML classification metrics</span>
+CLASSIFY_LATENCY = <span class="type">Histogram</span>(
+    <span class="str">"ml_classify_duration_seconds"</span>,
+    <span class="str">"ML classification latency"</span>,
+    buckets=[<span class="num">0.01</span>, <span class="num">0.05</span>, <span class="num">0.1</span>, <span class="num">0.25</span>, <span class="num">0.5</span>, <span class="num">1.0</span>],
+)
+CLASSIFY_COUNT = <span class="type">Counter</span>(
+    <span class="str">"ml_classifications_total"</span>,
+    <span class="str">"Total ML classifications served"</span>,
 )
 
 
@@ -4462,7 +4860,7 @@ PREDICTION_LATENCY = <span class="type">Histogram</span>(
       </details>
 
       <details class="code-example">
-        <summary>📄 tests/test_api.py — Integration tests with pytest</summary>
+        <summary>📄 tests/test_api.py — Integration tests for all endpoints</summary>
         <div class="code-block"><span class="cm"># tests/test_api.py — Integration tests</span>
 <span class="kw">import</span> <span class="type">pytest</span>
 <span class="kw">from</span> <span class="type">fastapi.testclient</span> <span class="kw">import</span> TestClient
@@ -4471,54 +4869,84 @@ PREDICTION_LATENCY = <span class="type">Histogram</span>(
 client = <span class="type">TestClient</span>(app)
 
 
+<span class="cm"># ---------- Health ----------</span>
+
 <span class="kw">def</span> <span class="fn">test_liveness</span>():
-    resp = client.<span class="fn">get</span>(<span class="str">"/api/v1/health/live"</span>)
+    resp = client.<span class="fn">get</span>(<span class="str">"/health/live"</span>)
     <span class="kw">assert</span> resp.status_code == <span class="num">200</span>
     <span class="kw">assert</span> resp.<span class="fn">json</span>()[<span class="str">"status"</span>] == <span class="str">"ok"</span>
 
 
 <span class="kw">def</span> <span class="fn">test_readiness</span>():
-    resp = client.<span class="fn">get</span>(<span class="str">"/api/v1/health/ready"</span>)
+    resp = client.<span class="fn">get</span>(<span class="str">"/health/ready"</span>)
     <span class="kw">assert</span> resp.status_code == <span class="num">200</span>
     data = resp.<span class="fn">json</span>()
     <span class="kw">assert</span> data[<span class="str">"status"</span>] == <span class="str">"ready"</span>
-    <span class="kw">assert</span> <span class="str">"model"</span> <span class="kw">in</span> data
+    <span class="kw">assert</span> data[<span class="str">"services"</span>][<span class="str">"llm"</span>] <span class="kw">is True</span>
+    <span class="kw">assert</span> data[<span class="str">"services"</span>][<span class="str">"vectorstore"</span>] <span class="kw">is True</span>
+    <span class="kw">assert</span> data[<span class="str">"services"</span>][<span class="str">"classifier"</span>] <span class="kw">is True</span>
 
 
-<span class="kw">def</span> <span class="fn">test_predict_single</span>():
-    resp = client.<span class="fn">post</span>(
-        <span class="str">"/api/v1/predict"</span>,
-        json={<span class="str">"texts"</span>: [<span class="str">"This product is amazing!"</span>]},
-    )
+<span class="cm"># ---------- LLM Chat ----------</span>
+
+<span class="kw">def</span> <span class="fn">test_chat_valid</span>():
+    resp = client.<span class="fn">post</span>(<span class="str">"/api/v1/chat"</span>, json={
+        <span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"Hello"</span>}],
+    })
     <span class="kw">assert</span> resp.status_code == <span class="num">200</span>
-    results = resp.<span class="fn">json</span>()
-    <span class="kw">assert</span> <span class="fn">len</span>(results) == <span class="num">1</span>
-    <span class="kw">assert</span> results[<span class="num">0</span>][<span class="str">"label"</span>] <span class="kw">in</span> (<span class="str">"POSITIVE"</span>, <span class="str">"NEGATIVE"</span>)
-    <span class="kw">assert</span> <span class="num">0</span> &lt;= results[<span class="num">0</span>][<span class="str">"score"</span>] &lt;= <span class="num">1</span>
+    <span class="kw">assert</span> <span class="str">"content"</span> <span class="kw">in</span> resp.<span class="fn">json</span>()
 
 
-<span class="kw">def</span> <span class="fn">test_predict_batch</span>():
-    resp = client.<span class="fn">post</span>(
-        <span class="str">"/api/v1/predict"</span>,
-        json={<span class="str">"texts"</span>: [<span class="str">"Great!"</span>, <span class="str">"Terrible experience."</span>]},
-    )
-    <span class="kw">assert</span> resp.status_code == <span class="num">200</span>
-    <span class="kw">assert</span> <span class="fn">len</span>(resp.<span class="fn">json</span>()) == <span class="num">2</span>
-
-
-<span class="kw">def</span> <span class="fn">test_predict_empty_rejected</span>():
-    resp = client.<span class="fn">post</span>(<span class="str">"/api/v1/predict"</span>, json={<span class="str">"texts"</span>: []})
+<span class="kw">def</span> <span class="fn">test_chat_invalid_role</span>():
+    resp = client.<span class="fn">post</span>(<span class="str">"/api/v1/chat"</span>, json={
+        <span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"hacker"</span>, <span class="str">"content"</span>: <span class="str">"Hi"</span>}],
+    })
     <span class="kw">assert</span> resp.status_code == <span class="num">422</span>
 
 
-<span class="kw">def</span> <span class="fn">test_request_id_header</span>():
-    resp = client.<span class="fn">get</span>(<span class="str">"/api/v1/health/live"</span>)
+<span class="cm"># ---------- RAG ----------</span>
+
+<span class="kw">def</span> <span class="fn">test_rag_query_no_docs</span>():
+    resp = client.<span class="fn">post</span>(<span class="str">"/api/v1/rag/query"</span>, json={
+        <span class="str">"question"</span>: <span class="str">"What is machine learning?"</span>,
+    })
+    <span class="kw">assert</span> resp.status_code == <span class="num">200</span>
+
+
+<span class="kw">def</span> <span class="fn">test_rag_ingest_invalid_type</span>():
+    <span class="kw">from</span> <span class="type">io</span> <span class="kw">import</span> BytesIO
+    resp = client.<span class="fn">post</span>(
+        <span class="str">"/api/v1/rag/ingest"</span>,
+        files={<span class="str">"file"</span>: (<span class="str">"test.exe"</span>, <span class="type">BytesIO</span>(<span class="str">b"data"</span>), <span class="str">"application/exe"</span>)},
+    )
+    <span class="kw">assert</span> resp.status_code == <span class="num">415</span>
+
+
+<span class="cm"># ---------- ML Classify ----------</span>
+
+<span class="kw">def</span> <span class="fn">test_classify_valid</span>():
+    resp = client.<span class="fn">post</span>(<span class="str">"/api/v1/classify"</span>, json={
+        <span class="str">"texts"</span>: [<span class="str">"This product is amazing!"</span>],
+    })
+    <span class="kw">assert</span> resp.status_code == <span class="num">200</span>
+    results = resp.<span class="fn">json</span>()
+    <span class="kw">assert</span> <span class="fn">len</span>(results) == <span class="num">1</span>
+    <span class="kw">assert</span> <span class="str">"label"</span> <span class="kw">in</span> results[<span class="num">0</span>]
+
+
+<span class="kw">def</span> <span class="fn">test_classify_empty_rejected</span>():
+    resp = client.<span class="fn">post</span>(<span class="str">"/api/v1/classify"</span>, json={<span class="str">"texts"</span>: []})
+    <span class="kw">assert</span> resp.status_code == <span class="num">422</span>
+
+
+<span class="kw">def</span> <span class="fn">test_request_id_propagated</span>():
+    resp = client.<span class="fn">get</span>(<span class="str">"/health/live"</span>)
     <span class="kw">assert</span> <span class="str">"x-request-id"</span> <span class="kw">in</span> resp.headers</div>
       </details>
 
       <details class="code-example">
         <summary>📄 Dockerfile — Multi-stage GPU-ready build</summary>
-        <div class="code-block"><span class="cm"># Dockerfile — Multi-stage build with optional GPU support</span>
+        <div class="code-block"><span class="cm"># Dockerfile — Multi-stage build for AI service</span>
 <span class="kw">FROM</span> python:<span class="num">3.11</span>-slim <span class="kw">AS</span> builder
 <span class="kw">WORKDIR</span> /app
 <span class="kw">COPY</span> requirements.txt .
@@ -4530,25 +4958,50 @@ client = <span class="type">TestClient</span>(app)
 
 <span class="cm"># Non-root user for security</span>
 <span class="kw">RUN</span> groupadd -r ml &amp;&amp; useradd -r -g ml ml
+<span class="kw">RUN</span> mkdir -p /app/data/chroma &amp;&amp; chown -R ml:ml /app/data
 <span class="kw">COPY</span> --chown=ml:ml app/ app/
 <span class="kw">USER</span> ml
 
 <span class="kw">EXPOSE</span> <span class="num">8000</span>
 <span class="kw">HEALTHCHECK</span> --interval=30s --timeout=5s --retries=3 \
-  <span class="kw">CMD</span> python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/live')"
+  <span class="kw">CMD</span> python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/live')"
 
 <span class="kw">CMD</span> [<span class="str">"uvicorn"</span>, <span class="str">"app.main:app"</span>, <span class="str">"--host"</span>, <span class="str">"0.0.0.0"</span>, <span class="str">"--port"</span>, <span class="str">"8000"</span>]</div>
       </details>
 
       <details class="code-example">
-        <summary>📄 k8s/deployment.yaml — Kubernetes deployment with GPU tolerations</summary>
-        <div class="code-block"><span class="cm"># k8s/deployment.yaml — ML inference deployment</span>
+        <summary>📄 docker-compose.yml — Local development stack</summary>
+        <div class="code-block"><span class="cm"># docker-compose.yml — Full local dev environment</span>
+<span class="kw">version</span>: <span class="str">'3.9'</span>
+<span class="kw">services</span>:
+  <span class="type">ai-service</span>:
+    <span class="kw">build</span>: .
+    <span class="kw">ports</span>:
+      - <span class="str">"8000:8000"</span>
+    <span class="kw">environment</span>:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      LLM_MODEL: gpt-4o-mini
+      EMBEDDING_MODEL: all-MiniLM-L6-v2
+      CLASSIFIER_MODEL: distilbert-base-uncased-finetuned-sst-2-english
+      CHROMA_PERSIST_DIR: /app/data/chroma
+      LOG_LEVEL: info
+    <span class="kw">volumes</span>:
+      - chroma-data:/app/data/chroma
+    <span class="kw">restart</span>: unless-stopped
+
+<span class="kw">volumes</span>:
+  chroma-data:</div>
+      </details>
+
+      <details class="code-example">
+        <summary>📄 k8s/deployment.yaml — Kubernetes deployment with GPU support</summary>
+        <div class="code-block"><span class="cm"># k8s/deployment.yaml — AI service deployment</span>
 <span class="kw">apiVersion</span>: apps/v1
 <span class="kw">kind</span>: Deployment
 <span class="kw">metadata</span>:
-  <span class="kw">name</span>: sentiment-service
+  <span class="kw">name</span>: ai-knowledge-service
   <span class="kw">labels</span>:
-    app: sentiment-service
+    app: ai-knowledge-service
 <span class="kw">spec</span>:
   <span class="kw">replicas</span>: <span class="num">2</span>
   <span class="kw">strategy</span>:
@@ -4558,11 +5011,11 @@ client = <span class="type">TestClient</span>(app)
       <span class="kw">maxUnavailable</span>: <span class="num">0</span>
   <span class="kw">selector</span>:
     <span class="kw">matchLabels</span>:
-      app: sentiment-service
+      app: ai-knowledge-service
   <span class="kw">template</span>:
     <span class="kw">metadata</span>:
       <span class="kw">labels</span>:
-        app: sentiment-service
+        app: ai-knowledge-service
       <span class="kw">annotations</span>:
         prometheus.io/scrape: <span class="str">"true"</span>
         prometheus.io/path: /metrics
@@ -4570,33 +5023,42 @@ client = <span class="type">TestClient</span>(app)
     <span class="kw">spec</span>:
       <span class="kw">terminationGracePeriodSeconds</span>: <span class="num">30</span>
       <span class="kw">containers</span>:
-        - <span class="kw">name</span>: inference
-          <span class="kw">image</span>: registry.example.com/sentiment-service:latest
+        - <span class="kw">name</span>: ai-service
+          <span class="kw">image</span>: registry.example.com/ai-knowledge-service:latest
           <span class="kw">ports</span>:
             - <span class="kw">containerPort</span>: <span class="num">8000</span>
           <span class="kw">envFrom</span>:
+            - <span class="kw">secretRef</span>:
+                <span class="kw">name</span>: ai-service-secrets
             - <span class="kw">configMapRef</span>:
-                <span class="kw">name</span>: sentiment-config
+                <span class="kw">name</span>: ai-service-config
+          <span class="kw">volumeMounts</span>:
+            - <span class="kw">name</span>: chroma-storage
+              <span class="kw">mountPath</span>: /app/data/chroma
           <span class="kw">resources</span>:
             <span class="kw">requests</span>:
               <span class="kw">cpu</span>: 500m
-              <span class="kw">memory</span>: 1Gi
+              <span class="kw">memory</span>: 2Gi
             <span class="kw">limits</span>:
               <span class="kw">cpu</span>: <span class="num">2</span>
-              <span class="kw">memory</span>: 4Gi
-              nvidia.com/gpu: <span class="num">1</span>     <span class="cm"># Optional GPU</span>
+              <span class="kw">memory</span>: 8Gi
+              nvidia.com/gpu: <span class="num">1</span>
           <span class="kw">livenessProbe</span>:
             <span class="kw">httpGet</span>:
-              <span class="kw">path</span>: /api/v1/health/live
+              <span class="kw">path</span>: /health/live
               <span class="kw">port</span>: <span class="num">8000</span>
             <span class="kw">initialDelaySeconds</span>: <span class="num">15</span>
             <span class="kw">periodSeconds</span>: <span class="num">10</span>
           <span class="kw">readinessProbe</span>:
             <span class="kw">httpGet</span>:
-              <span class="kw">path</span>: /api/v1/health/ready
+              <span class="kw">path</span>: /health/ready
               <span class="kw">port</span>: <span class="num">8000</span>
-            <span class="kw">initialDelaySeconds</span>: <span class="num">30</span>
+            <span class="kw">initialDelaySeconds</span>: <span class="num">60</span>
             <span class="kw">periodSeconds</span>: <span class="num">5</span>
+      <span class="kw">volumes</span>:
+        - <span class="kw">name</span>: chroma-storage
+          <span class="kw">persistentVolumeClaim</span>:
+            <span class="kw">claimName</span>: chroma-pvc
       <span class="kw">tolerations</span>:
         - <span class="kw">key</span>: nvidia.com/gpu
           <span class="kw">operator</span>: Exists
@@ -4605,14 +5067,24 @@ client = <span class="type">TestClient</span>(app)
 <span class="kw">apiVersion</span>: v1
 <span class="kw">kind</span>: Service
 <span class="kw">metadata</span>:
-  <span class="kw">name</span>: sentiment-service
+  <span class="kw">name</span>: ai-knowledge-service
 <span class="kw">spec</span>:
   <span class="kw">selector</span>:
-    app: sentiment-service
+    app: ai-knowledge-service
   <span class="kw">ports</span>:
     - <span class="kw">port</span>: <span class="num">80</span>
       <span class="kw">targetPort</span>: <span class="num">8000</span>
-  <span class="kw">type</span>: ClusterIP</div>
+  <span class="kw">type</span>: ClusterIP
+---
+<span class="kw">apiVersion</span>: v1
+<span class="kw">kind</span>: PersistentVolumeClaim
+<span class="kw">metadata</span>:
+  <span class="kw">name</span>: chroma-pvc
+<span class="kw">spec</span>:
+  <span class="kw">accessModes</span>: [ReadWriteOnce]
+  <span class="kw">resources</span>:
+    <span class="kw">requests</span>:
+      <span class="kw">storage</span>: 10Gi</div>
       </details>
 
       <details class="code-example">
@@ -4622,11 +5094,39 @@ fastapi==<span class="num">0.115.0</span>
 uvicorn[standard]==<span class="num">0.32.0</span>
 pydantic==<span class="num">2.9.0</span>
 pydantic-settings==<span class="num">2.6.0</span>
+openai==<span class="num">1.52.0</span>
+chromadb==<span class="num">0.5.15</span>
+sentence-transformers==<span class="num">3.3.0</span>
 torch==<span class="num">2.5.0</span>
 transformers==<span class="num">4.46.0</span>
 prometheus-client==<span class="num">0.21.0</span>
+python-multipart==<span class="num">0.0.12</span>
 pytest==<span class="num">8.3.0</span>
 httpx==<span class="num">0.27.0</span></div>
+      </details>
+
+      <details class="code-example">
+        <summary>📄 .env.example — Environment variables template</summary>
+        <div class="code-block"><span class="cm"># .env.example — Copy to .env and fill in values</span>
+
+<span class="cm"># LLM Provider (OpenAI or compatible API)</span>
+OPENAI_API_KEY=sk-your-api-key-here
+LLM_MODEL=gpt-4o-mini
+<span class="cm"># LLM_BASE_URL=http://localhost:11434/v1  # Uncomment for Ollama</span>
+
+<span class="cm"># Embedding model (runs locally via sentence-transformers)</span>
+EMBEDDING_MODEL=all-MiniLM-L6-v2
+
+<span class="cm"># Vector store</span>
+CHROMA_COLLECTION=knowledge_base
+CHROMA_PERSIST_DIR=./data/chroma
+
+<span class="cm"># ML Classifier (runs locally via HuggingFace)</span>
+CLASSIFIER_MODEL=distilbert-base-uncased-finetuned-sst-2-english
+
+<span class="cm"># General</span>
+LOG_LEVEL=INFO
+CORS_ORIGINS=["*"]</div>
       </details>
 
     </div>
