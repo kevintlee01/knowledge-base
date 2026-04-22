@@ -852,32 +852,29 @@ model.<span class="fn">fit</span>(X_train, y_train)
 
           <!-- Cross-connections between fields (behind everything) -->
           <g class="diagram-relationship">
-            <path d="M 240 155 Q 350 180 430 155" stroke="#8b5cf6" stroke-width="1.2" fill="none" stroke-dasharray="4 4"/><!-- ML↔DL -->
-            <path d="M 560 155 Q 620 180 680 155" stroke="#06b6d4" stroke-width="1.2" fill="none" stroke-dasharray="4 4"/><!-- NLP↔CV -->
-            <path d="M 480 155 Q 520 200 560 155" stroke="#f472b6" stroke-width="1.2" fill="none" stroke-dasharray="4 4"/><!-- DL↔NLP -->
-            <path d="M 430 155 Q 350 350 240 575" stroke="#fbbf24" stroke-width="1" fill="none" stroke-dasharray="4 4"/><!-- DL↔GenAI -->
-            <path d="M 560 155 Q 450 380 240 575" stroke="#f472b6" stroke-width="1" fill="none" stroke-dasharray="4 4"/><!-- NLP↔GenAI -->
-            <path d="M 680 155 Q 700 380 560 575" stroke="#06b6d4" stroke-width="1" fill="none" stroke-dasharray="4 4"/><!-- CV↔Robotics -->
-            <path d="M 240 155 Q 500 400 810 575" stroke="#34d399" stroke-width="1" fill="none" stroke-dasharray="4 4"/><!-- ML↔Safety -->
+            <path d="M 190 109 Q 310 140 430 109" stroke="#8b5cf6" stroke-width="1.2" fill="none" stroke-dasharray="4 4"/><!-- ML↔DL -->
+            <path d="M 670 109 Q 780 140 890 109" stroke="#06b6d4" stroke-width="1.2" fill="none" stroke-dasharray="4 4"/><!-- NLP↔CV -->
+            <path d="M 430 109 Q 550 150 670 109" stroke="#f472b6" stroke-width="1.2" fill="none" stroke-dasharray="4 4"/><!-- DL↔NLP -->
+            <path d="M 430 109 Q 310 350 160 574" stroke="#fbbf24" stroke-width="1" fill="none" stroke-dasharray="4 4"/><!-- DL↔GenAI -->
+            <path d="M 670 109 Q 430 350 160 574" stroke="#f472b6" stroke-width="1" fill="none" stroke-dasharray="4 4"/><!-- NLP↔GenAI -->
+            <path d="M 890 109 Q 800 350 660 574" stroke="#06b6d4" stroke-width="1" fill="none" stroke-dasharray="4 4"/><!-- CV↔Robotics -->
+            <path d="M 190 109 Q 520 380 910 574" stroke="#34d399" stroke-width="1" fill="none" stroke-dasharray="4 4"/><!-- ML↔Safety -->
           </g>
 
           <!-- Hub connections: center → each field -->
-          <line x1="550" y1="310" x2="190" y2="155" stroke="#8b5cf6" stroke-width="1.5" opacity=".3"/>
-          <line x1="550" y1="310" x2="430" y2="155" stroke="#06b6d4" stroke-width="1.5" opacity=".3"/>
-          <line x1="550" y1="310" x2="590" y2="155" stroke="#f472b6" stroke-width="1.5" opacity=".3"/>
-          <line x1="550" y1="310" x2="780" y2="155" stroke="#fbbf24" stroke-width="1.5" opacity=".3"/>
-          <line x1="550" y1="310" x2="985" y2="155" stroke="#34d399" stroke-width="1.5" opacity=".3"/>
-          <line x1="550" y1="390" x2="190" y2="575" stroke="#8b5cf6" stroke-width="1.5" opacity=".3"/>
-          <line x1="550" y1="390" x2="430" y2="575" stroke="#06b6d4" stroke-width="1.5" opacity=".3"/>
-          <line x1="550" y1="390" x2="690" y2="575" stroke="#f472b6" stroke-width="1.5" opacity=".3"/>
-          <line x1="550" y1="390" x2="920" y2="575" stroke="#fbbf24" stroke-width="1.5" opacity=".3"/>
+          <line x1="550" y1="350" x2="190" y2="109" stroke="#8b5cf6" stroke-width="1.5" opacity=".3"/>
+          <line x1="550" y1="350" x2="430" y2="109" stroke="#06b6d4" stroke-width="1.5" opacity=".3"/>
+          <line x1="550" y1="350" x2="670" y2="109" stroke="#f472b6" stroke-width="1.5" opacity=".3"/>
+          <line x1="550" y1="350" x2="890" y2="109" stroke="#fbbf24" stroke-width="1.5" opacity=".3"/>
+          <line x1="550" y1="350" x2="995" y2="254" stroke="#34d399" stroke-width="1.5" opacity=".3"/>
+          <line x1="550" y1="350" x2="160" y2="574" stroke="#8b5cf6" stroke-width="1.5" opacity=".3"/>
+          <line x1="550" y1="350" x2="410" y2="574" stroke="#06b6d4" stroke-width="1.5" opacity=".3"/>
+          <line x1="550" y1="350" x2="660" y2="574" stroke="#f472b6" stroke-width="1.5" opacity=".3"/>
+          <line x1="550" y1="350" x2="910" y2="574" stroke="#fbbf24" stroke-width="1.5" opacity=".3"/>
 
           <!-- === CENTER NODE: AI === -->
           <g class="svg-node-glow">
             <circle cx="550" cy="350" r="58" fill="url(#grad-center)" stroke="#8b5cf6" stroke-width="2.5"/>
-            <circle cx="550" cy="350" r="45" fill="none" stroke="#06b6d4" stroke-width=".8" opacity=".3" stroke-dasharray="3 3">
-              <animateTransform attributeName="transform" type="rotate" from="0 550 350" to="360 550 350" dur="30s" repeatCount="indefinite"/>
-            </circle>
             <text x="550" y="342" text-anchor="middle" fill="#f8fafc" font-size="15" font-weight="800">Artificial</text>
             <text x="550" y="362" text-anchor="middle" fill="#f8fafc" font-size="15" font-weight="800">Intelligence</text>
           </g>
@@ -1039,28 +1036,28 @@ model.<span class="fn">fit</span>(X_train, y_train)
 
           <!-- Animated dots on connections -->
           <circle r="3" fill="#8b5cf6" opacity=".6">
-            <animateMotion dur="6s" repeatCount="indefinite" path="M 550 310 L 190 155"/>
+            <animateMotion dur="6s" repeatCount="indefinite" path="M 550 350 L 190 109"/>
           </circle>
           <circle r="3" fill="#06b6d4" opacity=".6">
-            <animateMotion dur="7s" repeatCount="indefinite" path="M 550 310 L 430 155"/>
+            <animateMotion dur="7s" repeatCount="indefinite" path="M 550 350 L 430 109"/>
           </circle>
           <circle r="3" fill="#f472b6" opacity=".6">
-            <animateMotion dur="5.5s" repeatCount="indefinite" path="M 550 310 L 590 155"/>
+            <animateMotion dur="5.5s" repeatCount="indefinite" path="M 550 350 L 670 109"/>
           </circle>
           <circle r="3" fill="#fbbf24" opacity=".6">
-            <animateMotion dur="8s" repeatCount="indefinite" path="M 550 310 L 780 155"/>
+            <animateMotion dur="8s" repeatCount="indefinite" path="M 550 350 L 890 109"/>
           </circle>
           <circle r="3" fill="#34d399" opacity=".6">
-            <animateMotion dur="6.5s" repeatCount="indefinite" path="M 550 390 L 190 575"/>
+            <animateMotion dur="6.5s" repeatCount="indefinite" path="M 550 350 L 160 574"/>
           </circle>
           <circle r="3" fill="#fbbf24" opacity=".6">
-            <animateMotion dur="7.5s" repeatCount="indefinite" path="M 550 390 L 430 575"/>
+            <animateMotion dur="7.5s" repeatCount="indefinite" path="M 550 350 L 410 574"/>
           </circle>
           <circle r="3" fill="#f472b6" opacity=".6">
-            <animateMotion dur="9s" repeatCount="indefinite" path="M 550 390 L 690 575"/>
+            <animateMotion dur="9s" repeatCount="indefinite" path="M 550 350 L 660 574"/>
           </circle>
           <circle r="3" fill="#f87171" opacity=".6">
-            <animateMotion dur="8.5s" repeatCount="indefinite" path="M 550 390 L 920 575"/>
+            <animateMotion dur="8.5s" repeatCount="indefinite" path="M 550 350 L 910 574"/>
           </circle>
         </svg>
       </div>
